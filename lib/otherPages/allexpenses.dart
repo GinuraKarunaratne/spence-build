@@ -14,6 +14,7 @@ class AllExpensesScreen extends StatefulWidget {
 
 class _AllExpensesScreenState extends State<AllExpensesScreen> {
   List<String> selectedCategories = [];
+  String selectedTimePeriod = ''; // Empty string by default to display all expenses
 
   final List<String> categories = [
     'Food & Grocery',
@@ -29,12 +30,12 @@ class _AllExpensesScreenState extends State<AllExpensesScreen> {
     final screenWidth = MediaQuery.of(context).size.width;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF9FAFB),
+      backgroundColor: const Color(0xFFf2f2f2),
       body: Stack(
         children: [
           Column(
             children: [
-              Header(screenWidth: screenWidth), // Use the Header widget
+              Header(screenWidth: screenWidth),
               const SizedBox(height: 40),
               _buildExpenseContainer(context),
             ],
@@ -64,40 +65,71 @@ class _AllExpensesScreenState extends State<AllExpensesScreen> {
   }
 
   Widget _buildExpenseContainer(BuildContext context) {
-    double screenHeight = MediaQuery.of(context).size.height;
-    double containerHeight = screenHeight * 0.745;
+    double containerHeight = MediaQuery.of(context).size.height * 0.745;
 
     return Container(
-      width: 328,
+      width: 320,
       height: containerHeight,
-      margin: const EdgeInsets.only(bottom: 80),
-      decoration: BoxDecoration(
+      padding: const EdgeInsets.all(24),
+      decoration: ShapeDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
       ),
-      child: Stack(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Positioned(top: 24, left: 24, child: _buildTitle()),
-          Positioned(left: 16, top: 75, child: _buildExpensesList(context)),
+          Text(
+            'All Expenses',
+            style: GoogleFonts.poppins(
+              color: Colors.black,
+              fontSize: 17,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 21),
+          _buildTimePeriodSelector(),
+          const SizedBox(height: 24),
+          Expanded(child: _buildExpensesList(context)),
         ],
       ),
     );
   }
 
-  Widget _buildTitle() {
-    return Text(
-      'All Expenses',
-      style: GoogleFonts.poppins(
-        fontSize: 18,
-        fontWeight: FontWeight.w500,
-        color: Colors.black,
+  Widget _buildTimePeriodSelector() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.start,
+      children: ['Daily', 'Weekly', 'Monthly'].map((label) {
+        return _buildTimePeriodButton(label, const Color(0x26CCF20D));
+      }).toList(),
+    );
+  }
+
+  Widget _buildTimePeriodButton(String label, Color color) {
+    bool isSelected = selectedTimePeriod == label;
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          selectedTimePeriod = isSelected ? '' : label; // Toggle selection
+        });
+      },
+      child: Container(
+        width: 90,
+        height: 25,
+        decoration: BoxDecoration(
+          color: isSelected ? const Color(0xFFCCF20D) : color,
+        ),
+        child: Center(
+          child: Text(
+            label,
+            style: GoogleFonts.poppins(
+              color: Colors.black,
+              fontSize: 10,
+              fontWeight: FontWeight.w400,
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -105,15 +137,16 @@ class _AllExpensesScreenState extends State<AllExpensesScreen> {
   Widget _buildExpensesList(BuildContext context) {
     return ExpenseList(
       selectedCategories: selectedCategories,
+      selectedTimePeriod: selectedTimePeriod,
     );
   }
 
   Future<void> _showCategoryFilterDialog(BuildContext context) async {
     await showDialog(
       context: context,
-      builder: (BuildContext context) {
+      builder: (context) {
         return StatefulBuilder(
-          builder: (BuildContext context, StateSetter dialogSetState) {
+          builder: (context, dialogSetState) {
             return Dialog(
               backgroundColor: Colors.white,
               shape: RoundedRectangleBorder(
@@ -146,7 +179,6 @@ class _AllExpensesScreenState extends State<AllExpensesScreen> {
                               selectedCategories.add(category);
                             }
                           });
-
                           setState(() {});
                         },
                         child: Container(
@@ -168,7 +200,7 @@ class _AllExpensesScreenState extends State<AllExpensesScreen> {
                                   fontSize: 12,
                                   fontWeight: FontWeight.w400,
                                   color: isSelected
-                                      ? const Color.fromARGB(255, 0, 0, 0)
+                                      ? Colors.black
                                       : const Color(0xFF374151),
                                 ),
                               ),
@@ -176,7 +208,7 @@ class _AllExpensesScreenState extends State<AllExpensesScreen> {
                                 const Icon(
                                   Icons.remove,
                                   size: 18,
-                                  color: Color.fromARGB(255, 0, 0, 0),
+                                  color: Colors.black,
                                 ),
                             ],
                           ),

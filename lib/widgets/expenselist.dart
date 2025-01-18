@@ -6,8 +6,13 @@ import 'package:flutter_spinkit/flutter_spinkit.dart';
 
 class ExpenseList extends StatelessWidget {
   final List<String> selectedCategories;
+  final String selectedTimePeriod;
 
-  const ExpenseList({super.key, required this.selectedCategories});
+  const ExpenseList({
+    super.key,
+    required this.selectedCategories,
+    required this.selectedTimePeriod,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -17,7 +22,7 @@ class ExpenseList extends StatelessWidget {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(
             child: SpinKitThreeBounce(
-              color: Color.fromARGB(255, 255, 255, 255),
+              color: Color(0xFFCCF20D),
               size: 40.0,
             ),
           );
@@ -72,36 +77,62 @@ class ExpenseList extends StatelessWidget {
 
   Widget _buildExpenseListView(
       List<QueryDocumentSnapshot> expenses, BuildContext context) {
-    double screenHeight = MediaQuery.of(context).size.height;
-    double containerHeight = screenHeight * 0.63;
+    double containerHeight = MediaQuery.of(context).size.height * 0.63;
+
+    // Filter expenses based on selected time period
+    final filteredExpenses = _filterExpensesByTimePeriod(expenses);
 
     return SizedBox(
       width: 297,
       height: containerHeight,
-      child: Container(
-        color: const Color.fromARGB(0, 0, 0, 0),
-        child: ListView.builder(
-          padding: EdgeInsets.zero,
-          itemCount: expenses.length,
-          itemBuilder: (context, index) {
-            final expense = expenses[index];
-            final title = expense['title'] ?? 'Unknown';
-            final amount = 'Rs ${expense['amount']?.toInt() ?? 0}';
-            final category = expense['category'] ?? 'Unknown';
+      child: ListView.builder(
+        padding: EdgeInsets.zero,
+        itemCount: filteredExpenses.length,
+        itemBuilder: (context, index) {
+          final expense = filteredExpenses[index];
+          final title = expense['title'] ?? 'Unknown';
+          final amount = 'Rs ${expense['amount']?.toInt() ?? 0}';
+          final category = expense['category'] ?? 'Unknown';
 
-            if (selectedCategories.isEmpty ||
-                selectedCategories.contains(category)) {
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 10),
-                child: _buildExpenseItem(title, amount),
-              );
-            }
+          if (selectedCategories.isEmpty ||
+              selectedCategories.contains(category)) {
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: _buildExpenseItem(title, amount),
+            );
+          }
 
-            return Container();
-          },
-        ),
+          return Container();
+        },
       ),
     );
+  }
+
+  List<QueryDocumentSnapshot> _filterExpensesByTimePeriod(
+      List<QueryDocumentSnapshot> expenses) {
+    DateTime now = DateTime.now();
+
+    if (selectedTimePeriod == 'Daily') {
+      return expenses.where((expense) {
+        DateTime expenseDate = (expense['date'] as Timestamp).toDate();
+        return expenseDate.day == now.day &&
+            expenseDate.month == now.month &&
+            expenseDate.year == now.year;
+      }).toList();
+    } else if (selectedTimePeriod == 'Weekly') {
+      DateTime startOfWeek = now.subtract(Duration(days: now.weekday - 1));
+      return expenses.where((expense) {
+        DateTime expenseDate = (expense['date'] as Timestamp).toDate();
+        return expenseDate.isAfter(startOfWeek) && expenseDate.isBefore(now);
+      }).toList();
+    } else if (selectedTimePeriod == 'Monthly') {
+      return expenses.where((expense) {
+        DateTime expenseDate = (expense['date'] as Timestamp).toDate();
+        return expenseDate.month == now.month && expenseDate.year == now.year;
+      }).toList();
+    }
+
+    return expenses;
   }
 
   Widget _buildExpenseItem(String title, String amount) {
@@ -144,7 +175,7 @@ class ExpenseList extends StatelessWidget {
     return FirebaseFirestore.instance
         .collection('expenses')
         .where('userId', isEqualTo: userId)
-        .orderBy('date', descending: true) // Order by date (oldest first)
+        .orderBy('date', descending: true)
         .snapshots();
   }
 }

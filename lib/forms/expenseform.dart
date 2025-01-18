@@ -3,11 +3,12 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
 class ExpenseForm extends StatefulWidget {
-  final void Function(
-      {String? title,
-      String? amount,
-      String? category,
-      DateTime? date}) onFormDataChange;
+  final void Function({
+    String? title,
+    String? amount,
+    String? category,
+    DateTime? date,
+  }) onFormDataChange;
 
   const ExpenseForm({super.key, required this.onFormDataChange});
 
@@ -17,12 +18,20 @@ class ExpenseForm extends StatefulWidget {
 
 class ExpenseFormState extends State<ExpenseForm> {
   String _selectedCategory = 'Food & Grocery';
-  String amount = '', title = '';
   DateTime selectedDate = DateTime.now();
 
   final TextEditingController amountController = TextEditingController();
   final TextEditingController titleController = TextEditingController();
   final TextEditingController dateController = TextEditingController();
+
+  final List<String> categories = [
+    'Food & Grocery',
+    'Transportation',
+    'Entertainment',
+    'Recurring Payments',
+    'Shopping',
+    'Other Expenses'
+  ];
 
   @override
   void initState() {
@@ -54,17 +63,14 @@ class ExpenseFormState extends State<ExpenseForm> {
       initialDate: selectedDate,
       firstDate: DateTime(2000),
       lastDate: DateTime(2100),
-      builder: (BuildContext context, Widget? child) {
+      builder: (context, child) {
         return Theme(
           data: ThemeData.dark().copyWith(
             primaryColor: const Color(0xFFCCF20D),
-            buttonTheme: ButtonThemeData(
-              textTheme: ButtonTextTheme.primary,
-            ),
+            buttonTheme: const ButtonThemeData(textTheme: ButtonTextTheme.primary),
             scaffoldBackgroundColor: const Color(0xFFf2f2f2),
             dialogBackgroundColor: const Color(0xFFf2f2f2),
-            colorScheme:
-                ColorScheme.fromSwatch(primarySwatch: Colors.green).copyWith(
+            colorScheme: ColorScheme.fromSwatch(primarySwatch: Colors.green).copyWith(
               primary: const Color(0xFF000000),
               secondary: const Color(0xFFCCF20D),
             ),
@@ -86,10 +92,11 @@ class ExpenseFormState extends State<ExpenseForm> {
   Widget _buildInputField(
     String label,
     TextInputType inputType, {
-    TextEditingController? controller,
+    required TextEditingController controller,
     bool isReadOnly = false,
     Widget? suffixIcon,
     VoidCallback? onTap,
+    EdgeInsets? contentPadding,
   }) {
     return Row(
       children: [
@@ -97,7 +104,7 @@ class ExpenseFormState extends State<ExpenseForm> {
         Expanded(
           child: Container(
             height: 36,
-            decoration: BoxDecoration(color: const Color(0xFFCCF20D)),
+            decoration: const BoxDecoration(color: Color(0xFFCCF20D)),
             child: TextFormField(
               controller: controller,
               keyboardType: inputType,
@@ -106,10 +113,7 @@ class ExpenseFormState extends State<ExpenseForm> {
               readOnly: isReadOnly,
               decoration: InputDecoration(
                 border: InputBorder.none,
-                contentPadding: inputType == TextInputType.none
-                    ? const EdgeInsets.fromLTRB(
-                        14, 5, 14, 10)
-                    : const EdgeInsets.fromLTRB(14, 0, 14, 10),
+                contentPadding: contentPadding ?? const EdgeInsets.fromLTRB(14, 0, 14, 10),
                 suffixIcon: suffixIcon,
               ),
               style: GoogleFonts.poppins(fontSize: 10, color: Colors.black),
@@ -129,11 +133,10 @@ class ExpenseFormState extends State<ExpenseForm> {
         Expanded(
           child: Container(
             height: 37,
-            decoration: BoxDecoration(color: const Color(0xFFCCF20D)),
+            decoration: const BoxDecoration(color: Color(0xFFCCF20D)),
             child: DropdownButtonFormField<String>(
               value: _selectedCategory,
-              icon: const Icon(Icons.keyboard_arrow_down_rounded,
-                  color: Color(0xFF1C1B1F)),
+              icon: const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF1C1B1F)),
               iconSize: 18,
               decoration: const InputDecoration(
                 border: InputBorder.none,
@@ -146,19 +149,10 @@ class ExpenseFormState extends State<ExpenseForm> {
                   _triggerParentUpdate();
                 });
               },
-              items: [
-                'Food & Grocery',
-                'Transportation',
-                'Entertainment',
-                'Recurring Payments',
-                'Shopping',
-                'Other Expenses'
-              ].map((value) {
+              items: categories.map((value) {
                 return DropdownMenuItem<String>(
                   value: value,
-                  child: Text(value,
-                      style: GoogleFonts.poppins(
-                          fontSize: 10, color: Colors.black)),
+                  child: Text(value, style: GoogleFonts.poppins(fontSize: 10, color: Colors.black)),
                 );
               }).toList(),
             ),
@@ -172,7 +166,7 @@ class ExpenseFormState extends State<ExpenseForm> {
     return Container(
       width: 132,
       height: 37,
-      decoration: BoxDecoration(color: const Color(0xFFF8FDDB)),
+      decoration: const BoxDecoration(color: Color(0xFFF8FDDB)),
       child: Align(
         alignment: Alignment.centerLeft,
         child: Padding(
@@ -198,8 +192,7 @@ class ExpenseFormState extends State<ExpenseForm> {
         color: Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         shadows: [
-          BoxShadow(
-              color: const Color.fromARGB(255, 209, 209, 209), blurRadius: 1),
+          BoxShadow(color: const Color.fromARGB(255, 209, 209, 209), blurRadius: 1),
         ],
       ),
       child: Padding(
@@ -216,11 +209,9 @@ class ExpenseFormState extends State<ExpenseForm> {
               ),
             ),
             const SizedBox(height: 30),
-            _buildInputField('Expense Title', TextInputType.text,
-                controller: titleController),
+            _buildInputField('Expense Title', TextInputType.text, controller: titleController),
             const SizedBox(height: 12),
-            _buildInputField('Expense Amount', TextInputType.number,
-                controller: amountController),
+            _buildInputField('Expense Amount', TextInputType.number, controller: amountController),
             const SizedBox(height: 12),
             _buildCategoryField(),
             const SizedBox(height: 12),
@@ -229,18 +220,19 @@ class ExpenseFormState extends State<ExpenseForm> {
               TextInputType.none,
               controller: dateController,
               isReadOnly: true,
-              suffixIcon: const Icon(Icons.calendar_month_outlined,
-                  size: 15, color: Colors.black),
+              suffixIcon: const Icon(Icons.calendar_month_outlined, size: 15, color: Colors.black),
               onTap: () => _selectDate(context),
+              contentPadding: const EdgeInsets.fromLTRB(14, 5, 14, 10),
             ),
             const SizedBox(height: 20),
             Text(
-              '* U can leave Expense Date Empty to record today. Recorded expenses cant be undone and will be continued for the rest of the months time.',
+              '* You can leave Expense Date empty to record today. Recorded expenses can\'t be undone and will be continued for the rest of the month.',
               textAlign: TextAlign.justify,
               style: GoogleFonts.poppins(
-                  color: Colors.black38,
-                  fontSize: 9,
-                  fontWeight: FontWeight.w300),
+                color: Colors.black38,
+                fontSize: 9,
+                fontWeight: FontWeight.w300,
+              ),
             ),
           ],
         ),

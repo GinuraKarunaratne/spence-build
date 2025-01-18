@@ -6,6 +6,7 @@ import 'package:spence/forms/expenseform.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:spence/widgets/budgetdisplay.dart';
+import 'package:loading_indicator/loading_indicator.dart';
 
 class ExpenseScreen extends StatefulWidget {
   const ExpenseScreen({super.key});
@@ -20,6 +21,7 @@ class ExpenseScreenState extends State<ExpenseScreen> {
   String expenseAmount = '';
   String expenseCategory = 'Food & Grocery';
   DateTime expenseDate = DateTime.now();
+  bool _isLoading = false; // Loading state
 
   // Method to handle form updates
   void _updateFormData({
@@ -48,68 +50,75 @@ class ExpenseScreenState extends State<ExpenseScreen> {
       return;
     }
 
+    setState(() {
+      _isLoading = true;
+    });
+
     final userId = FirebaseAuth.instance.currentUser?.uid; // Get current user ID
     if (userId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('User not logged in')),
       );
+      setState(() {
+        _isLoading = false;
+      });
       return;
     }
 
     final double expenseAmountValue = double.parse(expenseAmount); // Parse the expense amount
 
-  try {
-    // 1. Add Expense to the `expenses` Collection
-    final expenseDoc = FirebaseFirestore.instance.collection('expenses').doc();
-    await expenseDoc.set({
-      'amount': expenseAmountValue,
-      'category': expenseCategory,
-      'date': expenseDate,
-      'title': expenseTitle,
-      'userId': userId,
-      'createdAt': Timestamp.now(),
-    });
-
-    // 2. Update the `totExpenses` Collection (increment count and total_expense)
-    final totExpensesDoc = FirebaseFirestore.instance.collection('users').doc(userId).collection('totExpenses').doc('summary');
-    final totExpensesSnapshot = await totExpensesDoc.get();
-
-    if (totExpensesSnapshot.exists) {
-      final currentCount = totExpensesSnapshot['count'] ?? 0;
-      final currentTotalExpense = totExpensesSnapshot['total_expense'] ?? 0.0;
-
-      await totExpensesDoc.update({
-        'count': currentCount + 1,
-        'total_expense': currentTotalExpense + expenseAmountValue,
+    try {
+      // 1. Add Expense to the `expenses` Collection
+      final expenseDoc = FirebaseFirestore.instance.collection('expenses').doc();
+      await expenseDoc.set({
+        'amount': expenseAmountValue,
+        'category': expenseCategory,
+        'date': expenseDate,
+        'title': expenseTitle,
+        'userId': userId,
+        'createdAt': Timestamp.now(),
       });
-    } else {
-      // If the document does not exist, create it
-      await totExpensesDoc.set({
-        'count': 1,
-        'total_expense': expenseAmountValue,
-      });
-    }
 
-    // 3. Update the `budgets` Collection (update used_budget and remaining_budget)
-    final budgetDoc = FirebaseFirestore.instance.collection('budgets').doc(userId);  // Reference to the `budgets` collection
-    final budgetSnapshot = await budgetDoc.get();
+      // 2. Update the `totExpenses` Collection (increment count and total_expense)
+      final totExpensesDoc = FirebaseFirestore.instance.collection('users').doc(userId).collection('totExpenses').doc('summary');
+      final totExpensesSnapshot = await totExpensesDoc.get();
 
-    if (budgetSnapshot.exists) {
-      final usedBudget = budgetSnapshot['used_budget'] ?? 0.0;
-      final remainingBudget = budgetSnapshot['remaining_budget'] ?? 0.0;
+      if (totExpensesSnapshot.exists) {
+        final currentCount = totExpensesSnapshot['count'] ?? 0;
+        final currentTotalExpense = totExpensesSnapshot['total_expense'] ?? 0.0;
 
-      // Update used_budget by adding the expense amount
-      await budgetDoc.update({
-        'used_budget': usedBudget + expenseAmountValue,
-        'remaining_budget': remainingBudget - expenseAmountValue,
-      });
-    } else {
-      // If the document does not exist, create it (you could also initialize it based on default values)
-      await budgetDoc.set({
-        'used_budget': expenseAmountValue,
-        'remaining_budget': 0.0, // This assumes the initial remaining_budget is not set
-      });
-    }
+        await totExpensesDoc.update({
+          'count': currentCount + 1,
+          'total_expense': currentTotalExpense + expenseAmountValue,
+        });
+      } else {
+        // If the document does not exist, create it
+        await totExpensesDoc.set({
+          'count': 1,
+          'total_expense': expenseAmountValue,
+        });
+      }
+
+      // 3. Update the `budgets` Collection (update used_budget and remaining_budget)
+      final budgetDoc = FirebaseFirestore.instance.collection('budgets').doc(userId);  // Reference to the `budgets` collection
+      final budgetSnapshot = await budgetDoc.get();
+
+      if (budgetSnapshot.exists) {
+        final usedBudget = budgetSnapshot['used_budget'] ?? 0.0;
+        final remainingBudget = budgetSnapshot['remaining_budget'] ?? 0.0;
+
+        // Update used_budget by adding the expense amount
+        await budgetDoc.update({
+          'used_budget': usedBudget + expenseAmountValue,
+          'remaining_budget': remainingBudget - expenseAmountValue,
+        });
+      } else {
+        // If the document does not exist, create it (you could also initialize it based on default values)
+        await budgetDoc.set({
+          'used_budget': expenseAmountValue,
+          'remaining_budget': 0.0, // This assumes the initial remaining_budget is not set
+        });
+      }
 
       // Reset form fields after submission
       setState(() {
@@ -127,6 +136,10 @@ class ExpenseScreenState extends State<ExpenseScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Failed to record expense. Please try again.')),
       );
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
     }
   }
 
@@ -187,6 +200,19 @@ class ExpenseScreenState extends State<ExpenseScreen> {
                 ),
               ),
             ),
+            if (_isLoading)
+              Positioned.fill(
+                child: Container(
+                  color: Colors.black.withOpacity(0.5),
+                  child: const Center(
+                    child: LoadingIndicator(
+                      indicatorType: Indicator.ballPulse,
+                      colors: [Color(0xFFCCF20D)],
+                      strokeWidth: 2,
+                    ),
+                  ),
+                ),
+              ),
           ],
         ),
       ),

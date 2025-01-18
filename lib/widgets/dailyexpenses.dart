@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 
 class DailyExpenses extends StatelessWidget {
   const DailyExpenses({super.key});
@@ -66,7 +67,12 @@ class DailyExpenses extends StatelessWidget {
       stream: _fetchExpenses(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
+          return const Center(
+            child: SpinKitThreeBounce(
+              color: Color.fromARGB(255, 255, 255, 255),
+              size: 40.0,
+            ),
+          );
         }
         if (snapshot.hasError) {
           return const Center(child: Text('Error loading expenses'));
@@ -74,7 +80,7 @@ class DailyExpenses extends StatelessWidget {
 
         final expenses = snapshot.data?.docs ?? [];
         if (expenses.isEmpty) {
-          // Stylish "No Expenses Today" Placeholder
+          
           return Container(
             width: 288,
             height: 252,
