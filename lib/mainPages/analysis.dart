@@ -1,41 +1,22 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:spence/buttons/imagerecordbutton.dart';
 import 'package:spence/buttons/recordbutton.dart';
+import 'package:spence/widgets/header.dart'; // Import the Header widget
 
 class AnalysisScreen extends StatelessWidget {
   const AnalysisScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+
     return Scaffold(
       backgroundColor: const Color(0xFFF2F2F2),
       body: Stack(
         children: [
           Column(
             children: [
-          Padding(
-            padding: const EdgeInsets.only(top: 30.0),
-            child: Row(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(25, 12, 0, 0),
-                  child: SvgPicture.asset(
-                    'assets/spence.svg',
-                    height: 14,
-                  ),
-                ),
-                const Spacer(),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(0, 12, 23, 0),
-                  child: SvgPicture.asset(
-                    'assets/light.svg',
-                    height: 38,
-                  ),
-                ),
-              ],
-                ),
-              ),
+              Header(screenWidth: screenWidth), // Use the Header widget
               const SizedBox(height: 100),
               Expanded(child: Container()),
             ],
@@ -49,10 +30,10 @@ class AnalysisScreen extends StatelessWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                ImageRecordButton(onPressed: () {}),
-                const SizedBox(width: 11),
-                RecordExpenseButton(onPressed: () {}),
-              ],
+                  ImageRecordButton(onPressed: () {}),
+                  const SizedBox(width: 11),
+                  RecordExpenseButton(onPressed: () {}),
+                ],
               ),
             ),
           ),

@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 
 class ExpenseList extends StatelessWidget {
   final List<String> selectedCategories;
@@ -14,7 +15,12 @@ class ExpenseList extends StatelessWidget {
       stream: _fetchExpenses(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
+          return const Center(
+            child: SpinKitThreeBounce(
+              color: Color.fromARGB(255, 255, 255, 255),
+              size: 40.0,
+            ),
+          );
         }
         if (snapshot.hasError) {
           return const Center(child: Text('Error loading expenses'));

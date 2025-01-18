@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:spence/buttons/categorybutton.dart';
 import 'package:spence/buttons/recordbutton.dart';
-import '../widgets/expenselist.dart';
+import 'package:spence/widgets/expenselist.dart';
+import 'package:spence/widgets/header.dart';
 
 class AllExpensesScreen extends StatefulWidget {
   const AllExpensesScreen({super.key});
@@ -26,34 +26,15 @@ class _AllExpensesScreenState extends State<AllExpensesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+
     return Scaffold(
       backgroundColor: const Color(0xFFF9FAFB),
       body: Stack(
         children: [
           Column(
             children: [
-              Padding(
-                padding: const EdgeInsets.only(top: 30.0),
-                child: Row(
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(25, 12, 0, 0),
-                      child: SvgPicture.asset(
-                        'assets/spence.svg',
-                        height: 14,
-                      ),
-                    ),
-                    const Spacer(),
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(0, 12, 23, 0),
-                      child: SvgPicture.asset(
-                        'assets/light.svg',
-                        height: 38,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+              Header(screenWidth: screenWidth), // Use the Header widget
               const SizedBox(height: 40),
               _buildExpenseContainer(context),
             ],
