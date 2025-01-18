@@ -1,0 +1,40 @@
+{
+    "files.readonlyInclude": {
+        "{**/.c4z/.extsrcs/*.PROTSYM.cbl,**/.c4z/.extsrcs/*.PROTSYM.listing}": true
+    },
+    "java.jdt.ls.vmargs": "-XX:+UseParallelGC -XX:GCTimeRatio=4 -XX:AdaptiveSizePolicyWeight=90 -Dsun.zip.disableMemoryMapping=true -Xmx2G -Xms100m -Xlog:disable",
+    "cSpell.words": [
+        "addexpense",
+        "allexpenses",
+        "ARGB",
+        "authcheck",
+        "backbutton",
+        "budgetdisplay",
+        "budgetform",
+        "Burkina",
+        "Cabo",
+        "categorybutton",
+        "confirmbudget",
+        "createaccount",
+        "cupertino",
+        "Eswatini",
+        "expenseform",
+        "expenselist",
+        "Faso",
+        "firestore",
+        "imagerecordbutton",
+        "Kitts",
+        "Leste",
+        "loginbutton",
+        "loginform",
+        "LTRB",
+        "Marino",
+        "navigationbar",
+        "recordbutton",
+        "Rica",
+        "screenutil",
+        "Signup",
+        "signupform",
+        "spinkit"
+    ]
+}

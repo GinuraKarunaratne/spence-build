@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "817575513079",
+    "project_id": "spencev2-3b372",
+    "storage_bucket": "spencev2-3b372.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:817575513079:android:1f0f8d6edffac053017cf2",
+        "android_client_info": {
+          "package_name": "com.example.spence"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDRjuYGfBsCEwYRF_t11CSdcWpi6vmlmdA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
