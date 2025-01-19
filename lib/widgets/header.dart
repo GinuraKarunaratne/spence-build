@@ -4,7 +4,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 class Header extends StatelessWidget {
   final double screenWidth;
 
-  const Header({Key? key, required this.screenWidth}) : super(key: key);
+  const Header({super.key, required this.screenWidth});
 
   @override
   Widget build(BuildContext context) {

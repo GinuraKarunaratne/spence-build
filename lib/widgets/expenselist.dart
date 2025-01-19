@@ -14,10 +14,32 @@ class ExpenseList extends StatelessWidget {
     required this.selectedTimePeriod,
   });
 
+  Future<String?> _fetchCurrencySymbol() async {
+    final userId = FirebaseAuth.instance.currentUser?.uid;
+    if (userId == null) {
+      print('User ID is null');
+      return null;
+    }
+
+    final budgetDoc = await FirebaseFirestore.instance
+        .collection('budgets')
+        .doc(userId)
+        .get();
+
+    if (budgetDoc.exists) {
+      final currency = budgetDoc['currency'] as String?;
+      print('Fetched currency: $currency');
+      return currency;
+    } else {
+      print('Budget document does not exist for user: $userId');
+      return null;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<QuerySnapshot>(
-      stream: _fetchExpenses(),
+    return FutureBuilder<String?>(
+      future: _fetchCurrencySymbol(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(
@@ -27,16 +49,45 @@ class ExpenseList extends StatelessWidget {
             ),
           );
         }
+
         if (snapshot.hasError) {
-          return const Center(child: Text('Error loading expenses'));
+          print('Error fetching currency symbol: ${snapshot.error}');
+          return const Center(child: Text('Error loading currency symbol'));
         }
 
-        final expenses = snapshot.data?.docs ?? [];
-        if (expenses.isEmpty) {
-          return _buildEmptyExpensesMessage();
-        }
+        final currencySymbol = snapshot.data ?? 'Rs';
+        print('Using currency symbol: $currencySymbol');
 
-        return _buildExpenseListView(expenses, context);
+        return StreamBuilder<QuerySnapshot>(
+          stream: _fetchExpenses(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(
+                child: SpinKitThreeBounce(
+                  color: Color(0xFFCCF20D),
+                  size: 40.0,
+                ),
+              );
+            }
+            if (snapshot.hasError) {
+              print('Error fetching expenses: ${snapshot.error}');
+              return const Center(child: Text('Error loading expenses'));
+            }
+
+            final expenses = snapshot.data?.docs ?? [];
+            if (expenses.isEmpty) {
+              return _buildEmptyExpensesMessage();
+            }
+
+            // Filter expenses based on selected time period
+            final filteredExpenses = _filterExpensesByTimePeriod(expenses);
+            if (filteredExpenses.isEmpty) {
+              return _buildEmptyExpensesMessage();
+            }
+
+            return _buildExpenseListView(filteredExpenses, context, currencySymbol);
+          },
+        );
       },
     );
   }
@@ -76,22 +127,19 @@ class ExpenseList extends StatelessWidget {
   }
 
   Widget _buildExpenseListView(
-      List<QueryDocumentSnapshot> expenses, BuildContext context) {
+      List<QueryDocumentSnapshot> expenses, BuildContext context, String currencySymbol) {
     double containerHeight = MediaQuery.of(context).size.height * 0.63;
-
-    // Filter expenses based on selected time period
-    final filteredExpenses = _filterExpensesByTimePeriod(expenses);
 
     return SizedBox(
       width: 297,
       height: containerHeight,
       child: ListView.builder(
         padding: EdgeInsets.zero,
-        itemCount: filteredExpenses.length,
+        itemCount: expenses.length,
         itemBuilder: (context, index) {
-          final expense = filteredExpenses[index];
+          final expense = expenses[index];
           final title = expense['title'] ?? 'Unknown';
-          final amount = 'Rs ${expense['amount']?.toInt() ?? 0}';
+          final amount = '$currencySymbol ${expense['amount']?.toInt() ?? 0}';
           final category = expense['category'] ?? 'Unknown';
 
           if (selectedCategories.isEmpty ||

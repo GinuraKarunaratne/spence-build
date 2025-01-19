@@ -7,12 +7,56 @@ import 'package:flutter_spinkit/flutter_spinkit.dart';
 class DailyExpenses extends StatelessWidget {
   const DailyExpenses({super.key});
 
-  @override
-  Widget build(BuildContext context) {
-    return Column(children: [_buildExpenseContainer(context)]);
+  Future<String?> _fetchCurrencySymbol() async {
+    final userId = FirebaseAuth.instance.currentUser?.uid;
+    if (userId == null) {
+      print('User ID is null');
+      return null;
+    }
+
+    final budgetDoc = await FirebaseFirestore.instance
+        .collection('budgets')
+        .doc(userId)
+        .get();
+
+    if (budgetDoc.exists) {
+      final currency = budgetDoc['currency'] as String?;
+      print('Fetched currency: $currency');
+      return currency;
+    } else {
+      print('Budget document does not exist for user: $userId');
+      return null;
+    }
   }
 
-  Widget _buildExpenseContainer(BuildContext context) {
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<String?>(
+      future: _fetchCurrencySymbol(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(
+            child: SpinKitThreeBounce(
+              color: Color(0xFFCCF20D),
+              size: 40.0,
+            ),
+          );
+        }
+
+        if (snapshot.hasError) {
+          print('Error fetching currency symbol: ${snapshot.error}');
+          return const Center(child: Text('Error loading currency symbol'));
+        }
+
+        final currencySymbol = snapshot.data ?? 'Rs';
+        print('Using currency symbol: $currencySymbol');
+
+        return Column(children: [_buildExpenseContainer(context, currencySymbol)]);
+      },
+    );
+  }
+
+  Widget _buildExpenseContainer(BuildContext context, String currencySymbol) {
     return Container(
       width: 320,
       height: 370,
@@ -23,7 +67,7 @@ class DailyExpenses extends StatelessWidget {
       child: Stack(
         children: [
           Positioned(top: 24, left: 24, child: _buildTitle()),
-          Positioned(left: 16, top: 58, child: _buildExpensesList()),
+          Positioned(left: 16, top: 58, child: _buildExpensesList(currencySymbol)),
           Positioned(left: 16, top: 317, child: _buildViewAllExpenses(context)),
         ],
       ),
@@ -62,7 +106,7 @@ class DailyExpenses extends StatelessWidget {
     );
   }
 
-  Widget _buildExpensesList() {
+  Widget _buildExpensesList(String currencySymbol) {
     return StreamBuilder<QuerySnapshot>(
       stream: _fetchExpenses(),
       builder: (context, snapshot) {
@@ -80,7 +124,6 @@ class DailyExpenses extends StatelessWidget {
 
         final expenses = snapshot.data?.docs ?? [];
         if (expenses.isEmpty) {
-          
           return Container(
             width: 288,
             height: 252,
@@ -125,7 +168,7 @@ class DailyExpenses extends StatelessWidget {
             itemBuilder: (context, index) {
               final expense = expenses[index];
               final title = expense['title'] ?? 'Unknown';
-              final amount = 'Rs ${expense['amount']?.toInt() ?? 0}';
+              final amount = '$currencySymbol ${expense['amount']?.toInt() ?? 0}';
 
               return Padding(
                 padding: const EdgeInsets.only(bottom: 10),
