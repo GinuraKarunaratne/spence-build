@@ -62,6 +62,5 @@ Future<void> archiveExpenses(String userId, DateTime lastUpdate) async {
 }
 
 void notifyUserOfMonthEndSummary() {
-  // Implement notification or in-app summary display
-  print("Month-end summary notification");
+  
 }

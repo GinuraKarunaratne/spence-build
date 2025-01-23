@@ -48,7 +48,7 @@ class HomeScreenState extends State<HomeScreen> {
     final List<Widget> screens = [
       Column(
         children: [
-          Header(screenWidth: screenWidth), // Use the Header widget
+          Header(screenWidth: screenWidth),
           SizedBox(height: spacingHeight),
           const BudgetDisplay(),
           SizedBox(height: budgetSpacing),
