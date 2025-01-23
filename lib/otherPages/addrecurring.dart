@@ -11,27 +11,17 @@ import '../forms/recurringform.dart';
 
 class AddRecurringScreen extends StatefulWidget {
   const AddRecurringScreen({super.key});
-
   @override
   _AddRecurringScreenState createState() => _AddRecurringScreenState();
 }
 
 class _AddRecurringScreenState extends State<AddRecurringScreen> {
-  String recurringTitle = '';
-  String recurringAmount = '';
-  String recurringCategory = 'Food & Grocery';
+  String recurringTitle = '', recurringAmount = '', recurringCategory = 'Food & Grocery';
   DateTime recurringDate = DateTime.now();
-  int repeatIntervalMonths = 1; // Store interval in months
+  int repeatIntervalMonths = 1;
   bool _isLoading = false;
 
-  void _updateFormData({
-    String? title,
-    String? amount,
-    String? category,
-    DateTime? date,
-    String? repeatInterval,
-  }) {
-    // Schedule the state update after the current frame
+  void _updateFormData({String? title, String? amount, String? category, DateTime? date, String? repeatInterval}) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         setState(() {
@@ -39,9 +29,7 @@ class _AddRecurringScreenState extends State<AddRecurringScreen> {
           if (amount != null) recurringAmount = amount;
           if (category != null) recurringCategory = category;
           if (date != null) recurringDate = date;
-          if (repeatInterval != null) {
-            repeatIntervalMonths = _parseInterval(repeatInterval);
-          }
+          if (repeatInterval != null) repeatIntervalMonths = _parseInterval(repeatInterval);
         });
       }
     });
@@ -52,55 +40,44 @@ class _AddRecurringScreenState extends State<AddRecurringScreen> {
     return int.parse(parts[0]);
   }
 
+  DateTime calculateInitialNextDate(DateTime chosenDate, int intervalMonths) {
+    DateTime today = DateTime.now();
+    DateTime nextDate = DateTime(chosenDate.year, chosenDate.month, chosenDate.day);
+    DateTime todayDate = DateTime(today.year, today.month, today.day);
+    if (nextDate.isBefore(todayDate)) {
+      while (nextDate.isBefore(todayDate)) {
+        nextDate = DateTime(nextDate.year, nextDate.month + intervalMonths, nextDate.day);
+      }
+    }
+    return nextDate;
+  }
+
   Future<void> _submitRecurringExpense() async {
     if (recurringTitle.isEmpty || recurringAmount.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please fill in all required fields')),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please fill in all required fields')));
       return;
     }
-
-    setState(() {
-      _isLoading = true;
-    });
-
+    setState(() => _isLoading = true);
     final userId = FirebaseAuth.instance.currentUser?.uid;
     if (userId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('User not logged in')),
-      );
-      setState(() {
-        _isLoading = false;
-      });
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('User not logged in')));
+      setState(() => _isLoading = false);
       return;
     }
-
-    final double recurringAmountValue = double.parse(recurringAmount);
-
-    // Calculate the next date accurately
-    final DateTime nextDate =
-        calculateNextDate(recurringDate, repeatIntervalMonths);
-
     try {
-      // Save the recurring expense to the `recurringExpenses` collection
-      final recurringDoc =
-          FirebaseFirestore.instance.collection('recurringExpenses').doc();
+      final recurringAmountValue = double.parse(recurringAmount);
+      final nextDate = calculateInitialNextDate(recurringDate, repeatIntervalMonths);
+      final recurringDoc = FirebaseFirestore.instance.collection('recurringExpenses').doc();
       await recurringDoc.set({
         'userId': userId,
         'title': recurringTitle,
         'amount': recurringAmountValue,
         'category': recurringCategory,
-        'nextDate': Timestamp.fromDate(nextDate), // Save as a timestamp
+        'nextDate': Timestamp.fromDate(nextDate),
         'repeatIntervalMonths': repeatIntervalMonths,
         'createdAt': Timestamp.now(),
       });
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('Recurring expense scheduled successfully!')),
-      );
-
-      // Reset form fields after submission
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Recurring expense scheduled successfully!')));
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
           setState(() {
@@ -113,161 +90,64 @@ class _AddRecurringScreenState extends State<AddRecurringScreen> {
         }
       });
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text(
-                'Failed to schedule recurring expense. Please try again.')),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to schedule recurring expense. Please try again.')));
     } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
+      if (mounted) setState(() => _isLoading = false);
     }
-  }
-
-// Function to calculate the next date
-  DateTime calculateNextDate(DateTime initialDate, int intervalMonths) {
-    DateTime nextDate = DateTime(
-        initialDate.year, initialDate.month + intervalMonths, initialDate.day);
-
-    // Ensure the next date is in the future
-    final DateTime today = DateTime.now();
-    while (nextDate.isBefore(today)) {
-      nextDate = DateTime(
-          nextDate.year, nextDate.month + intervalMonths, nextDate.day);
-    }
-
-    return nextDate;
   }
 
   void _showIntervalDialog(BuildContext context) async {
-    final intervals = [
-      '1 Month',
-      '2 Months',
-      '3 Months',
-      '6 Months',
-      '12 Months',
-      '24 Months'
-    ];
-
+    final intervals = ['1 Month','2 Months','3 Months','6 Months','12 Months','24 Months'];
     await showDialog(
       context: context,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, dialogSetState) {
-            return Dialog(
-              backgroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SizedBox(height: 5),
-                    Text(
-                      '  Select Repeat Interval',
-                      style: GoogleFonts.poppins(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                        color: Colors.black,
+      builder: (context) => StatefulBuilder(
+        builder: (context, dialogSetState) => Dialog(
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 5),
+                Text('  Select Repeat Interval', style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w500, color: Colors.black)),
+                const SizedBox(height: 15),
+                ...intervals.map((interval) {
+                  final isSelected = repeatIntervalMonths == _parseInterval(interval);
+                  return GestureDetector(
+                    onTap: () {
+                      dialogSetState(() => repeatIntervalMonths = _parseInterval(interval));
+                      setState(() {});
+                      Navigator.of(context).pop();
+                      _updateFormData(repeatInterval: interval);
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+                      margin: const EdgeInsets.only(bottom: 8),
+                      decoration: BoxDecoration(
+                        color: isSelected ? const Color(0xFFCCF20D) : const Color(0xFFF9FAFB),
+                        borderRadius: BorderRadius.circular(12),
                       ),
+                      child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                        Text(interval, style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w400, color: isSelected ? Colors.black : const Color(0xFF374151))),
+                        if (isSelected) const Icon(Icons.check, size: 18, color: Colors.black),
+                      ]),
                     ),
-                    const SizedBox(height: 15),
-                    ...intervals.map((interval) {
-                      final isSelected =
-                          repeatIntervalMonths == _parseInterval(interval);
-                      return GestureDetector(
-                        onTap: () {
-                          dialogSetState(() {
-                            repeatIntervalMonths = _parseInterval(interval);
-                          });
-                          setState(() {});
-                          Navigator.of(context).pop();
-                          _updateFormData(repeatInterval: interval);
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                              vertical: 10, horizontal: 16),
-                          margin: const EdgeInsets.only(bottom: 8),
-                          decoration: BoxDecoration(
-                            color: isSelected
-                                ? const Color(0xFFCCF20D)
-                                : const Color(0xFFF9FAFB),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                interval,
-                                style: GoogleFonts.poppins(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w400,
-                                  color: isSelected
-                                      ? Colors.black
-                                      : const Color(0xFF374151),
-                                ),
-                              ),
-                              if (isSelected)
-                                const Icon(
-                                  Icons.check,
-                                  size: 18,
-                                  color: Colors.black,
-                                ),
-                            ],
-                          ),
-                        ),
-                      );
-                    }),
-                  ],
-                ),
-              ),
-            );
-          },
-        );
-      },
+                  );
+                }),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final screenHeight = MediaQuery.of(context).size.height;
-
-    double budgetDisplayHeight;
-    double budgetDisplaySpacing;
-    double formSpacing;
-    double bottomButtonSpacing;
-    double logoHeight;
-    double lightHeight;
-
-    if (screenHeight > 800) {
-      budgetDisplayHeight = 70;
-      budgetDisplaySpacing = 80;
-      formSpacing = 0;
-      bottomButtonSpacing = 30.0;
-      logoHeight = 14.0;
-      lightHeight = 38.0;
-    } else if (screenHeight < 600) {
-      budgetDisplayHeight = 40;
-      budgetDisplaySpacing = 50;
-      formSpacing = 20;
-      bottomButtonSpacing = 20.0;
-      logoHeight = 10.0;
-      lightHeight = 30.0;
-    } else {
-      budgetDisplayHeight = 20;
-      budgetDisplaySpacing = 20;
-      formSpacing = 10;
-      bottomButtonSpacing = 20.0;
-      logoHeight = 12.0;
-      lightHeight = 34.0;
-    }
-
+    final h = MediaQuery.of(context).size.height;
+    var (bHeight, bSpace, fSpace, bottomSpace, logoH, lightH) = _adjustLayout(h);
     return Scaffold(
       backgroundColor: const Color(0xFFF2F2F2),
       body: SafeArea(
@@ -277,46 +157,31 @@ class _AddRecurringScreenState extends State<AddRecurringScreen> {
               child: Column(
                 children: [
                   Padding(
-                    padding: const EdgeInsets.only(top: 0.0),
+                    padding: const EdgeInsets.only(top: 0),
                     child: Row(
                       children: [
-                        Padding(
-                          padding: const EdgeInsets.fromLTRB(25, 12, 0, 0),
-                          child: SvgPicture.asset(
-                            'assets/spence.svg',
-                            height: logoHeight,
-                          ),
-                        ),
+                        Padding(padding: const EdgeInsets.fromLTRB(25, 12, 0, 0), child: SvgPicture.asset('assets/spence.svg', height: logoH)),
                         const Spacer(),
-                        Padding(
-                          padding: const EdgeInsets.fromLTRB(0, 12, 23, 0),
-                          child: SvgPicture.asset(
-                            'assets/light.svg',
-                            height: lightHeight,
-                          ),
-                        ),
+                        Padding(padding: const EdgeInsets.fromLTRB(0, 12, 23, 0), child: SvgPicture.asset('assets/light.svg', height: lightH)),
                       ],
                     ),
                   ),
-                  SizedBox(height: budgetDisplayHeight),
+                  SizedBox(height: bHeight),
                   const BudgetDisplay(),
-                  SizedBox(height: budgetDisplaySpacing),
-                  RecurringForm(
-                    onFormDataChange: _updateFormData,
-                  ),
-                  SizedBox(height: formSpacing),
+                  SizedBox(height: bSpace),
+                  RecurringForm(onFormDataChange: _updateFormData),
+                  SizedBox(height: fSpace),
                 ],
               ),
             ),
             Align(
               alignment: Alignment.bottomCenter,
               child: Padding(
-                padding: EdgeInsets.only(bottom: bottomButtonSpacing),
+                padding: EdgeInsets.only(bottom: bottomSpace),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    IntervalButton(
-                        onPressed: () => _showIntervalDialog(context)),
+                    IntervalButton(onPressed: () => _showIntervalDialog(context)),
                     const SizedBox(width: 11),
                     ScheduleButton(onPressed: _submitRecurringExpense),
                   ],
@@ -328,11 +193,7 @@ class _AddRecurringScreenState extends State<AddRecurringScreen> {
                 child: Container(
                   color: Colors.black.withOpacity(0.5),
                   child: const Center(
-                    child: LoadingIndicator(
-                      indicatorType: Indicator.ballPulse,
-                      colors: [Color(0xFFCCF20D)],
-                      strokeWidth: 2,
-                    ),
+                    child: LoadingIndicator(indicatorType: Indicator.ballPulse, colors: [Color(0xFFCCF20D)], strokeWidth: 2),
                   ),
                 ),
               ),
@@ -340,5 +201,15 @@ class _AddRecurringScreenState extends State<AddRecurringScreen> {
         ),
       ),
     );
+  }
+
+  (double, double, double, double, double, double) _adjustLayout(double screenHeight) {
+    if (screenHeight > 800) {
+      return (70, 80, 0, 30.0, 14.0, 38.0);
+    } else if (screenHeight < 600) {
+      return (40, 50, 20, 20.0, 10.0, 30.0);
+    } else {
+      return (20, 20, 10, 20.0, 12.0, 34.0);
+    }
   }
 }

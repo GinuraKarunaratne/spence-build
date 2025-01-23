@@ -1,40 +1,38 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:intl/intl.dart';
+
+bool isSameOrBeforeDay(DateTime dateA, DateTime dateB) {
+  final a = DateTime(dateA.year, dateA.month, dateA.day);
+  final b = DateTime(dateB.year, dateB.month, dateB.day);
+  return a.isBefore(b) || a.isAtSameMomentAs(b);
+}
 
 Future<void> processRecurringExpenses(String userId) async {
-  final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
-
-  // Query recurring expenses due today or earlier
-  final querySnapshot = await FirebaseFirestore.instance
+  final now = DateTime.now();
+  final db = FirebaseFirestore.instance;
+  final snapshot = await db
       .collection('recurringExpenses')
       .where('userId', isEqualTo: userId)
-      .where('nextDate', isLessThanOrEqualTo: today)
       .get();
 
-  for (var doc in querySnapshot.docs) {
+  for (var doc in snapshot.docs) {
     final data = doc.data();
+    final interval = (data['repeatIntervalMonths'] as num?)?.toInt() ?? 1;
+    DateTime nextDate = (data['nextDate'] as Timestamp).toDate();
+    DateTime todayDate = DateTime(now.year, now.month, now.day);
 
-    // Record the expense in the user's history
-    await FirebaseFirestore.instance.collection('expenses').add({
-      'userId': userId,
-      'title': data['title'],
-      'amount': data['amount'],
-      'category': data['category'],
-      'date': today, // Log today's date
+    while (isSameOrBeforeDay(nextDate, todayDate)) {
+      await db.collection('expenses').add({
+        'userId': userId,
+        'title': data['title'],
+        'amount': data['amount'],
+        'category': data['category'],
+        'date': Timestamp.fromDate(nextDate),
+      });
+      nextDate = DateTime(nextDate.year, nextDate.month + interval, nextDate.day);
+    }
+
+    await db.collection('recurringExpenses').doc(doc.id).update({
+      'nextDate': Timestamp.fromDate(nextDate),
     });
-
-    // Calculate the next occurrence
-    final DateTime nextDate = DateTime.parse(data['nextDate']);
-    final DateTime newNextDate = DateTime(
-      nextDate.year,
-      nextDate.month + (data['repeatIntervalMonths'] as num).toInt(),
-      nextDate.day,
-    );
-
-    // Update the next occurrence in Firebase
-    await FirebaseFirestore.instance
-        .collection('recurringExpenses')
-        .doc(doc.id)
-        .update({'nextDate': DateFormat('yyyy-MM-dd').format(newNextDate)});
   }
 }

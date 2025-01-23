@@ -245,7 +245,7 @@ class RecurringFormState extends State<RecurringForm> {
             ),
             const SizedBox(height: 20),
             Text(
-              '* Expenses are set to recur every 1 month by default. Recurring amount will be added to your expenses at 8AM of the day. Change the default interval below',
+              '* Expenses are set to recur every 1 month by default. Recurring amount will be added to your expenses on the start of the day. Change the default interval below',
               textAlign: TextAlign.justify,
               style: GoogleFonts.poppins(
                 color: Colors.black38,
