@@ -1,4 +1,5 @@
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:spence/otherPages/addexpense.dart';
@@ -13,19 +14,50 @@ import './mainPages/recurring.dart';
 import './authPages/authcheck.dart';
 import './otherPages/allexpenses.dart';
 import './services/monthlyupdate.dart';
+import 'package:workmanager/workmanager.dart';
+import './services/recurringprocess.dart';
+
+void callbackDispatcher() {
+  Workmanager().executeTask((task, inputData) async {
+    final userId = inputData?['userId'];
+
+    if (userId != null) {
+      await processRecurringExpenses(userId);
+    }
+
+    return Future.value(true);
+  });
+}
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
 
-  // Check and update the monthly budget
-  await checkAndUpdateMonthlyBudget();
+  final User? currentUser = FirebaseAuth.instance.currentUser;
+
+  if (currentUser != null) {
+
+    final String userId = currentUser.uid;
+
+    await checkAndUpdateMonthlyBudget();
+
+    await Workmanager().initialize(callbackDispatcher);
+
+    Workmanager().registerPeriodicTask(
+      "checkRecurringExpenses",
+      "checkRecurringExpensesTask",
+      inputData: {'userId': userId},
+      frequency: const Duration(hours: 24),
+    );
+  } else {
+    debugPrint("No user is currently logged in. Skipping background task setup.");
+  }
 
   SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
     statusBarColor: const Color.fromARGB(0, 242, 242, 242),
     statusBarIconBrightness: Brightness.dark,
   ));
-  
+
   runApp(const MyApp());
 }
 

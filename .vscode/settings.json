@@ -40,12 +40,15 @@
         "preprocess",
         "recordbutton",
         "recurringform",
+        "recurringprocess",
         "removebutton",
         "Rica",
         "schedulebutton",
         "screenutil",
         "Signup",
         "signupform",
-        "spinkit"
-    ]
+        "spinkit",
+        "workmanager"
+    ],
+    "java.configuration.updateBuildConfiguration": "interactive"
 }

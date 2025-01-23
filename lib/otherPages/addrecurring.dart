@@ -21,7 +21,7 @@ class _AddRecurringScreenState extends State<AddRecurringScreen> {
   String recurringAmount = '';
   String recurringCategory = 'Food & Grocery';
   DateTime recurringDate = DateTime.now();
-  String repeatInterval = '1 Month';
+  int repeatIntervalMonths = 1; // Store interval in months
   bool _isLoading = false;
 
   void _updateFormData({
@@ -39,10 +39,17 @@ class _AddRecurringScreenState extends State<AddRecurringScreen> {
           if (amount != null) recurringAmount = amount;
           if (category != null) recurringCategory = category;
           if (date != null) recurringDate = date;
-          if (repeatInterval != null) this.repeatInterval = repeatInterval;
+          if (repeatInterval != null) {
+            repeatIntervalMonths = _parseInterval(repeatInterval);
+          }
         });
       }
     });
+  }
+
+  int _parseInterval(String interval) {
+    final parts = interval.split(' ');
+    return int.parse(parts[0]);
   }
 
   Future<void> _submitRecurringExpense() async {
@@ -70,21 +77,27 @@ class _AddRecurringScreenState extends State<AddRecurringScreen> {
 
     final double recurringAmountValue = double.parse(recurringAmount);
 
+    // Calculate the next date accurately
+    final DateTime nextDate =
+        calculateNextDate(recurringDate, repeatIntervalMonths);
+
     try {
-      // Save the recurring expense to the `recurring` collection
-      final recurringDoc = FirebaseFirestore.instance.collection('recurring').doc();
+      // Save the recurring expense to the `recurringExpenses` collection
+      final recurringDoc =
+          FirebaseFirestore.instance.collection('recurringExpenses').doc();
       await recurringDoc.set({
+        'userId': userId,
         'title': recurringTitle,
         'amount': recurringAmountValue,
         'category': recurringCategory,
-        'date': recurringDate,
-        'repeatInterval': repeatInterval,
-        'userId': userId,
+        'nextDate': Timestamp.fromDate(nextDate), // Save as a timestamp
+        'repeatIntervalMonths': repeatIntervalMonths,
         'createdAt': Timestamp.now(),
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Recurring expense scheduled successfully!')),
+        const SnackBar(
+            content: Text('Recurring expense scheduled successfully!')),
       );
 
       // Reset form fields after submission
@@ -95,13 +108,15 @@ class _AddRecurringScreenState extends State<AddRecurringScreen> {
             recurringAmount = '';
             recurringCategory = 'Food & Grocery';
             recurringDate = DateTime.now();
-            repeatInterval = '1 Month';
+            repeatIntervalMonths = 1;
           });
         }
       });
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to schedule recurring expense. Please try again.')),
+        const SnackBar(
+            content: Text(
+                'Failed to schedule recurring expense. Please try again.')),
       );
     } finally {
       if (mounted) {
@@ -112,14 +127,29 @@ class _AddRecurringScreenState extends State<AddRecurringScreen> {
     }
   }
 
+// Function to calculate the next date
+  DateTime calculateNextDate(DateTime initialDate, int intervalMonths) {
+    DateTime nextDate = DateTime(
+        initialDate.year, initialDate.month + intervalMonths, initialDate.day);
+
+    // Ensure the next date is in the future
+    final DateTime today = DateTime.now();
+    while (nextDate.isBefore(today)) {
+      nextDate = DateTime(
+          nextDate.year, nextDate.month + intervalMonths, nextDate.day);
+    }
+
+    return nextDate;
+  }
+
   void _showIntervalDialog(BuildContext context) async {
     final intervals = [
       '1 Month',
       '2 Months',
       '3 Months',
       '6 Months',
-      '1 Year',
-      '2 Years'
+      '12 Months',
+      '24 Months'
     ];
 
     await showDialog(
@@ -149,11 +179,12 @@ class _AddRecurringScreenState extends State<AddRecurringScreen> {
                     ),
                     const SizedBox(height: 15),
                     ...intervals.map((interval) {
-                      final isSelected = repeatInterval == interval;
+                      final isSelected =
+                          repeatIntervalMonths == _parseInterval(interval);
                       return GestureDetector(
                         onTap: () {
                           dialogSetState(() {
-                            repeatInterval = interval;
+                            repeatIntervalMonths = _parseInterval(interval);
                           });
                           setState(() {});
                           Navigator.of(context).pop();
@@ -284,7 +315,8 @@ class _AddRecurringScreenState extends State<AddRecurringScreen> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    IntervalButton(onPressed: () => _showIntervalDialog(context)),
+                    IntervalButton(
+                        onPressed: () => _showIntervalDialog(context)),
                     const SizedBox(width: 11),
                     ScheduleButton(onPressed: _submitRecurringExpense),
                   ],
