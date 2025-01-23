@@ -2,6 +2,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:spence/otherPages/addexpense.dart';
+import 'package:spence/otherPages/addrecurring.dart';
 import './mainPages/home.dart';
 import './authPages/login.dart';
 import './authPages/signup.dart';
@@ -47,6 +48,7 @@ class MyApp extends StatelessWidget {
         '/authcheck': (context) => const AuthCheck(),
         '/addexpense': (context) => const ExpenseScreen(),
         '/allexpenses': (context) => const AllExpensesScreen(),
+        '/addrecurring': (context) => const AddRecurringScreen(),
       },
     );
   }

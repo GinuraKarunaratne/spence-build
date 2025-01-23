@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:spence/buttons/imagerecordbutton.dart';
 import 'package:spence/buttons/removebutton.dart';
 import 'package:spence/buttons/schedulebutton.dart';
-import 'package:spence/widgets/header.dart'; // Import the Header widget
+import 'package:spence/widgets/header.dart';
 
 class RecurringScreen extends StatelessWidget {
   const RecurringScreen({super.key});
@@ -33,7 +32,9 @@ class RecurringScreen extends StatelessWidget {
                 children: [
                   RemoveButton(onPressed: () {}),
                   const SizedBox(width: 11),
-                  ScheduleButton(onPressed: () {}),
+                  ScheduleButton(onPressed: () {
+                    Navigator.of(context).pushNamed('/addrecurring');
+                  }),
                 ],
               ),
             ),
