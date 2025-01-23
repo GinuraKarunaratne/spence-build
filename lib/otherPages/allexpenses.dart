@@ -9,10 +9,10 @@ class AllExpensesScreen extends StatefulWidget {
   const AllExpensesScreen({super.key});
 
   @override
-  _AllExpensesScreenState createState() => _AllExpensesScreenState();
+  AllExpensesScreenState createState() => AllExpensesScreenState();
 }
 
-class _AllExpensesScreenState extends State<AllExpensesScreen> {
+class AllExpensesScreenState extends State<AllExpensesScreen> {
   List<String> selectedCategories = [];
   String selectedTimePeriod = ''; // Empty string by default to display all expenses
 
@@ -27,7 +27,31 @@ class _AllExpensesScreenState extends State<AllExpensesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final screenHeight = MediaQuery.of(context).size.height;
     final screenWidth = MediaQuery.of(context).size.width;
+
+    double headerSpacing;
+    double containerHeight;
+    double bottomButtonSpacing;
+    double categoryButtonWidth;
+
+    // Adjust spacings based on screen height
+    if (screenHeight > 800) {
+      headerSpacing = 40;
+      containerHeight = screenHeight * 0.745;
+      bottomButtonSpacing = 20;
+      categoryButtonWidth = 320;
+    } else if (screenHeight < 600) {
+      headerSpacing = 20;
+      containerHeight = screenHeight * 0.73;
+      bottomButtonSpacing = 15;
+      categoryButtonWidth = 280;
+    } else {
+      headerSpacing = 25;
+      containerHeight = screenHeight * 0.72;
+      bottomButtonSpacing = 18;
+      categoryButtonWidth = 320;
+    }
 
     return Scaffold(
       backgroundColor: const Color(0xFFf2f2f2),
@@ -36,12 +60,12 @@ class _AllExpensesScreenState extends State<AllExpensesScreen> {
           Column(
             children: [
               Header(screenWidth: screenWidth),
-              const SizedBox(height: 40),
-              _buildExpenseContainer(context),
+              SizedBox(height: headerSpacing),
+              _buildExpenseContainer(context, containerHeight, categoryButtonWidth),
             ],
           ),
           Positioned(
-            bottom: 20,
+            bottom: bottomButtonSpacing,
             left: 20,
             right: 20,
             child: Row(
@@ -64,11 +88,9 @@ class _AllExpensesScreenState extends State<AllExpensesScreen> {
     );
   }
 
-  Widget _buildExpenseContainer(BuildContext context) {
-    double containerHeight = MediaQuery.of(context).size.height * 0.745;
-
+  Widget _buildExpenseContainer(BuildContext context, double containerHeight, double width) {
     return Container(
-      width: 320,
+      width: width,
       height: containerHeight,
       padding: const EdgeInsets.all(24),
       decoration: ShapeDecoration(
@@ -108,6 +130,22 @@ class _AllExpensesScreenState extends State<AllExpensesScreen> {
 
   Widget _buildTimePeriodButton(String label, Color color) {
     bool isSelected = selectedTimePeriod == label;
+    final screenHeight = MediaQuery.of(context).size.height;
+    double timePeriodButtonHeight;
+    double timePeriodButtonWidth;
+
+    // Adjust button sizes based on screen height
+    if (screenHeight > 800) {
+      timePeriodButtonHeight = 25;
+      timePeriodButtonWidth = 90;
+    } else if (screenHeight < 600) {
+      timePeriodButtonHeight = 20;
+      timePeriodButtonWidth = 80;
+    } else {
+      timePeriodButtonHeight = 22;
+      timePeriodButtonWidth = 90;
+    }
+
     return GestureDetector(
       onTap: () {
         setState(() {
@@ -115,8 +153,8 @@ class _AllExpensesScreenState extends State<AllExpensesScreen> {
         });
       },
       child: Container(
-        width: 90,
-        height: 25,
+        width: timePeriodButtonWidth,
+        height: timePeriodButtonHeight,
         decoration: BoxDecoration(
           color: isSelected ? const Color(0xFFCCF20D) : color,
         ),
@@ -214,7 +252,7 @@ class _AllExpensesScreenState extends State<AllExpensesScreen> {
                           ),
                         ),
                       );
-                    }).toList(),
+                    }),
                   ],
                 ),
               ),

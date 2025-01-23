@@ -10,21 +10,28 @@ class ExpenseForm extends StatefulWidget {
     DateTime? date,
   }) onFormDataChange;
 
-  const ExpenseForm({super.key, required this.onFormDataChange});
+  final String initialTitle;
+  final String initialAmount;
+
+  const ExpenseForm({
+    super.key,
+    required this.onFormDataChange,
+    this.initialTitle = '',
+    this.initialAmount = '',
+  });
 
   @override
   ExpenseFormState createState() => ExpenseFormState();
 }
 
 class ExpenseFormState extends State<ExpenseForm> {
+  late final TextEditingController titleController;
+  late final TextEditingController amountController;
+  late final TextEditingController dateController;
   String _selectedCategory = 'Food & Grocery';
   DateTime selectedDate = DateTime.now();
 
-  final TextEditingController amountController = TextEditingController();
-  final TextEditingController titleController = TextEditingController();
-  final TextEditingController dateController = TextEditingController();
-
-  final List<String> categories = [
+  static const List<String> categories = [
     'Food & Grocery',
     'Transportation',
     'Entertainment',
@@ -36,14 +43,20 @@ class ExpenseFormState extends State<ExpenseForm> {
   @override
   void initState() {
     super.initState();
-    dateController.text = DateFormat('yyyy-MM-dd').format(selectedDate);
-    _triggerParentUpdate(); // Send initial data to parent.
+
+    titleController = TextEditingController(text: widget.initialTitle);
+    amountController = TextEditingController(text: widget.initialAmount);
+    dateController = TextEditingController(
+      text: DateFormat('yyyy-MM-dd').format(selectedDate),
+    );
+
+    _triggerParentUpdate();
   }
 
   @override
   void dispose() {
-    amountController.dispose();
     titleController.dispose();
+    amountController.dispose();
     dateController.dispose();
     super.dispose();
   }

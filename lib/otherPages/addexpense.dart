@@ -132,7 +132,6 @@ class ExpenseScreenState extends State<ExpenseScreen> {
         const SnackBar(content: Text('Expense recorded successfully!')),
       );
     } catch (e) {
-      print("Error adding expense: $e");
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Failed to record expense. Please try again.')),
       );
@@ -145,6 +144,38 @@ class ExpenseScreenState extends State<ExpenseScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final screenHeight = MediaQuery.of(context).size.height;
+
+    double budgetDisplayHeight;
+    double budgetDisplaySpacing;
+    double formSpacing;
+    double bottomButtonSpacing;
+    double logoHeight;
+    double lightHeight;
+
+    if (screenHeight > 800) {
+      budgetDisplayHeight = 70;
+      budgetDisplaySpacing = 80;
+      formSpacing = 0;
+      bottomButtonSpacing = 30.0;
+      logoHeight = 14.0;
+      lightHeight = 38.0;
+    } else if (screenHeight < 600) {
+      budgetDisplayHeight = 40;
+      budgetDisplaySpacing = 50;
+      formSpacing = 20;
+      bottomButtonSpacing = 20.0;
+      logoHeight = 10.0;
+      lightHeight = 30.0;
+    } else {
+      budgetDisplayHeight = 20;
+      budgetDisplaySpacing = 20;
+      formSpacing = 10;
+      bottomButtonSpacing = 20.0;
+      logoHeight = 12.0;
+      lightHeight = 34.0;
+    }
+
     return Scaffold(
       backgroundColor: const Color(0xFFF2F2F2),
       body: SafeArea(
@@ -161,7 +192,7 @@ class ExpenseScreenState extends State<ExpenseScreen> {
                           padding: const EdgeInsets.fromLTRB(25, 12, 0, 0),
                           child: SvgPicture.asset(
                             'assets/spence.svg',
-                            height: 14,
+                            height: logoHeight,
                           ),
                         ),
                         const Spacer(),
@@ -169,25 +200,26 @@ class ExpenseScreenState extends State<ExpenseScreen> {
                           padding: const EdgeInsets.fromLTRB(0, 12, 23, 0),
                           child: SvgPicture.asset(
                             'assets/light.svg',
-                            height: 38,
+                            height: lightHeight,
                           ),
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 70),
+                  SizedBox(height: budgetDisplayHeight),
                   const BudgetDisplay(),
-                  const SizedBox(height: 80),
+                  SizedBox(height: budgetDisplaySpacing),
                   ExpenseForm(
                     onFormDataChange: _updateFormData, // Pass callback to ExpenseForm
                   ),
+                  SizedBox(height: formSpacing),
                 ],
               ),
             ),
             Align(
               alignment: Alignment.bottomCenter,
               child: Padding(
-                padding: const EdgeInsets.only(bottom: 30.0),
+                padding: EdgeInsets.only(bottom: bottomButtonSpacing),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -195,7 +227,7 @@ class ExpenseScreenState extends State<ExpenseScreen> {
                       // Action for Image Record Button
                     }),
                     const SizedBox(width: 11),
-                    RecordExpenseButton(onPressed: _submitExpense), // Submit button logic
+                    RecordExpenseButton(onPressed: _submitExpense),
                   ],
                 ),
               ),

@@ -11,11 +11,15 @@ import './mainPages/reports.dart';
 import './mainPages/recurring.dart';
 import './authPages/authcheck.dart';
 import './otherPages/allexpenses.dart';
+import './services/monthlyupdate.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
-  
+
+  // Check and update the monthly budget
+  await checkAndUpdateMonthlyBudget();
+
   SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
     statusBarColor: const Color.fromARGB(0, 242, 242, 242),
     statusBarIconBrightness: Brightness.dark,

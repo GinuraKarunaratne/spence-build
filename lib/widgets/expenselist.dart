@@ -17,7 +17,6 @@ class ExpenseList extends StatelessWidget {
   Future<String?> _fetchCurrencySymbol() async {
     final userId = FirebaseAuth.instance.currentUser?.uid;
     if (userId == null) {
-      print('User ID is null');
       return null;
     }
 
@@ -28,10 +27,8 @@ class ExpenseList extends StatelessWidget {
 
     if (budgetDoc.exists) {
       final currency = budgetDoc['currency'] as String?;
-      print('Fetched currency: $currency');
       return currency;
     } else {
-      print('Budget document does not exist for user: $userId');
       return null;
     }
   }
@@ -51,12 +48,10 @@ class ExpenseList extends StatelessWidget {
         }
 
         if (snapshot.hasError) {
-          print('Error fetching currency symbol: ${snapshot.error}');
           return const Center(child: Text('Error loading currency symbol'));
         }
 
         final currencySymbol = snapshot.data ?? 'Rs';
-        print('Using currency symbol: $currencySymbol');
 
         return StreamBuilder<QuerySnapshot>(
           stream: _fetchExpenses(),
@@ -70,7 +65,6 @@ class ExpenseList extends StatelessWidget {
               );
             }
             if (snapshot.hasError) {
-              print('Error fetching expenses: ${snapshot.error}');
               return const Center(child: Text('Error loading expenses'));
             }
 

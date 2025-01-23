@@ -10,7 +10,6 @@ class DailyExpenses extends StatelessWidget {
   Future<String?> _fetchCurrencySymbol() async {
     final userId = FirebaseAuth.instance.currentUser?.uid;
     if (userId == null) {
-      print('User ID is null');
       return null;
     }
 
@@ -21,10 +20,8 @@ class DailyExpenses extends StatelessWidget {
 
     if (budgetDoc.exists) {
       final currency = budgetDoc['currency'] as String?;
-      print('Fetched currency: $currency');
       return currency;
     } else {
-      print('Budget document does not exist for user: $userId');
       return null;
     }
   }
@@ -44,12 +41,10 @@ class DailyExpenses extends StatelessWidget {
         }
 
         if (snapshot.hasError) {
-          print('Error fetching currency symbol: ${snapshot.error}');
           return const Center(child: Text('Error loading currency symbol'));
         }
 
         final currencySymbol = snapshot.data ?? 'Rs';
-        print('Using currency symbol: $currencySymbol');
 
         return Column(children: [_buildExpenseContainer(context, currencySymbol)]);
       },
@@ -57,9 +52,33 @@ class DailyExpenses extends StatelessWidget {
   }
 
   Widget _buildExpenseContainer(BuildContext context, String currencySymbol) {
+    final screenHeight = MediaQuery.of(context).size.height;
+    
+    double containerHeight;
+    double viewAllExpensesTop;
+    double expensesListTop;
+    double expensesListHeight;
+
+    if (screenHeight > 800) {
+      containerHeight = 370;
+      viewAllExpensesTop = 317;
+      expensesListTop = 58;
+      expensesListHeight = 252;
+    } else if (screenHeight < 600) {
+      containerHeight = 300;
+      viewAllExpensesTop = 250;
+      expensesListTop = 50;
+      expensesListHeight = 200;
+    } else {
+      containerHeight = 305;
+      viewAllExpensesTop = 252;
+      expensesListTop = 45;
+      expensesListHeight = 225;
+    }
+
     return Container(
       width: 320,
-      height: 370,
+      height: containerHeight,
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(18),
@@ -67,8 +86,8 @@ class DailyExpenses extends StatelessWidget {
       child: Stack(
         children: [
           Positioned(top: 24, left: 24, child: _buildTitle()),
-          Positioned(left: 16, top: 58, child: _buildExpensesList(currencySymbol)),
-          Positioned(left: 16, top: 317, child: _buildViewAllExpenses(context)),
+          Positioned(left: 16, top: expensesListTop, child: _buildExpensesList(currencySymbol, expensesListHeight)),
+          Positioned(left: 16, top: viewAllExpensesTop, child: _buildViewAllExpenses(context)),
         ],
       ),
     );
@@ -106,7 +125,7 @@ class DailyExpenses extends StatelessWidget {
     );
   }
 
-  Widget _buildExpensesList(String currencySymbol) {
+  Widget _buildExpensesList(String currencySymbol, double height) {
     return StreamBuilder<QuerySnapshot>(
       stream: _fetchExpenses(),
       builder: (context, snapshot) {
@@ -126,7 +145,7 @@ class DailyExpenses extends StatelessWidget {
         if (expenses.isEmpty) {
           return Container(
             width: 288,
-            height: 252,
+            height: height,
             alignment: Alignment.center,
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -160,7 +179,7 @@ class DailyExpenses extends StatelessWidget {
         // List of Expenses
         return Container(
           width: 288,
-          height: 252,
+          height: height,
           decoration: BoxDecoration(borderRadius: BorderRadius.circular(12)),
           child: ListView.builder(
             padding: EdgeInsets.zero,

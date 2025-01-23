@@ -28,7 +28,29 @@ class SignupFormState extends State<SignupForm> {
     super.dispose();
   }
 
+  void _showSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red,
+      ),
+    );
+  }
+
   Future<void> _createAccount() async {
+    if (fullNameController.text.isEmpty) {
+      _showSnackBar('Please enter Full Name');
+      return;
+    }
+    if (emailController.text.isEmpty) {
+      _showSnackBar('Please enter Email Address');
+      return;
+    }
+    if (passwordController.text.isEmpty) {
+      _showSnackBar('Please enter Password');
+      return;
+    }
+
     if (_formKey.currentState?.validate() ?? false) {
       _formKey.currentState?.save();
 
@@ -54,25 +76,19 @@ class SignupFormState extends State<SignupForm> {
         Navigator.pushNamed(context, '/budget');
       } catch (e) {
         // Show error with SnackBar
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: ${e.toString()}'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        _showSnackBar('Error: ${e.toString()}');
       }
     }
   }
 
-  Widget _buildInputField(String label, TextInputType inputType,
-      {TextEditingController? controller}) {
+  Widget _buildInputField(String label, TextInputType inputType, {TextEditingController? controller}) {
     return Row(
       children: [
         _buildLabel(label),
         Expanded(
           child: Container(
             height: 36,
-            decoration: BoxDecoration(color: const Color(0xFFCCF20D)),
+            decoration: const BoxDecoration(color: Color(0xFFCCF20D)),
             child: TextFormField(
               controller: controller,
               keyboardType: inputType,
@@ -84,8 +100,7 @@ class SignupFormState extends State<SignupForm> {
                 contentPadding: EdgeInsets.fromLTRB(14, 0, 14, 10),
               ),
               style: GoogleFonts.poppins(fontSize: 10, color: Colors.black),
-              validator: (value) =>
-                  value?.isEmpty ?? true ? 'This field cannot be empty' : null,
+              validator: (value) => value?.isEmpty ?? true ? 'This field cannot be empty' : null,
               onSaved: (value) {
                 if (label == 'Full Name') fullName = value ?? '';
                 if (label == 'Email Address') email = value ?? '';
@@ -105,7 +120,7 @@ class SignupFormState extends State<SignupForm> {
         Expanded(
           child: Container(
             height: 37,
-            decoration: BoxDecoration(color: const Color(0xFFCCF20D)),
+            decoration: const BoxDecoration(color: Color(0xFFCCF20D)),
             child: DropdownButtonFormField<String>(
               value: _selectedCountry,
               icon: const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF1C1B1F)),
@@ -113,7 +128,7 @@ class SignupFormState extends State<SignupForm> {
               decoration: const InputDecoration(
                 border: InputBorder.none,
                 contentPadding: EdgeInsets.fromLTRB(14, 0, 12, 10),
-                ),
+              ),
               style: GoogleFonts.poppins(fontSize: 10, color: Colors.black),
               validator: (value) => value == null ? 'Please select a country' : null,
               onChanged: (newValue) {
@@ -122,11 +137,11 @@ class SignupFormState extends State<SignupForm> {
                 });
               },
               items: [
-                  'Armenia', 'Australia', 'Brazil', 'Canada', 'China', 'France', 'Germany', 'India', 'Indonesia',
-                  'Italy', 'Japan', 'Malaysia', 'New Zealand', 'Pakistan', 'Philippines', 'Russia', 'Saudi Arabia',
-                  'Singapore', 'South Africa', 'South Korea', 'Spain', 'Sri Lanka', 'Thailand', 'United Kingdom',
-                  'United States'
-                ].map((value) {
+                'Armenia', 'Australia', 'Brazil', 'Canada', 'China', 'France', 'Germany', 'India', 'Indonesia',
+                'Italy', 'Japan', 'Malaysia', 'New Zealand', 'Pakistan', 'Philippines', 'Russia', 'Saudi Arabia',
+                'Singapore', 'South Africa', 'South Korea', 'Spain', 'Sri Lanka', 'Thailand', 'United Kingdom',
+                'United States'
+              ].map((value) {
                 return DropdownMenuItem<String>(
                   value: value,
                   child: Text(value, style: GoogleFonts.poppins(fontSize: 10, color: Colors.black)),
@@ -143,7 +158,7 @@ class SignupFormState extends State<SignupForm> {
     return Container(
       width: 115,
       height: 37,
-      decoration: BoxDecoration(color: const Color(0xFFF8FDDB)),
+      decoration: const BoxDecoration(color: Color(0xFFF8FDDB)),
       child: Align(
         alignment: Alignment.centerLeft,
         child: Padding(
@@ -161,8 +176,8 @@ class SignupFormState extends State<SignupForm> {
       decoration: ShapeDecoration(
         color: Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        shadows: [
-          BoxShadow(color: const Color.fromARGB(255, 209, 209, 209), blurRadius: 1),
+        shadows: const [
+          BoxShadow(color: Color.fromARGB(255, 209, 209, 209), blurRadius: 1),
         ],
       ),
       child: Padding(

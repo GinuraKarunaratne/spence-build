@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:spence/buttons/imagerecordbutton.dart';
-import 'package:spence/buttons/recordbutton.dart';
+import 'package:spence/buttons/removebutton.dart';
+import 'package:spence/buttons/schedulebutton.dart';
 import 'package:spence/widgets/header.dart'; // Import the Header widget
 
 class RecurringScreen extends StatelessWidget {
@@ -30,9 +31,9 @@ class RecurringScreen extends StatelessWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  ImageRecordButton(onPressed: () {}),
+                  RemoveButton(onPressed: () {}),
                   const SizedBox(width: 11),
-                  RecordExpenseButton(onPressed: () {}),
+                  ScheduleButton(onPressed: () {}),
                 ],
               ),
             ),

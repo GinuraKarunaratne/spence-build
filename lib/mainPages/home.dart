@@ -26,15 +26,30 @@ class HomeScreenState extends State<HomeScreen> {
     final screenHeight = MediaQuery.of(context).size.height;
     final screenWidth = MediaQuery.of(context).size.width;
 
-    double spacingHeight = screenHeight > 800 ? 55 : 28; 
-    double budgetSpacing = screenHeight > 800 ? 40 : 30; 
-    double buttonSpacing = screenHeight > 800 ? 20 : 20;
+    double spacingHeight;
+    double budgetSpacing;
+    double buttonSpacing;
+
+    // Adjust spacings based on screen height
+    if (screenHeight > 800) {
+      spacingHeight = 55;
+      budgetSpacing = 40;
+      buttonSpacing = 20;
+    } else if (screenHeight < 600) {
+      spacingHeight = 28;
+      budgetSpacing = 30;
+      buttonSpacing = 20;
+    } else {
+      spacingHeight = 10;
+      budgetSpacing = 15;
+      buttonSpacing = 15;
+    }
 
     final List<Widget> screens = [
       Column(
         children: [
           Header(screenWidth: screenWidth), // Use the Header widget
-          SizedBox(height: spacingHeight), 
+          SizedBox(height: spacingHeight),
           const BudgetDisplay(),
           SizedBox(height: budgetSpacing),
           const DailyExpenses(),

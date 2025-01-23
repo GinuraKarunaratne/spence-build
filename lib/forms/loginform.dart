@@ -22,7 +22,7 @@ class LoginFormState extends State<LoginForm> {
   }
 
   Widget _buildInputField(String label, TextEditingController controller,
-      TextInputType inputType, {bool isPassword = false}) {
+      TextInputType inputType, {bool isPassword = false, EdgeInsets? contentPadding}) {
     return Row(
       children: [
         _buildLabel(label),
@@ -39,7 +39,7 @@ class LoginFormState extends State<LoginForm> {
               cursorColor: Colors.black,
               decoration: InputDecoration(
                 border: InputBorder.none,
-                contentPadding: const EdgeInsets.fromLTRB(14, 0, 14, 10),
+                contentPadding: contentPadding ?? const EdgeInsets.fromLTRB(14, 0, 14, 10),
                 suffixIcon: isPassword
                     ? GestureDetector(
                         onTap: () => setState(() {
@@ -63,11 +63,33 @@ class LoginFormState extends State<LoginForm> {
     );
   }
 
-  void _login() async {
-    await FirebaseAuth.instance.signInWithEmailAndPassword(
-      email: _emailController.text,
-      password: _passwordController.text,
+  void _showSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red,
+      ),
     );
+  }
+
+  Future<void> _login() async {
+    if (_emailController.text.isEmpty) {
+      _showSnackBar('Please enter Email Address');
+      return;
+    }
+    if (_passwordController.text.isEmpty) {
+      _showSnackBar('Please enter Password');
+      return;
+    }
+
+    try {
+      await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: _emailController.text,
+        password: _passwordController.text,
+      );
+    } catch (e) {
+      _showSnackBar('Login failed: ${e.toString()}');
+    }
   }
 
   Widget _buildLabel(String label) {
@@ -125,7 +147,7 @@ class LoginFormState extends State<LoginForm> {
             const SizedBox(height: 12),
             _buildInputField(
                 'Password', _passwordController, TextInputType.text,
-                isPassword: true),
+                isPassword: true, contentPadding: const EdgeInsets.fromLTRB(14, 5, 14, 10)),
             const SizedBox(height: 20),
             Text(
               '* All previous analytics and records can be accessed after login. You will be redirected to Home Page after verification.',
@@ -150,10 +172,10 @@ class LoginFormState extends State<LoginForm> {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(
+                  const Icon(
                     Icons.meeting_room_outlined,
                     size: 18,
-                    color: const Color(0xFF1C1B1F),
+                    color: Color(0xFF1C1B1F),
                   ),
                   const SizedBox(width: 7),
                   Text(
