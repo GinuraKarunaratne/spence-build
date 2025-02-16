@@ -1,0 +1,140 @@
+import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
+
+class TotalExpense extends StatelessWidget {
+  const TotalExpense({super.key});
+
+  Future<Map<String, dynamic>> fetchTotalExpenseAndCount() async {
+    final userId = FirebaseAuth.instance.currentUser?.uid;
+    if (userId == null) {
+      return {'total': 0.0, 'count': 0};
+    }
+    try {
+      final expensesSnapshot = await FirebaseFirestore.instance
+          .collection('expenses')
+          .where('userId', isEqualTo: userId)
+          .get();
+      double total = 0.0;
+      for (var doc in expensesSnapshot.docs) {
+        final amount = doc['amount'] as double?;
+        if (amount != null) {
+          total += amount;
+        }
+      }
+      int count = expensesSnapshot.docs.length;
+      return {'total': total, 'count': count};
+    } catch (e) {
+      print('Error fetching total expense and count: $e');
+      return {'total': 0.0, 'count': 0};
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder(
+      future: fetchTotalExpenseAndCount(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(
+            child: SpinKitThreeBounce(
+              color: Color.fromARGB(0, 204, 242, 13),
+              size: 40.0,
+            ),
+          );
+        }
+        if (snapshot.hasError) {
+          return const Center(child: Text('Error loading data'));
+        }
+        final data = snapshot.data!;
+        final total = data['total'];
+        final count = data['count'];
+        return _buildExpenseContainer(context, total, count);
+      },
+    );
+  }
+
+  Widget _buildExpenseContainer(BuildContext context, double total, int count) {
+    return Container(
+      width: 330,
+      height: 130,
+      clipBehavior: Clip.antiAlias,
+      decoration: ShapeDecoration(
+        color: const Color(0xFFEBEBEB),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+      ),
+      child: Stack(
+        children: [
+          Positioned(
+            left: 20,
+            top: 21,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(color: const Color(0xFFCCF20D)),
+              child: Text(
+                'Lifetime Expenses',
+                style: GoogleFonts.poppins(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w400,
+                  color: Colors.black,
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            right: 20,
+            top: 20,
+            child: Row(
+              children: [
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(color: const Color(0x26CCF20D)),
+                  child: Text(
+                    'Expense Count',
+                    style: GoogleFonts.poppins(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w400,
+                      color: Colors.black,
+                    ),
+                  ),
+                ),
+                Container(
+                  width: 45,
+                  padding: const EdgeInsets.fromLTRB(5, 6, 9, 6),
+                  decoration: BoxDecoration(color: const Color(0xFFCCF20D)),
+                  child: Text(
+                    count.toString(),
+                    textAlign: TextAlign.right,
+                    style: GoogleFonts.poppins(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w400,
+                      color: Colors.black,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Positioned(
+            right: 20,
+            top: 65,
+            child: Text(
+              total.toStringAsFixed(2),
+              textAlign: TextAlign.right,
+              style: GoogleFonts.urbanist(
+                fontSize: 40,
+                fontWeight: FontWeight.w400,
+                color: Colors.black,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}

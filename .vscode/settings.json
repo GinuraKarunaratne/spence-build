@@ -7,6 +7,7 @@
         "addexpense",
         "addrecurring",
         "allexpenses",
+        "allrecurring",
         "ARGB",
         "authcheck",
         "backbutton",
@@ -40,6 +41,7 @@
         "preprocess",
         "recordbutton",
         "recurringform",
+        "recurringlist",
         "recurringprocess",
         "removebutton",
         "Rica",
@@ -48,6 +50,8 @@
         "Signup",
         "signupform",
         "spinkit",
+        "topexpense",
+        "totalexpense",
         "workmanager"
     ],
     "java.configuration.updateBuildConfiguration": "interactive"

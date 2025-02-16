@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-class RemoveButton extends StatelessWidget {
+class RecordButton_alt extends StatelessWidget {
   final VoidCallback onPressed;
 
-  const RemoveButton({super.key, required this.onPressed});
+  const RecordButton_alt({super.key, required this.onPressed});
 
   @override
   Widget build(BuildContext context) {
@@ -22,13 +22,13 @@ class RemoveButton extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(
-            Icons.delete_outline_rounded,
+            Icons.edit_outlined,
             size: 18,
             color: Color(0xFF1C1B1F),
           ),
           const SizedBox(width: 7),
           Text(
-            'Remove Selected',
+            'Record Expense',
             style: GoogleFonts.poppins(
               color: Colors.black,
               fontSize: 11,

@@ -2,6 +2,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:spence/otherPages/addexpense.dart';
 import 'package:spence/otherPages/addrecurring.dart';
 import './mainPages/home.dart';
@@ -36,7 +37,6 @@ void main() async {
   final User? currentUser = FirebaseAuth.instance.currentUser;
 
   if (currentUser != null) {
-
     final String userId = currentUser.uid;
 
     await checkAndUpdateMonthlyBudget();
@@ -68,6 +68,10 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        textTheme: GoogleFonts.poppinsTextTheme(),
+        scaffoldBackgroundColor: const Color(0xFFF2F2F2),
+      ),
       initialRoute: '/authcheck',
       routes: {
         '/home': (context) => const HomeScreen(),
