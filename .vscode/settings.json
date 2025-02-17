@@ -38,6 +38,7 @@
         "monthlyupdate",
         "navigationbar",
         "ocrservice",
+        "piechart",
         "preprocess",
         "recordbutton",
         "recurringform",
@@ -50,6 +51,7 @@
         "Signup",
         "signupform",
         "spinkit",
+        "tesseract",
         "topexpense",
         "totalexpense",
         "workmanager"

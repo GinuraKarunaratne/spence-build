@@ -3,11 +3,11 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart'; // Import ScreenUtil
 
 class ExpenseList extends StatelessWidget {
   final List<String> selectedCategories;
   final String selectedTimePeriod;
-
   const ExpenseList({
     super.key,
     required this.selectedCategories,
@@ -19,12 +19,10 @@ class ExpenseList extends StatelessWidget {
     if (userId == null) {
       return null;
     }
-
     final budgetDoc = await FirebaseFirestore.instance
         .collection('budgets')
         .doc(userId)
         .get();
-
     if (budgetDoc.exists) {
       final currency = budgetDoc['currency'] as String?;
       return currency;
@@ -46,13 +44,10 @@ class ExpenseList extends StatelessWidget {
             ),
           );
         }
-
         if (snapshot.hasError) {
           return const Center(child: Text('Error loading currency symbol'));
         }
-
         final currencySymbol = snapshot.data ?? 'Rs';
-
         return StreamBuilder<QuerySnapshot>(
           stream: _fetchExpenses(),
           builder: (context, snapshot) {
@@ -67,18 +62,15 @@ class ExpenseList extends StatelessWidget {
             if (snapshot.hasError) {
               return const Center(child: Text('Error loading expenses'));
             }
-
             final expenses = snapshot.data?.docs ?? [];
             if (expenses.isEmpty) {
               return _buildEmptyExpensesMessage();
             }
-
             // Filter expenses based on selected time period
             final filteredExpenses = _filterExpensesByTimePeriod(expenses);
             if (filteredExpenses.isEmpty) {
               return _buildEmptyExpensesMessage();
             }
-
             return _buildExpenseListView(filteredExpenses, context, currencySymbol);
           },
         );
@@ -88,29 +80,29 @@ class ExpenseList extends StatelessWidget {
 
   Widget _buildEmptyExpensesMessage() {
     return Container(
-      width: 288,
-      height: 350,
+      width: 288.w, // Use ScreenUtil for width
+      height: 350.h, // Use ScreenUtil for height
       alignment: Alignment.center,
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(Icons.receipt_rounded,
-              size: 50, color: const Color.fromARGB(80, 149, 149, 149)),
-          const SizedBox(height: 10),
+              size: 50.w, color: const Color.fromARGB(80, 149, 149, 149)),
+          SizedBox(height: 10.h), // Use ScreenUtil for height
           Text(
             'No recorded expenses',
             style: GoogleFonts.poppins(
-              fontSize: 14,
+              fontSize: 14.sp, // Use ScreenUtil for font size
               fontWeight: FontWeight.w500,
               color: const Color(0xFF272727),
             ),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8.h), // Use ScreenUtil for height
           Text(
             'Start recording an expense to see it here',
             textAlign: TextAlign.center,
             style: GoogleFonts.poppins(
-              fontSize: 9,
+              fontSize: 9.sp, // Use ScreenUtil for font size
               fontWeight: FontWeight.w400,
               color: const Color.fromARGB(80, 0, 0, 0),
             ),
@@ -123,10 +115,9 @@ class ExpenseList extends StatelessWidget {
   Widget _buildExpenseListView(
       List<QueryDocumentSnapshot> expenses, BuildContext context, String currencySymbol) {
     double containerHeight = MediaQuery.of(context).size.height * 0.63;
-
     return SizedBox(
-      width: 297,
-      height: containerHeight,
+      width: 297.w, // Use ScreenUtil for width
+      height: containerHeight.h, // Use ScreenUtil for height
       child: ListView.builder(
         padding: EdgeInsets.zero,
         itemCount: expenses.length,
@@ -135,15 +126,13 @@ class ExpenseList extends StatelessWidget {
           final title = expense['title'] ?? 'Unknown';
           final amount = '$currencySymbol ${expense['amount']?.toInt() ?? 0}';
           final category = expense['category'] ?? 'Unknown';
-
           if (selectedCategories.isEmpty ||
               selectedCategories.contains(category)) {
             return Padding(
-              padding: const EdgeInsets.only(bottom: 10),
+              padding: EdgeInsets.only(bottom: 10.h), // Use ScreenUtil for bottom padding
               child: _buildExpenseItem(title, amount),
             );
           }
-
           return Container();
         },
       ),
@@ -153,7 +142,6 @@ class ExpenseList extends StatelessWidget {
   List<QueryDocumentSnapshot> _filterExpensesByTimePeriod(
       List<QueryDocumentSnapshot> expenses) {
     DateTime now = DateTime.now();
-
     if (selectedTimePeriod == 'Daily') {
       return expenses.where((expense) {
         DateTime expenseDate = (expense['date'] as Timestamp).toDate();
@@ -173,18 +161,17 @@ class ExpenseList extends StatelessWidget {
         return expenseDate.month == now.month && expenseDate.year == now.year;
       }).toList();
     }
-
     return expenses;
   }
 
   Widget _buildExpenseItem(String title, String amount) {
     return Container(
       width: double.infinity,
-      height: 37,
-      padding: const EdgeInsets.symmetric(horizontal: 10),
+      height: 37.h,
+      padding: EdgeInsets.symmetric(horizontal: 10.w), 
       decoration: BoxDecoration(
         color: const Color(0xFFF2F2F2),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(12.w), 
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -193,17 +180,17 @@ class ExpenseList extends StatelessWidget {
             title,
             style: GoogleFonts.poppins(
               color: const Color.fromARGB(255, 0, 0, 0),
-              fontSize: 12,
+              fontSize: 12.sp, 
               fontWeight: FontWeight.w400,
             ),
           ),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+            padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),
             decoration: BoxDecoration(
               color: const Color(0xFFCCF20D),
-              borderRadius: BorderRadius.circular(6),
+              borderRadius: BorderRadius.circular(6.w),
             ),
-            child: Text(amount, style: GoogleFonts.poppins(fontSize: 10)),
+            child: Text(amount, style: GoogleFonts.poppins(fontSize: 10.sp)),
           ),
         ],
       ),
@@ -213,7 +200,6 @@ class ExpenseList extends StatelessWidget {
   Stream<QuerySnapshot> _fetchExpenses() {
     final userId = FirebaseAuth.instance.currentUser?.uid;
     if (userId == null) return const Stream.empty();
-
     return FirebaseFirestore.instance
         .collection('expenses')
         .where('userId', isEqualTo: userId)

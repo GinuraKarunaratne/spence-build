@@ -17,6 +17,7 @@ import './otherPages/allexpenses.dart';
 import './services/monthlyupdate.dart';
 import 'package:workmanager/workmanager.dart';
 import './services/recurringprocess.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 void callbackDispatcher() {
   Workmanager().executeTask((task, inputData) async {
@@ -66,25 +67,33 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        textTheme: GoogleFonts.poppinsTextTheme(),
-        scaffoldBackgroundColor: const Color(0xFFF2F2F2),
-      ),
-      initialRoute: '/authcheck',
-      routes: {
-        '/home': (context) => const HomeScreen(),
-        '/login': (context) => const LoginScreen(),
-        '/signup': (context) => const SignupScreen(),
-        '/budget': (context) => const BudgetScreen(),
-        '/analysis': (context) => const AnalysisScreen(),
-        '/reports': (context) => const ReportsScreen(),
-        '/recurring': (context) => const RecurringScreen(),
-        '/authcheck': (context) => const AuthCheck(),
-        '/addexpense': (context) => const ExpenseScreen(),
-        '/allexpenses': (context) => const AllExpensesScreen(),
-        '/addrecurring': (context) => const AddRecurringScreen(),
+    return ScreenUtilInit(
+      designSize: const Size(375, 815),
+      minTextAdapt: true,
+      splitScreenMode: true,
+      builder: (context, child) {
+        return MaterialApp(
+          debugShowCheckedModeBanner: false,
+          theme: ThemeData(
+            textTheme: GoogleFonts.poppinsTextTheme(),
+            scaffoldBackgroundColor: const Color(0xFFF2F2F2),
+          ),
+          initialRoute: '/authcheck',
+          routes: {
+            '/home': (context) => const HomeScreen(),
+            '/login': (context) => const LoginScreen(),
+            '/signup': (context) => const SignupScreen(),
+            '/budget': (context) => const BudgetScreen(),
+            '/analysis': (context) => const AnalysisScreen(),
+            '/reports': (context) => const ReportsScreen(),
+            '/recurring': (context) => const RecurringScreen(),
+            '/authcheck': (context) => const AuthCheck(),
+            '/addexpense': (context) => const ExpenseScreen(),
+            '/allexpenses': (context) => const AllExpensesScreen(),
+            '/addrecurring': (context) => const AddRecurringScreen(),
+          },
+          home: child,
+        );
       },
     );
   }

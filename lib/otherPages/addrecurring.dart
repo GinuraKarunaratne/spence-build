@@ -8,6 +8,7 @@ import 'package:spence/buttons/schedulebutton.dart';
 import 'package:spence/widgets/budgetdisplay.dart';
 import 'package:loading_indicator/loading_indicator.dart';
 import '../forms/recurringform.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 bool isSameOrBeforeDay(DateTime a, DateTime b) {
   final dA = DateTime(a.year, a.month, a.day);
@@ -39,6 +40,7 @@ class _AddRecurringScreenState extends State<AddRecurringScreen> {
   DateTime recurringDate = DateTime.now();
   int repeatIntervalMonths = 1;
   bool _isLoading = false;
+  List<String> selectedCategories = []; // For interval dialog selection
 
   void _updateFormData({
     String? title,
@@ -166,25 +168,25 @@ class _AddRecurringScreenState extends State<AddRecurringScreen> {
   }
 
   void _showIntervalDialog(BuildContext context) async {
-    final intervals = ['1 Month','2 Months','3 Months','6 Months','12 Months','24 Months'];
+    final intervals = ['1 Month', '2 Months', '3 Months', '6 Months', '12 Months', '24 Months'];
     await showDialog(
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, dialogSetState) => Dialog(
           backgroundColor: Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.all(16.w),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const SizedBox(height: 5),
+                SizedBox(height: 5.h),
                 Text(
                   '  Select Repeat Interval',
-                  style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w500, color: Colors.black),
+                  style: GoogleFonts.poppins(fontSize: 12.sp, fontWeight: FontWeight.w500, color: Colors.black),
                 ),
-                const SizedBox(height: 15),
+                SizedBox(height: 15.h),
                 ...intervals.map((interval) {
                   final isSelected = repeatIntervalMonths == _parseInterval(interval);
                   return GestureDetector(
@@ -195,20 +197,25 @@ class _AddRecurringScreenState extends State<AddRecurringScreen> {
                       _updateFormData(repeatInterval: interval);
                     },
                     child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
-                      margin: const EdgeInsets.only(bottom: 8),
+                      padding: EdgeInsets.symmetric(vertical: 10.h, horizontal: 16.w),
+                      margin: EdgeInsets.only(bottom: 8.h),
                       decoration: BoxDecoration(
                         color: isSelected ? const Color(0xFFCCF20D) : const Color(0xFFF9FAFB),
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(12.r),
                       ),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
                             interval,
-                            style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w400, color: isSelected ? Colors.black : const Color(0xFF374151)),
+                            style: GoogleFonts.poppins(fontSize: 12.sp, fontWeight: FontWeight.w400, color: isSelected ? Colors.black : const Color(0xFF374151)),
                           ),
-                          if (isSelected) const Icon(Icons.check, size: 18, color: Colors.black),
+                          if (isSelected)
+                            const Icon(
+                              Icons.check,
+                              size: 18,
+                              color: Colors.black,
+                            ),
                         ],
                       ),
                     ),
@@ -225,7 +232,7 @@ class _AddRecurringScreenState extends State<AddRecurringScreen> {
   @override
   Widget build(BuildContext context) {
     final h = MediaQuery.of(context).size.height;
-    final (bHeight, bSpace, fSpace, bottomSpace, logoH, lightH) = _adjustLayout(h);
+    final layout = _adjustLayout(h);
     return Scaffold(
       backgroundColor: const Color(0xFFF2F2F2),
       body: SafeArea(
@@ -235,38 +242,54 @@ class _AddRecurringScreenState extends State<AddRecurringScreen> {
               child: Column(
                 children: [
                   Padding(
-                    padding: const EdgeInsets.only(top: 0),
+                    padding: EdgeInsets.only(top: 2.h),
                     child: Row(
                       children: [
                         Padding(
-                          padding: const EdgeInsets.fromLTRB(25, 12, 0, 0),
-                          child: SvgPicture.asset('assets/spence.svg', height: logoH),
+                          padding: EdgeInsets.fromLTRB(25.w, 12.h, 0.w, 0.h),
+                          child: SvgPicture.asset(
+                            'assets/spence.svg',
+                            height: 14.h, 
+                          ),
                         ),
                         const Spacer(),
                         Padding(
-                          padding: const EdgeInsets.fromLTRB(0, 12, 23, 0),
-                          child: SvgPicture.asset('assets/light.svg', height: lightH),
+                          padding: EdgeInsets.fromLTRB(40.w, 12.h, 20.w, 0.h),
+                          child: Container(
+                            width: 38.w,
+                            height: 38.w,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: Colors.white,
+                            ),
+                            child: IconButton(
+                              icon: Icon(Icons.arrow_back_rounded, size: 20.w, color: Colors.black),
+                              onPressed: () {
+                                Navigator.of(context).pop();
+                              },
+                            ),
+                          ),
                         ),
                       ],
                     ),
                   ),
-                  SizedBox(height: bHeight),
+                  SizedBox(height: layout[0]),
                   const BudgetDisplay(),
-                  SizedBox(height: bSpace),
+                  SizedBox(height: layout[1]),
                   RecurringForm(onFormDataChange: _updateFormData),
-                  SizedBox(height: fSpace),
+                  SizedBox(height: layout[2]),
                 ],
               ),
             ),
             Align(
               alignment: Alignment.bottomCenter,
               child: Padding(
-                padding: EdgeInsets.only(bottom: bottomSpace),
+                padding: EdgeInsets.only(bottom: layout[3]),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     IntervalButton(onPressed: () => _showIntervalDialog(context)),
-                    const SizedBox(width: 11),
+                    SizedBox(width: 11.w),
                     ScheduleButton(onPressed: _submitRecurringExpense),
                   ],
                 ),
@@ -291,9 +314,9 @@ class _AddRecurringScreenState extends State<AddRecurringScreen> {
     );
   }
 
-  (double, double, double, double, double, double) _adjustLayout(double s) {
-    if (s > 800) return (70, 80, 0, 30.0, 14.0, 38.0);
-    if (s < 600) return (40, 50, 20, 20.0, 10.0, 30.0);
-    return (20, 20, 10, 20.0, 12.0, 34.0);
+  List<double> _adjustLayout(double s) {
+    if (s > 800) return [70.h, 80.h, 0.h, 30.h, 14.h, 38.h];
+    if (s < 600) return [40.h, 50.h, 20.h, 20.h, 10.h, 30.h];
+    return [20.h, 20.h, 10.h, 20.h, 12.h, 34.h];
   }
 }

@@ -4,6 +4,7 @@ import 'package:spence/buttons/categorybutton.dart';
 import 'package:spence/buttons/recordbutton.dart';
 import 'package:spence/widgets/expenselist.dart';
 import 'package:spence/widgets/header.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart'; // Import ScreenUtil
 
 class AllExpensesScreen extends StatefulWidget {
   const AllExpensesScreen({super.key});
@@ -14,8 +15,7 @@ class AllExpensesScreen extends StatefulWidget {
 
 class AllExpensesScreenState extends State<AllExpensesScreen> {
   List<String> selectedCategories = [];
-  String selectedTimePeriod = ''; // Empty string by default to display all expenses
-
+  String selectedTimePeriod = '';
   final List<String> categories = [
     'Food & Grocery',
     'Transportation',
@@ -27,47 +27,21 @@ class AllExpensesScreenState extends State<AllExpensesScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final screenHeight = MediaQuery.of(context).size.height;
-    final screenWidth = MediaQuery.of(context).size.width;
-
-    double headerSpacing;
-    double containerHeight;
-    double bottomButtonSpacing;
-    double categoryButtonWidth;
-
-    // Adjust spacings based on screen height
-    if (screenHeight > 800) {
-      headerSpacing = 40;
-      containerHeight = screenHeight * 0.745;
-      bottomButtonSpacing = 20;
-      categoryButtonWidth = 320;
-    } else if (screenHeight < 600) {
-      headerSpacing = 20;
-      containerHeight = screenHeight * 0.73;
-      bottomButtonSpacing = 15;
-      categoryButtonWidth = 280;
-    } else {
-      headerSpacing = 25;
-      containerHeight = screenHeight * 0.72;
-      bottomButtonSpacing = 18;
-      categoryButtonWidth = 320;
-    }
-
     return Scaffold(
       backgroundColor: const Color(0xFFf2f2f2),
       body: Stack(
         children: [
           Column(
             children: [
-              Header(screenWidth: screenWidth),
-              SizedBox(height: headerSpacing),
-              _buildExpenseContainer(context, containerHeight, categoryButtonWidth),
+              const Header(), 
+              SizedBox(height: 40.h), 
+              _buildExpenseContainer(context),
             ],
           ),
           Positioned(
-            bottom: bottomButtonSpacing,
-            left: 20,
-            right: 20,
+            bottom: 20.h, 
+            left: 20.w, 
+            right: 20.w, 
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -76,7 +50,7 @@ class AllExpensesScreenState extends State<AllExpensesScreen> {
                     _showCategoryFilterDialog(context);
                   },
                 ),
-                const SizedBox(width: 11),
+                SizedBox(width: 11.w), 
                 RecordExpenseButton(onPressed: () {
                   Navigator.of(context).pushNamed('/addexpense');
                 }),
@@ -88,15 +62,15 @@ class AllExpensesScreenState extends State<AllExpensesScreen> {
     );
   }
 
-  Widget _buildExpenseContainer(BuildContext context, double containerHeight, double width) {
+  Widget _buildExpenseContainer(BuildContext context) {
     return Container(
-      width: width,
-      height: containerHeight,
-      padding: const EdgeInsets.all(24),
+      width: 320.w, 
+      height: 610.h, 
+      padding: EdgeInsets.all(24.w), 
       decoration: ShapeDecoration(
         color: Colors.white,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(12.w), 
         ),
       ),
       child: Column(
@@ -106,13 +80,13 @@ class AllExpensesScreenState extends State<AllExpensesScreen> {
             'All Expenses',
             style: GoogleFonts.poppins(
               color: Colors.black,
-              fontSize: 17,
+              fontSize: 17.sp, 
               fontWeight: FontWeight.w500,
             ),
           ),
-          const SizedBox(height: 21),
+          SizedBox(height: 21.h), 
           _buildTimePeriodSelector(),
-          const SizedBox(height: 24),
+          SizedBox(height: 24.h), 
           Expanded(child: _buildExpensesList(context)),
         ],
       ),
@@ -130,31 +104,15 @@ class AllExpensesScreenState extends State<AllExpensesScreen> {
 
   Widget _buildTimePeriodButton(String label, Color color) {
     bool isSelected = selectedTimePeriod == label;
-    final screenHeight = MediaQuery.of(context).size.height;
-    double timePeriodButtonHeight;
-    double timePeriodButtonWidth;
-
-    // Adjust button sizes based on screen height
-    if (screenHeight > 800) {
-      timePeriodButtonHeight = 25;
-      timePeriodButtonWidth = 90;
-    } else if (screenHeight < 600) {
-      timePeriodButtonHeight = 20;
-      timePeriodButtonWidth = 80;
-    } else {
-      timePeriodButtonHeight = 22;
-      timePeriodButtonWidth = 90;
-    }
-
     return GestureDetector(
       onTap: () {
         setState(() {
-          selectedTimePeriod = isSelected ? '' : label; // Toggle selection
+          selectedTimePeriod = isSelected ? '' : label; 
         });
       },
       child: Container(
-        width: timePeriodButtonWidth,
-        height: timePeriodButtonHeight,
+        width: 90.w, 
+        height: 25.h, 
         decoration: BoxDecoration(
           color: isSelected ? const Color(0xFFCCF20D) : color,
         ),
@@ -163,7 +121,7 @@ class AllExpensesScreenState extends State<AllExpensesScreen> {
             label,
             style: GoogleFonts.poppins(
               color: Colors.black,
-              fontSize: 10,
+              fontSize: 10.sp, 
               fontWeight: FontWeight.w400,
             ),
           ),
@@ -188,24 +146,24 @@ class AllExpensesScreenState extends State<AllExpensesScreen> {
             return Dialog(
               backgroundColor: Colors.white,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(16.w), 
               ),
               child: Padding(
-                padding: const EdgeInsets.all(16.0),
+                padding: EdgeInsets.all(16.w), 
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const SizedBox(height: 5),
+                    SizedBox(height: 5.h), 
                     Text(
                       '  Filter by Category',
                       style: GoogleFonts.poppins(
-                        fontSize: 12,
+                        fontSize: 12.sp, 
                         fontWeight: FontWeight.w500,
                         color: Colors.black,
                       ),
                     ),
-                    const SizedBox(height: 15),
+                    SizedBox(height: 15.h), 
                     ...categories.map((category) {
                       final isSelected = selectedCategories.contains(category);
                       return GestureDetector(
@@ -220,14 +178,14 @@ class AllExpensesScreenState extends State<AllExpensesScreen> {
                           setState(() {});
                         },
                         child: Container(
-                          padding: const EdgeInsets.symmetric(
-                              vertical: 10, horizontal: 16),
-                          margin: const EdgeInsets.only(bottom: 8),
+                          padding: EdgeInsets.symmetric(
+                              vertical: 10.h, horizontal: 16.w), 
+                          margin: EdgeInsets.only(bottom: 8.h), 
                           decoration: BoxDecoration(
                             color: isSelected
                                 ? const Color(0xFFCCF20D)
                                 : const Color(0xFFF9FAFB),
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(12.w), 
                           ),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -235,7 +193,7 @@ class AllExpensesScreenState extends State<AllExpensesScreen> {
                               Text(
                                 category,
                                 style: GoogleFonts.poppins(
-                                  fontSize: 12,
+                                  fontSize: 12.sp, 
                                   fontWeight: FontWeight.w400,
                                   color: isSelected
                                       ? Colors.black
@@ -245,7 +203,7 @@ class AllExpensesScreenState extends State<AllExpensesScreen> {
                               if (isSelected)
                                 const Icon(
                                   Icons.remove,
-                                  size: 18,
+                                  size: 18, 
                                   color: Colors.black,
                                 ),
                             ],

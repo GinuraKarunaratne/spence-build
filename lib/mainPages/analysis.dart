@@ -1,37 +1,36 @@
 import 'package:flutter/material.dart';
 import 'package:spence/buttons/imagerecordbutton.dart';
 import 'package:spence/buttons/recordbutton.dart';
-import 'package:spence/widgets/header.dart'; // Import the Header widget
+import 'package:spence/widgets/header.dart'; 
+import 'package:flutter_screenutil/flutter_screenutil.dart'; 
 
 class AnalysisScreen extends StatelessWidget {
   const AnalysisScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-
     return Scaffold(
       backgroundColor: const Color(0xFFF2F2F2),
       body: Stack(
         children: [
           Column(
             children: [
-              Header(screenWidth: screenWidth), // Use the Header widget
-              const SizedBox(height: 100),
+              const Header(), 
+              SizedBox(height: 100.h), 
               Expanded(child: Container()),
             ],
           ),
           Positioned(
-            bottom: 20,
-            left: 20,
-            right: 20,
+            bottom: 20.h, 
+            left: 20.w, 
+            right: 20.w, 
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 0.0),
+              padding: EdgeInsets.symmetric(horizontal: 0.w), 
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   ImageRecordButton(onPressed: () {}),
-                  const SizedBox(width: 11),
+                  SizedBox(width: 11.w), 
                   RecordExpenseButton(onPressed: () {}),
                 ],
               ),

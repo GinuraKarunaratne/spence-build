@@ -7,6 +7,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:spence/widgets/budgetdisplay.dart';
 import 'package:loading_indicator/loading_indicator.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart'; // Import ScreenUtil
 
 class ExpenseScreen extends StatefulWidget {
   const ExpenseScreen({super.key});
@@ -49,11 +50,9 @@ class ExpenseScreenState extends State<ExpenseScreen> {
       );
       return;
     }
-
     setState(() {
       _isLoading = true;
     });
-
     final userId = FirebaseAuth.instance.currentUser?.uid; // Get current user ID
     if (userId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -64,9 +63,7 @@ class ExpenseScreenState extends State<ExpenseScreen> {
       });
       return;
     }
-
     final double expenseAmountValue = double.parse(expenseAmount); // Parse the expense amount
-
     try {
       // 1. Add Expense to the `expenses` Collection
       final expenseDoc = FirebaseFirestore.instance.collection('expenses').doc();
@@ -78,15 +75,12 @@ class ExpenseScreenState extends State<ExpenseScreen> {
         'userId': userId,
         'createdAt': Timestamp.now(),
       });
-
       // 2. Update the `totExpenses` Collection (increment count and total_expense)
       final totExpensesDoc = FirebaseFirestore.instance.collection('users').doc(userId).collection('totExpenses').doc('summary');
       final totExpensesSnapshot = await totExpensesDoc.get();
-
       if (totExpensesSnapshot.exists) {
         final currentCount = totExpensesSnapshot['count'] ?? 0;
         final currentTotalExpense = totExpensesSnapshot['total_expense'] ?? 0.0;
-
         await totExpensesDoc.update({
           'count': currentCount + 1,
           'total_expense': currentTotalExpense + expenseAmountValue,
@@ -98,15 +92,12 @@ class ExpenseScreenState extends State<ExpenseScreen> {
           'total_expense': expenseAmountValue,
         });
       }
-
       // 3. Update the `budgets` Collection (update used_budget and remaining_budget)
       final budgetDoc = FirebaseFirestore.instance.collection('budgets').doc(userId);  // Reference to the `budgets` collection
       final budgetSnapshot = await budgetDoc.get();
-
       if (budgetSnapshot.exists) {
         final usedBudget = budgetSnapshot['used_budget'] ?? 0.0;
         final remainingBudget = budgetSnapshot['remaining_budget'] ?? 0.0;
-
         // Update used_budget by adding the expense amount
         await budgetDoc.update({
           'used_budget': usedBudget + expenseAmountValue,
@@ -119,7 +110,6 @@ class ExpenseScreenState extends State<ExpenseScreen> {
           'remaining_budget': 0.0, // This assumes the initial remaining_budget is not set
         });
       }
-
       // Reset form fields after submission
       setState(() {
         expenseTitle = '';
@@ -127,7 +117,6 @@ class ExpenseScreenState extends State<ExpenseScreen> {
         expenseCategory = 'Food & Grocery';
         expenseDate = DateTime.now();
       });
-
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Expense recorded successfully!')),
       );
@@ -144,38 +133,6 @@ class ExpenseScreenState extends State<ExpenseScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final screenHeight = MediaQuery.of(context).size.height;
-
-    double budgetDisplayHeight;
-    double budgetDisplaySpacing;
-    double formSpacing;
-    double bottomButtonSpacing;
-    double logoHeight;
-    double lightHeight;
-
-    if (screenHeight > 800) {
-      budgetDisplayHeight = 70;
-      budgetDisplaySpacing = 80;
-      formSpacing = 0;
-      bottomButtonSpacing = 30.0;
-      logoHeight = 14.0;
-      lightHeight = 38.0;
-    } else if (screenHeight < 600) {
-      budgetDisplayHeight = 40;
-      budgetDisplaySpacing = 50;
-      formSpacing = 20;
-      bottomButtonSpacing = 20.0;
-      logoHeight = 10.0;
-      lightHeight = 30.0;
-    } else {
-      budgetDisplayHeight = 20;
-      budgetDisplaySpacing = 20;
-      formSpacing = 10;
-      bottomButtonSpacing = 20.0;
-      logoHeight = 12.0;
-      lightHeight = 34.0;
-    }
-
     return Scaffold(
       backgroundColor: const Color(0xFFF2F2F2),
       body: SafeArea(
@@ -185,48 +142,58 @@ class ExpenseScreenState extends State<ExpenseScreen> {
               child: Column(
                 children: [
                   Padding(
-                    padding: const EdgeInsets.only(top: 0.0),
+                    padding: EdgeInsets.only(top: 2.h),
                     child: Row(
                       children: [
                         Padding(
-                          padding: const EdgeInsets.fromLTRB(25, 12, 0, 0),
+                          padding: EdgeInsets.fromLTRB(25.w, 12.h, 0.w, 0.h),
                           child: SvgPicture.asset(
                             'assets/spence.svg',
-                            height: logoHeight,
+                            height: 14.h, 
                           ),
                         ),
                         const Spacer(),
                         Padding(
-                          padding: const EdgeInsets.fromLTRB(0, 12, 23, 0),
-                          child: SvgPicture.asset(
-                            'assets/light.svg',
-                            height: lightHeight,
+                          padding: EdgeInsets.fromLTRB(40.w, 12.h, 20.w, 0.h),
+                          child: Container(
+                            width: 38.w,
+                            height: 38.w,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: Colors.white,
+                            ),
+                            child: IconButton(
+                              icon: Icon(Icons.arrow_back_rounded, size: 20.w, color: Colors.black),
+                              onPressed: () {
+                                Navigator.of(context).pop();
+                              },
+                            ),
                           ),
                         ),
                       ],
                     ),
                   ),
-                  SizedBox(height: budgetDisplayHeight),
+                  SizedBox(height: 70.h),
                   const BudgetDisplay(),
-                  SizedBox(height: budgetDisplaySpacing),
+                  SizedBox(height: 80.h), 
                   ExpenseForm(
-                    onFormDataChange: _updateFormData, // Pass callback to ExpenseForm
+                    onFormDataChange: _updateFormData,
                   ),
-                  SizedBox(height: formSpacing),
+                  SizedBox(height: 0.h), 
                 ],
               ),
             ),
             Align(
               alignment: Alignment.bottomCenter,
               child: Padding(
-                padding: EdgeInsets.only(bottom: bottomButtonSpacing),
+                padding: EdgeInsets.only(bottom: 30.h),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     ImageRecordButton(onPressed: () {
-                      // Action for Image Record Button
+                      
                     }),
-                    const SizedBox(width: 11),
+                    SizedBox(width: 11.w), 
                     RecordExpenseButton(onPressed: _submitExpense),
                   ],
                 ),

@@ -1,35 +1,35 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class Header extends StatelessWidget {
-  final double screenWidth;
-  const Header({super.key, required this.screenWidth});
+  const Header({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(top: 30.0),
+      padding: EdgeInsets.only(top: 30.h),
       child: Row(
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(25, 12, 0, 0),
+            padding: EdgeInsets.fromLTRB(25.w, 12.h, 110.w, 0.h),
             child: SvgPicture.asset(
               'assets/spence.svg',
-              height: 14,
+              height: 14.h,
             ),
           ),
           const Spacer(),
           Padding(
-            padding: EdgeInsets.fromLTRB(screenWidth * 0.4, 12, 0, 0),
+            padding: EdgeInsets.fromLTRB(40.w, 12.h, 0.w, 0.h), 
             child: Container(
-              width: 38,
-              height: 38,
+              width: 38.w,
+              height: 38.w,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: Colors.white,
               ),
               child: IconButton(
-                icon: Icon(Icons.notifications_outlined, size: 20, color: Colors.black),
+                icon: Icon(Icons.notifications_outlined, size: 20.w, color: Colors.black),
                 onPressed: () {
                   
                 },
@@ -38,10 +38,10 @@ class Header extends StatelessWidget {
           ),
           const Spacer(),
           Padding(
-            padding: EdgeInsets.fromLTRB(0, 12, screenWidth * 0.06, 0),
+            padding: EdgeInsets.fromLTRB(0.w, 12.h, 20.w, 0.h),
             child: SvgPicture.asset(
               'assets/light.svg',
-              height: 38,
+              height: 38.h,
             ),
           ),
         ],

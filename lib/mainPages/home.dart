@@ -5,11 +5,11 @@ import 'package:spence/buttons/recordbutton.dart';
 import 'package:spence/widgets/budgetdisplay.dart';
 import 'package:spence/widgets/dailyexpenses.dart';
 import 'package:spence/widgets/header.dart';
-
 import '../otherPages/allexpenses.dart';
 import './analysis.dart';
 import './reports.dart';
 import './recurring.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -23,52 +23,68 @@ class HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Get screen dimensions
     final screenHeight = MediaQuery.of(context).size.height;
     final screenWidth = MediaQuery.of(context).size.width;
 
+    // Define responsive spacing using ScreenUtil
     double spacingHeight;
     double budgetSpacing;
     double buttonSpacing;
 
-    // Adjust spacings based on screen height
     if (screenHeight > 800) {
-      spacingHeight = 55;
-      budgetSpacing = 40;
-      buttonSpacing = 20;
+      spacingHeight = 55.h;
+      budgetSpacing = 40.h;
+      buttonSpacing = 20.h;
     } else if (screenHeight < 600) {
-      spacingHeight = 28;
-      budgetSpacing = 30;
-      buttonSpacing = 20;
+      spacingHeight = 28.h;
+      budgetSpacing = 30.h;
+      buttonSpacing = 20.h;
     } else {
-      spacingHeight = 10;
-      budgetSpacing = 15;
-      buttonSpacing = 15;
+      spacingHeight = 10.h;
+      budgetSpacing = 15.h;
+      buttonSpacing = 15.h;
     }
 
-    final List<Widget> screens = [
-      Column(
-        children: [
-          Header(screenWidth: screenWidth),
-          SizedBox(height: spacingHeight),
-          const BudgetDisplay(),
-          SizedBox(height: budgetSpacing),
-          const DailyExpenses(),
-          Spacer(), // Ensures that the buttons are pushed to the bottom
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: screenWidth * 0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                ImageRecordButton(onPressed: () {}),
-                SizedBox(width: screenWidth * 0.03),
-                RecordExpenseButton(onPressed: () {
+    // Build the primary home screen content
+    final Widget homeContent = Column(
+      children: [
+        const Header(),
+        SizedBox(height: spacingHeight),
+        const BudgetDisplay(),
+        SizedBox(height: budgetSpacing),
+        const DailyExpenses(),
+        const Spacer(), // Pushes the buttons to the bottom when content overflows
+        Padding(
+          padding: EdgeInsets.symmetric(horizontal: 0.w),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              ImageRecordButton(onPressed: () {}),
+              SizedBox(width: screenWidth * 0.03),
+              RecordExpenseButton(
+                onPressed: () {
                   Navigator.of(context).pushNamed('/addexpense');
-                }),
-              ],
-            ),
+                },
+              ),
+            ],
           ),
-          SizedBox(height: buttonSpacing), // Adjust spacing below buttons
-        ],
+        ),
+        SizedBox(height: buttonSpacing),
+      ],
+    );
+
+    // Wrap the content in a LayoutBuilder to conditionally scroll if needed
+    final List<Widget> screens = [
+      LayoutBuilder(
+        builder: (context, constraints) {
+          return SingleChildScrollView(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: constraints.maxHeight),
+              child: IntrinsicHeight(child: homeContent),
+            ),
+          );
+        },
       ),
       const AnalysisScreen(),
       const ReportsScreen(),
@@ -78,15 +94,12 @@ class HomeScreenState extends State<HomeScreen> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF2F2F2),
-      body: screens[_currentIndex], // Ensure we're accessing a valid screen
-
+      body: screens[_currentIndex],
       bottomNavigationBar: CustomNavigationBar(
-        currentIndex: _currentIndex, // Ensure valid currentIndex (0 to 3)
+        currentIndex: _currentIndex,
         onTap: (int index) {
           setState(() {
-            if (index >= 0 && index < 4) {  // Ensure the index is within valid range
-              _currentIndex = index;
-            }
+            _currentIndex = index;
           });
         },
       ),
