@@ -41,9 +41,9 @@ class HomeScreenState extends State<HomeScreen> {
       budgetSpacing = 30.h;
       buttonSpacing = 20.h;
     } else {
-      spacingHeight = 10.h;
-      budgetSpacing = 15.h;
-      buttonSpacing = 15.h;
+      spacingHeight = 70.h;
+      budgetSpacing = 70.h;
+      buttonSpacing = 20.h;
     }
 
     // Build the primary home screen content

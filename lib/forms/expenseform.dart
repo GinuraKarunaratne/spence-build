@@ -242,7 +242,7 @@ class ExpenseFormState extends State<ExpenseForm> {
               '* You can leave Expense Date empty to record today. Recorded expenses can\'t be undone and will be continued for the rest of the month.',
               textAlign: TextAlign.justify,
               style: GoogleFonts.poppins(
-                color: Colors.black38,
+                color: const Color.fromRGBO(0, 0, 0, 0.38),
                 fontSize: 9,
                 fontWeight: FontWeight.w300,
               ),
