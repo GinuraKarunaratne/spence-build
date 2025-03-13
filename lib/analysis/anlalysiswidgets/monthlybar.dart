@@ -57,7 +57,7 @@ class MonthlyBarWidget extends StatelessWidget {
             ),
           ),
         ),
-        SizedBox(height: 40.h),
+        SizedBox(height: 20.h),
       ],
     );
   }
@@ -65,6 +65,7 @@ class MonthlyBarWidget extends StatelessWidget {
   Widget _buildBarChart(List<double> monthlyExpenses) {
     double maxExpense = monthlyExpenses.reduce((a, b) => a > b ? a : b);
     maxExpense = maxExpense > 0 ? maxExpense : 1; // Avoid division by zero
+    int currentMonth = DateTime.now().month - 1;
 
     return Column(
       children: [
@@ -73,6 +74,27 @@ class MonthlyBarWidget extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: List.generate(12, (index) {
             double barHeight = (monthlyExpenses[index] / maxExpense) * 145.h;
+            Color barColor = index == currentMonth
+                ? Colors.transparent
+                : const Color(0xFFF5FCCF);
+            
+            BoxDecoration decoration = index == currentMonth
+                ? BoxDecoration(
+                    borderRadius: BorderRadius.circular(60.r),
+                    gradient: const LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Color(0xFFCCF20D),
+                        Color(0xFFBBE000),
+                      ],
+                    ),
+                  )
+                : BoxDecoration(
+                    color: barColor,
+                    borderRadius: BorderRadius.circular(60.r),
+                  );
+
             return monthlyExpenses[index] == 0
                 ? Container(
                     width: 19.w,
@@ -85,17 +107,7 @@ class MonthlyBarWidget extends StatelessWidget {
                 : Container(
                     width: 19.w,
                     height: barHeight,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(60.r),
-                      gradient: const LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          Color(0xFFCCF20D),
-                          Color(0xFFBBE000),
-                        ],
-                      ),
-                    ),
+                    decoration: decoration,
                   );
           }),
         ),

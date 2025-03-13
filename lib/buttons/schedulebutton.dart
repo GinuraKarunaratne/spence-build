@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class ScheduleButton extends StatelessWidget {
@@ -13,7 +14,7 @@ class ScheduleButton extends StatelessWidget {
       style: ElevatedButton.styleFrom(
         elevation: 0,
         backgroundColor: Color(0xFFCCF20D),
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 15),
+        padding: EdgeInsets.symmetric(horizontal: 18.w, vertical: 15.h),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(700),
         ),
@@ -26,12 +27,12 @@ class ScheduleButton extends StatelessWidget {
             size: 18,
             color: Color(0xFF1C1B1F),
           ),
-          const SizedBox(width: 7),
+          SizedBox(width: 7.w),
           Text(
             'Schedule Expense',
             style: GoogleFonts.poppins(
               color: Colors.black,
-              fontSize: 11,
+              fontSize: 11.sp,
               fontWeight: FontWeight.w400,
             ),
           ),

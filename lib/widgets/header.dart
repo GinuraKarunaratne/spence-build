@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:spence/otherPages/notifications.dart';
 
 class Header extends StatelessWidget {
   const Header({super.key});
@@ -20,18 +21,25 @@ class Header extends StatelessWidget {
           ),
           const Spacer(),
           Padding(
-            padding: EdgeInsets.fromLTRB(40.w, 12.h, 0.w, 0.h), 
+            padding: EdgeInsets.fromLTRB(40.w, 12.h, 0.w, 0.h),
             child: Container(
               width: 38.w,
               height: 38.w,
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 shape: BoxShape.circle,
                 color: Colors.white,
               ),
               child: IconButton(
-                icon: Icon(Icons.notifications_outlined, size: 20.w, color: Colors.black),
+                icon: Icon(
+                  Icons.notifications_outlined,
+                  size: 20.w,
+                  color: Colors.black,
+                ),
                 onPressed: () {
-                  
+                  // Open Notifications page with default transition
+                  Navigator.of(context).push(
+                    MaterialPageRoute(builder: (context) => const Notifications()),
+                  );
                 },
               ),
             ),

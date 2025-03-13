@@ -61,7 +61,7 @@ class HomeScreenState extends State<HomeScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               ImageRecordButton(onPressed: () {}),
-              SizedBox(width: screenWidth * 0.03),
+              SizedBox(width: screenWidth * 0.03.w),
               RecordExpenseButton(
                 onPressed: () {
                   Navigator.of(context).pushNamed('/addexpense');

@@ -46,10 +46,12 @@ class WeeklyBarWidget extends StatelessWidget {
                     ),
                   );
                 }
-                if (snapshot.hasError)
+                if (snapshot.hasError) {
                   return Center(child: Text('Error: ${snapshot.error}'));
-                if (!snapshot.hasData || snapshot.data!.isEmpty)
+                }
+                if (!snapshot.hasData || snapshot.data!.isEmpty) {
                   return const Center(child: Text('No data available'));
+                }
 
                 final List<double> weeklyExpenses = snapshot.data!;
                 return _buildBarChart(weeklyExpenses);
@@ -57,7 +59,7 @@ class WeeklyBarWidget extends StatelessWidget {
             ),
           ),
         ),
-        SizedBox(height: 40.h),
+        SizedBox(height: 20.h),
       ],
     );
   }
@@ -65,7 +67,9 @@ class WeeklyBarWidget extends StatelessWidget {
   Widget _buildBarChart(List<double> weeklyExpenses) {
     double maxExpense = weeklyExpenses.isNotEmpty
         ? weeklyExpenses.reduce((a, b) => a > b ? a : b)
-        : 1; // Avoid division by zero if there are no expenses
+        : 1;
+
+    int activeWeekIndex = _getCurrentWeekIndex();
 
     return Column(
       children: [
@@ -77,7 +81,7 @@ class WeeklyBarWidget extends StatelessWidget {
             double expense = entry.value;
             double barHeight = (expense / maxExpense) * 145.h;
 
-            return _buildBar(expense, barHeight, index);
+            return _buildBar(expense, barHeight, index, activeWeekIndex);
           }).toList(),
         ),
         SizedBox(height: 12.h),
@@ -98,8 +102,9 @@ class WeeklyBarWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildBar(double expense, double barHeight, int index) {
-    bool isCurrentWeek = index == 0;
+  Widget _buildBar(
+      double expense, double barHeight, int index, int activeWeekIndex) {
+    bool isCurrentWeek = index == activeWeekIndex;
 
     return expense == 0
         ? Container(
@@ -115,76 +120,90 @@ class WeeklyBarWidget extends StatelessWidget {
             height: barHeight,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(60.r),
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: isCurrentWeek
-                    ? [const Color(0xFFF5FCCF), const Color(0xFFF5FCCF)]
-                    : [const Color(0xFFCCF20D), const Color(0xFFBBE000)],
-              ),
+              gradient: isCurrentWeek
+                  ? const LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [Color(0xFFCCF20D), Color(0xFFBBE000)],
+                    )
+                  : const LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [Color(0xFFF5FCCF), Color(0xFFF5FCCF)],
+                    ),
             ),
           );
   }
 
   Stream<List<double>> _getWeeklyExpensesByWeek() {
-  final userId = FirebaseAuth.instance.currentUser?.uid;
-  if (userId == null) return Stream.value(List.filled(5, 0.0));
+    final userId = FirebaseAuth.instance.currentUser?.uid;
+    if (userId == null) return Stream.value(List.filled(5, 0.0));
 
-  final now = DateTime.now();
-  final int currentYear = now.year;
-  final int currentMonth = now.month;
+    final now = DateTime.now();
+    final int currentYear = now.year;
+    final int currentMonth = now.month;
 
-  // Find the first Monday of the month
-  DateTime firstDayOfMonth = DateTime(currentYear, currentMonth, 1);
-  DateTime firstMondayOfMonth = firstDayOfMonth.add(
-    Duration(days: (firstDayOfMonth.weekday == 1) ? 0 : (8 - firstDayOfMonth.weekday))
-  );
+    DateTime firstDayOfMonth = DateTime(currentYear, currentMonth, 1);
+    DateTime firstMondayOfMonth = firstDayOfMonth.add(Duration(
+        days: (firstDayOfMonth.weekday == 1)
+            ? 0
+            : (8 - firstDayOfMonth.weekday)));
 
-  // Calculate week start dates (max 5 weeks)
-  List<DateTime> weekStartDates = [];
-  DateTime weekStart = firstMondayOfMonth;
-  while (weekStart.month == currentMonth) {
-    weekStartDates.add(weekStart);
-    weekStart = weekStart.add(const Duration(days: 7));
-  }
+    List<DateTime> weekStartDates = [];
+    DateTime weekStart = firstMondayOfMonth;
+    while (weekStart.month == currentMonth) {
+      weekStartDates.add(weekStart);
+      weekStart = weekStart.add(const Duration(days: 7));
+    }
 
-  // Ensure exactly 5 bars, even if only 4 weeks exist
-  while (weekStartDates.length < 5) {
-    weekStartDates.add(weekStartDates.last); // Duplicate last valid week
-  }
+    while (weekStartDates.length < 5) {
+      weekStartDates.add(weekStartDates.last);
+    }
 
-  List<double> weeklyExpenses = List.filled(5, 0.0);
+    List<double> weeklyExpenses = List.filled(5, 0.0);
 
-  return FirebaseFirestore.instance
-      .collection('expenses')
-      .where('userId', isEqualTo: userId)
-      .where('date', isGreaterThanOrEqualTo: firstDayOfMonth)
-      .snapshots()
-      .map((querySnapshot) {
-    for (var doc in querySnapshot.docs) {
-      final expense = doc.data();
-      final expenseAmount = expense['amount'] as double?;
-      final expenseDate = (expense['date'] as Timestamp?)?.toDate();
+    return FirebaseFirestore.instance
+        .collection('expenses')
+        .where('userId', isEqualTo: userId)
+        .where('date', isGreaterThanOrEqualTo: firstDayOfMonth)
+        .snapshots()
+        .map((querySnapshot) {
+      for (var doc in querySnapshot.docs) {
+        final expense = doc.data();
+        final expenseAmount = expense['amount'] as double?;
+        final expenseDate = (expense['date'] as Timestamp?)?.toDate();
 
-      if (expenseAmount != null && expenseDate != null) {
-        for (int i = 0; i < 5; i++) {
-          DateTime weekStart = weekStartDates[i];
-          DateTime weekEnd = (i == weekStartDates.length - 1)
-              ? DateTime(currentYear, currentMonth + 1, 0) // Trimmed last week
-              : weekStart.add(const Duration(days: 6)); // Normal week
+        if (expenseAmount != null && expenseDate != null) {
+          for (int i = 0; i < 5; i++) {
+            DateTime weekStart = weekStartDates[i];
+            DateTime weekEnd = (i == weekStartDates.length - 1)
+                ? DateTime(currentYear, currentMonth + 1, 0)
+                : weekStart.add(const Duration(days: 6));
 
-          if (expenseDate.isAfter(weekStart.subtract(const Duration(seconds: 1))) &&
-              expenseDate.isBefore(weekEnd.add(const Duration(seconds: 1)))) {
-            weeklyExpenses[i] += expenseAmount;
-            break;
+            if (expenseDate
+                    .isAfter(weekStart.subtract(const Duration(seconds: 1))) &&
+                expenseDate.isBefore(weekEnd.add(const Duration(seconds: 1)))) {
+              weeklyExpenses[i] += expenseAmount;
+              break;
+            }
           }
         }
       }
-    }
+      return weeklyExpenses;
+    });
+  }
 
-    return weeklyExpenses;
-  });
-}
+  int _getCurrentWeekIndex() {
+    final now = DateTime.now();
+    final firstDayOfMonth = DateTime(now.year, now.month, 1);
+    final firstMonday = firstDayOfMonth.add(
+      Duration(
+          days: (firstDayOfMonth.weekday == DateTime.monday)
+              ? 0
+              : (8 - firstDayOfMonth.weekday)),
+    );
 
-
+    int weekIndex = ((now.difference(firstMonday).inDays) ~/ 7).clamp(0, 4);
+    return weekIndex;
+  }
 }

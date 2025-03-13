@@ -17,62 +17,66 @@ class AnalysisScreen extends StatelessWidget {
     return Scaffold(
       body: Stack(
         children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Header(),
-              SizedBox(height: 30.h),
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: 30.w),
-                child: Text(
-                  'Basic Analysis',
-                  style: GoogleFonts.poppins(
-                    fontSize: 17.sp,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.black,
+          // Scrollable content
+          SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Header(),
+                SizedBox(height: 30.h),
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 30.w),
+                  child: Text(
+                    'Basic Analysis',
+                    style: GoogleFonts.poppins(
+                      fontSize: 17.sp,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.black,
+                    ),
                   ),
                 ),
-              ),
-              SizedBox(height: 20.h),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  _buildSquareIcon(
-                    icon: Icons.event_outlined,
-                    onPressed: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                            builder: (context) => const DailyAnalysis()),
-                      );
-                    },
-                  ),
-                  SizedBox(width: 12.w),
-                  _buildSquareIcon(
-                    icon: Icons.date_range_outlined,
-                    onPressed: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                            builder: (context) => const WeeklyAnalysis()),
-                      );
-                    },
-                  ),
-                  SizedBox(width: 12.w),
-                  _buildSquareIcon(
-                    icon: Icons.calendar_month_outlined,
-                    onPressed: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                            builder: (context) => const MonthlyAnalysis()),
-                      );
-                    },
-                  ),
-                ],
-              ),
-              SizedBox(height: 20.h),
-              Predictive(),
-              Expanded(child: Container()),
-            ],
+                SizedBox(height: 20.h),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    _buildSquareIcon(
+                      icon: Icons.event_outlined,
+                      onPressed: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                              builder: (context) => const DailyAnalysis()),
+                        );
+                      },
+                    ),
+                    SizedBox(width: 12.w),
+                    _buildSquareIcon(
+                      icon: Icons.date_range_outlined,
+                      onPressed: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                              builder: (context) => const WeeklyAnalysis()),
+                        );
+                      },
+                    ),
+                    SizedBox(width: 12.w),
+                    _buildSquareIcon(
+                      icon: Icons.calendar_month_outlined,
+                      onPressed: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                              builder: (context) => const MonthlyAnalysis()),
+                        );
+                      },
+                    ),
+                  ],
+                ),
+                SizedBox(height: 20.h),
+                const Predictive(),
+                SizedBox(height: 90.h), // Add padding to avoid overlap with buttons
+              ],
+            ),
           ),
+          // Fixed buttons at the bottom
           Positioned(
             bottom: 20.h,
             left: 20.w,

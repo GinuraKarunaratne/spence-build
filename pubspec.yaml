@@ -13,7 +13,7 @@ dependencies:
   flutter_svg: ^2.0.16
   google_fonts: ^6.2.1
   http: ^1.2.2
-  lottie: ^3.3.0
+  lottie: ^3.3.1
   flutter_spinkit: ^5.2.1
   flutter_screenutil: ^5.9.3
   firebase_core: ^3.9.0
@@ -45,6 +45,8 @@ flutter:
     - assets/pattern.svg
     - assets/bubo.svg
     - assets/predict.svg
+    - assets/happy.svg
+    - assets/happy.json
 
 flutter_icons:
   android: true

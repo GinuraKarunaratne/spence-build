@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class Predictive extends StatelessWidget {
   const Predictive({super.key});
@@ -9,8 +10,8 @@ class Predictive extends StatelessWidget {
   Widget build(BuildContext context) {
     return Center(
       child: Container(
-        width: 330,
-        height: 395,
+        width: 330.w,
+        height: 395.h,
         padding: const EdgeInsets.symmetric(vertical: 0),
         decoration: BoxDecoration(
           color: Colors.white,
@@ -19,11 +20,11 @@ class Predictive extends StatelessWidget {
         child: Stack(
           children: [
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 25),
+              padding: EdgeInsets.symmetric(horizontal: 25.w),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const SizedBox(height: 27),
+                  SizedBox(height: 27.h),
                   Text(
                     'Predictive Analysis',
                     style: GoogleFonts.poppins(
@@ -32,7 +33,7 @@ class Predictive extends StatelessWidget {
                       color: Colors.black,
                     ),
                   ),
-                  const SizedBox(height: 15),
+                  SizedBox(height: 15.h),
                   Text(
                     'Note that this process will read your spending patterns and might take some time to generate your personalized spending analysis prediction.',
                     textAlign: TextAlign.justify,
@@ -42,11 +43,11 @@ class Predictive extends StatelessWidget {
                       color: const Color(0x60000000),
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  SizedBox(height: 16.h),
                   Align(
                     alignment: Alignment.centerRight,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                      padding: EdgeInsets.symmetric(vertical: 8.h, horizontal: 16.w),
                       decoration: BoxDecoration(
                         color: const Color(0xFFF8FDDB),
                         borderRadius: BorderRadius.circular(20),
@@ -54,7 +55,7 @@ class Predictive extends StatelessWidget {
                       child: Text(
                         'Start Analysis',
                         style: GoogleFonts.poppins(
-                          fontSize: 10,
+                          fontSize: 10.sp,
                           fontWeight: FontWeight.w400,
                           color: Colors.black,
                         ),
@@ -65,11 +66,11 @@ class Predictive extends StatelessWidget {
               ),
             ),
             Positioned(
-              bottom: 0,
-              left: 20,
+              bottom: 0.h,
+              left: 20.w,
               child: SvgPicture.asset(
                 'assets/predict.svg',
-                width: 200,
+                width: 205.w,
               ),
             ),
           ],
