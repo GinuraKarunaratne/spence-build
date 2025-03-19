@@ -2,22 +2,25 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'package:spence/otherPages/addexpense.dart';
-import 'package:spence/otherPages/addrecurring.dart';
-import './mainPages/home.dart';
-import './authPages/login.dart';
-import './authPages/signup.dart';
-import './authPages/budget.dart';
-import './mainPages/analysis.dart';
-import './mainPages/reports.dart';
-import './mainPages/recurring.dart';
-import './authPages/authcheck.dart';
-import './otherPages/allexpenses.dart';
-import './services/monthlyupdate.dart';
+import 'package:provider/provider.dart';
 import 'package:workmanager/workmanager.dart';
-import './services/recurringprocess.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'theme/theme.dart';
+import 'theme/theme_provider.dart';
+import 'otherPages/addexpense.dart';
+import 'otherPages/addrecurring.dart';
+import 'otherPages/notifications.dart';
+import 'mainPages/home.dart';
+import 'authPages/login.dart';
+import 'authPages/signup.dart';
+import 'authPages/budget.dart';
+import 'mainPages/analysis.dart';
+import 'mainPages/reports.dart';
+import 'mainPages/recurring.dart';
+import 'authPages/authcheck.dart';
+import 'otherPages/allexpenses.dart';
+import 'services/monthlyupdate.dart';
+import 'services/recurringprocess.dart';
 
 void callbackDispatcher() {
   Workmanager().executeTask((task, inputData) async {
@@ -34,6 +37,7 @@ void callbackDispatcher() {
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
+  await NotificationService.init();
 
   final User? currentUser = FirebaseAuth.instance.currentUser;
 
@@ -59,7 +63,12 @@ void main() async {
     statusBarIconBrightness: Brightness.dark,
   ));
 
-  runApp(const MyApp());
+  runApp(
+    ChangeNotifierProvider(
+      create: (_) => ThemeProvider(),
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -72,27 +81,30 @@ class MyApp extends StatelessWidget {
       minTextAdapt: true,
       splitScreenMode: true,
       builder: (context, child) {
-        return MaterialApp(
-          debugShowCheckedModeBanner: false,
-          theme: ThemeData(
-            textTheme: GoogleFonts.poppinsTextTheme(),
-            scaffoldBackgroundColor: const Color(0xFFF2F2F2),
-          ),
-          initialRoute: '/authcheck',
-          routes: {
-            '/home': (context) => const HomeScreen(),
-            '/login': (context) => const LoginScreen(),
-            '/signup': (context) => const SignupScreen(),
-            '/budget': (context) => const BudgetScreen(),
-            '/analysis': (context) => const AnalysisScreen(),
-            '/reports': (context) => const ReportsScreen(),
-            '/recurring': (context) => const RecurringScreen(),
-            '/authcheck': (context) => const AuthCheck(),
-            '/addexpense': (context) => const ExpenseScreen(),
-            '/allexpenses': (context) => const AllExpensesScreen(),
-            '/addrecurring': (context) => const AddRecurringScreen(),
+        return Consumer<ThemeProvider>(
+          builder: (context, themeProvider, child) {
+            return MaterialApp(
+              debugShowCheckedModeBanner: false,
+              theme: AppTheme.lightTheme,
+              darkTheme: AppTheme.darkTheme,
+              themeMode: themeProvider.themeMode,
+              initialRoute: '/authcheck',
+              routes: {
+                '/home': (context) => const HomeScreen(),
+                '/login': (context) => const LoginScreen(),
+                '/signup': (context) => const SignupScreen(),
+                '/budget': (context) => const BudgetScreen(),
+                '/analysis': (context) => const AnalysisScreen(),
+                '/reports': (context) => const ReportsScreen(),
+                '/recurring': (context) => const RecurringScreen(),
+                '/authcheck': (context) => const AuthCheck(),
+                '/addexpense': (context) => const ExpenseScreen(),
+                '/allexpenses': (context) => const AllExpensesScreen(),
+                '/addrecurring': (context) => const AddRecurringScreen(),
+              },
+              home: child,
+            );
           },
-          home: child,
         );
       },
     );

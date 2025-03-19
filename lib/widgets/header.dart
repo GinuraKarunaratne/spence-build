@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:spence/otherPages/notifications.dart';
+import 'package:spence/otherPages/profile.dart'; // Import ProfileScreen
 
 class Header extends StatelessWidget {
   const Header({super.key});
@@ -36,7 +37,6 @@ class Header extends StatelessWidget {
                   color: Colors.black,
                 ),
                 onPressed: () {
-                  // Open Notifications page with default transition
                   Navigator.of(context).push(
                     MaterialPageRoute(builder: (context) => const Notifications()),
                   );
@@ -47,9 +47,17 @@ class Header extends StatelessWidget {
           const Spacer(),
           Padding(
             padding: EdgeInsets.fromLTRB(0.w, 12.h, 20.w, 0.h),
-            child: SvgPicture.asset(
-              'assets/light.svg',
-              height: 38.h,
+            child: GestureDetector(
+              onTap: () {
+                // Open ProfileScreen when light.svg is pressed
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (context) => const ProfileScreen()),
+                );
+              },
+              child: SvgPicture.asset(
+                'assets/light.svg',
+                height: 38.h,
+              ),
             ),
           ),
         ],

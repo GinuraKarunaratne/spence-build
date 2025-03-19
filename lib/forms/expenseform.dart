@@ -3,21 +3,15 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
 class ExpenseForm extends StatefulWidget {
-  final void Function({
-    String? title,
-    String? amount,
-    String? category,
-    DateTime? date,
-  }) onFormDataChange;
-
   final String initialTitle;
   final String initialAmount;
+  final Future<void> Function(String title, String amount, String category, DateTime date) onSubmit;
 
   const ExpenseForm({
     super.key,
-    required this.onFormDataChange,
     this.initialTitle = '',
     this.initialAmount = '',
+    required this.onSubmit,
   });
 
   @override
@@ -25,11 +19,11 @@ class ExpenseForm extends StatefulWidget {
 }
 
 class ExpenseFormState extends State<ExpenseForm> {
-  late final TextEditingController titleController;
-  late final TextEditingController amountController;
-  late final TextEditingController dateController;
+  late TextEditingController _titleController;
+  late TextEditingController _amountController;
+  late TextEditingController _dateController;
   String _selectedCategory = 'Food & Grocery';
-  DateTime selectedDate = DateTime.now();
+  DateTime _selectedDate = DateTime.now();
 
   static const List<String> categories = [
     'Food & Grocery',
@@ -37,43 +31,42 @@ class ExpenseFormState extends State<ExpenseForm> {
     'Entertainment',
     'Recurring Payments',
     'Shopping',
-    'Other Expenses'
+    'Other Expenses',
   ];
 
   @override
   void initState() {
     super.initState();
-
-    titleController = TextEditingController(text: widget.initialTitle);
-    amountController = TextEditingController(text: widget.initialAmount);
-    dateController = TextEditingController(
-      text: DateFormat('yyyy-MM-dd').format(selectedDate),
+    _titleController = TextEditingController(text: widget.initialTitle);
+    _amountController = TextEditingController(text: widget.initialAmount);
+    _dateController = TextEditingController(
+      text: DateFormat('yyyy-MM-dd').format(_selectedDate),
     );
+  }
 
-    _triggerParentUpdate();
+  @override
+  void didUpdateWidget(covariant ExpenseForm oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.initialTitle != oldWidget.initialTitle) {
+      _titleController.text = widget.initialTitle;
+    }
+    if (widget.initialAmount != oldWidget.initialAmount) {
+      _amountController.text = widget.initialAmount;
+    }
   }
 
   @override
   void dispose() {
-    titleController.dispose();
-    amountController.dispose();
-    dateController.dispose();
+    _titleController.dispose();
+    _amountController.dispose();
+    _dateController.dispose();
     super.dispose();
-  }
-
-  void _triggerParentUpdate() {
-    widget.onFormDataChange(
-      title: titleController.text,
-      amount: amountController.text,
-      category: _selectedCategory,
-      date: selectedDate,
-    );
   }
 
   Future<void> _selectDate(BuildContext context) async {
     final DateTime? pickedDate = await showDatePicker(
       context: context,
-      initialDate: selectedDate,
+      initialDate: _selectedDate,
       firstDate: DateTime(2000),
       lastDate: DateTime(2100),
       builder: (context, child) {
@@ -93,13 +86,33 @@ class ExpenseFormState extends State<ExpenseForm> {
       },
     );
 
-    if (pickedDate != null && pickedDate != selectedDate) {
+    if (pickedDate != null && pickedDate != _selectedDate) {
       setState(() {
-        selectedDate = pickedDate;
-        dateController.text = DateFormat('yyyy-MM-dd').format(selectedDate);
-        _triggerParentUpdate();
+        _selectedDate = pickedDate;
+        _dateController.text = DateFormat('yyyy-MM-dd').format(_selectedDate);
       });
     }
+  }
+
+  // Make submit method public for external access
+  void submit() {
+    widget.onSubmit(
+      _titleController.text,
+      _amountController.text,
+      _selectedCategory,
+      _selectedDate,
+    );
+  }
+
+  // Add method to reset the form
+  void resetForm() {
+    _titleController.clear();
+    _amountController.clear();
+    setState(() {
+      _selectedCategory = 'Food & Grocery';
+      _selectedDate = DateTime.now();
+      _dateController.text = DateFormat('yyyy-MM-dd').format(_selectedDate);
+    });
   }
 
   Widget _buildInputField(
@@ -130,7 +143,6 @@ class ExpenseFormState extends State<ExpenseForm> {
                 suffixIcon: suffixIcon,
               ),
               style: GoogleFonts.poppins(fontSize: 10, color: Colors.black),
-              onChanged: (_) => _triggerParentUpdate(),
               onTap: onTap,
             ),
           ),
@@ -159,7 +171,6 @@ class ExpenseFormState extends State<ExpenseForm> {
               onChanged: (newValue) {
                 setState(() {
                   _selectedCategory = newValue!;
-                  _triggerParentUpdate();
                 });
               },
               items: categories.map((value) {
@@ -204,8 +215,8 @@ class ExpenseFormState extends State<ExpenseForm> {
       decoration: ShapeDecoration(
         color: Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        shadows: [
-          BoxShadow(color: const Color.fromARGB(255, 209, 209, 209), blurRadius: 1),
+        shadows: const [
+          BoxShadow(color: Color.fromARGB(255, 209, 209, 209), blurRadius: 1),
         ],
       ),
       child: Padding(
@@ -214,7 +225,7 @@ class ExpenseFormState extends State<ExpenseForm> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              ' Record Expense',
+              'Record Expense',
               style: GoogleFonts.poppins(
                 color: Colors.black,
                 fontSize: 17,
@@ -222,16 +233,16 @@ class ExpenseFormState extends State<ExpenseForm> {
               ),
             ),
             const SizedBox(height: 30),
-            _buildInputField('Expense Title', TextInputType.text, controller: titleController),
+            _buildInputField('Expense Title', TextInputType.text, controller: _titleController),
             const SizedBox(height: 12),
-            _buildInputField('Expense Amount', TextInputType.number, controller: amountController),
+            _buildInputField('Expense Amount', TextInputType.number, controller: _amountController),
             const SizedBox(height: 12),
             _buildCategoryField(),
             const SizedBox(height: 12),
             _buildInputField(
               'Expense Date',
               TextInputType.none,
-              controller: dateController,
+              controller: _dateController,
               isReadOnly: true,
               suffixIcon: const Icon(Icons.calendar_month_outlined, size: 15, color: Colors.black),
               onTap: () => _selectDate(context),

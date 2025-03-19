@@ -2,137 +2,152 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:spence/buttons/imagerecordbutton.dart';
 import 'package:spence/buttons/recordbutton.dart';
+import 'package:spence/widgets/budgetdisplay.dart';
+import 'package:loading_indicator/loading_indicator.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:spence/forms/expenseform.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:spence/widgets/budgetdisplay.dart';
-import 'package:loading_indicator/loading_indicator.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart'; // Import ScreenUtil
+import 'package:image_picker/image_picker.dart';
+import 'package:spence/services/ocrservice.dart';
 
 class ExpenseScreen extends StatefulWidget {
   const ExpenseScreen({super.key});
 
   @override
-  ExpenseScreenState createState() => ExpenseScreenState();
+  _ExpenseScreenState createState() => _ExpenseScreenState();
 }
 
-class ExpenseScreenState extends State<ExpenseScreen> {
-  // Variables to hold form data
-  String expenseTitle = '';
-  String expenseAmount = '';
-  String expenseCategory = 'Food & Grocery';
-  DateTime expenseDate = DateTime.now();
-  bool _isLoading = false; // Loading state
+class _ExpenseScreenState extends State<ExpenseScreen> {
+  bool _isLoading = false;
+  Map<String, String>? _ocrData;
+  late final OcrService _ocrService;
+  // Add a GlobalKey to access the ExpenseForm state
+  final _formKey = GlobalKey<ExpenseFormState>();
 
-  // Method to handle form updates
-  void _updateFormData({
-    String? title,
-    String? amount,
-    String? category,
-    DateTime? date,
-  }) {
-    // Use post-frame callback to schedule the state update after the build phase
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      setState(() {
-        if (title != null) expenseTitle = title;
-        if (amount != null) expenseAmount = amount;
-        if (category != null) expenseCategory = category;
-        if (date != null) expenseDate = date;
-      });
-    });
+  @override
+  void initState() {
+    super.initState();
+    _ocrService = OcrService();
   }
 
-  // Method to handle expense submission
-  Future<void> _submitExpense() async {
-    if (expenseTitle.isEmpty || expenseAmount.isEmpty) {
+  @override
+  void dispose() {
+    _ocrService.dispose();
+    super.dispose();
+  }
+
+  Future<void> _captureAndProcessImage() async {
+    final picker = ImagePicker();
+    final XFile? image = await picker.pickImage(source: ImageSource.camera);
+    if (image == null) return;
+
+    setState(() => _isLoading = true);
+    try {
+      final extractedData = await _ocrService.processImage(image.path);
+      if (extractedData != null) {
+        setState(() {
+          _ocrData = extractedData;
+        });
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Couldn’t extract data from the bill')),
+        );
+      }
+    } catch (e) {
+      debugPrint("OCR Error: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to process image')),
+      );
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _submitExpense(String title, String amount, String category, DateTime date) async {
+    if (title.isEmpty || amount.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please fill in all required fields')),
       );
       return;
     }
-    setState(() {
-      _isLoading = true;
-    });
-    final userId = FirebaseAuth.instance.currentUser?.uid; // Get current user ID
+
+    final userId = FirebaseAuth.instance.currentUser?.uid;
     if (userId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('User not logged in')),
       );
-      setState(() {
-        _isLoading = false;
-      });
       return;
     }
-    final double expenseAmountValue = double.parse(expenseAmount); // Parse the expense amount
+
     try {
-      // 1. Add Expense to the `expenses` Collection
+      final double expenseAmountValue = double.parse(amount);
+      final batch = FirebaseFirestore.instance.batch();
+
       final expenseDoc = FirebaseFirestore.instance.collection('expenses').doc();
-      await expenseDoc.set({
+      batch.set(expenseDoc, {
         'amount': expenseAmountValue,
-        'category': expenseCategory,
-        'date': expenseDate,
-        'title': expenseTitle,
+        'category': category,
+        'date': date,
+        'title': title,
         'userId': userId,
-        'createdAt': Timestamp.now(),
+        'createdAt': FieldValue.serverTimestamp(),
       });
-      // 2. Update the `totExpenses` Collection (increment count and total_expense)
-      final totExpensesDoc = FirebaseFirestore.instance.collection('users').doc(userId).collection('totExpenses').doc('summary');
-      final totExpensesSnapshot = await totExpensesDoc.get();
-      if (totExpensesSnapshot.exists) {
-        final currentCount = totExpensesSnapshot['count'] ?? 0;
-        final currentTotalExpense = totExpensesSnapshot['total_expense'] ?? 0.0;
-        await totExpensesDoc.update({
-          'count': currentCount + 1,
-          'total_expense': currentTotalExpense + expenseAmountValue,
-        });
-      } else {
-        // If the document does not exist, create it
-        await totExpensesDoc.set({
-          'count': 1,
-          'total_expense': expenseAmountValue,
-        });
-      }
-      // 3. Update the `budgets` Collection (update used_budget and remaining_budget)
-      final budgetDoc = FirebaseFirestore.instance.collection('budgets').doc(userId);  // Reference to the `budgets` collection
+
+      final totExpensesDoc = FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .collection('totExpenses')
+          .doc('summary');
+      batch.set(totExpensesDoc, {
+        'count': FieldValue.increment(1),
+        'total_expense': FieldValue.increment(expenseAmountValue),
+      }, SetOptions(merge: true));
+
+      final budgetDoc = FirebaseFirestore.instance.collection('budgets').doc(userId);
       final budgetSnapshot = await budgetDoc.get();
       if (budgetSnapshot.exists) {
-        final usedBudget = budgetSnapshot['used_budget'] ?? 0.0;
-        final remainingBudget = budgetSnapshot['remaining_budget'] ?? 0.0;
-        // Update used_budget by adding the expense amount
-        await budgetDoc.update({
-          'used_budget': usedBudget + expenseAmountValue,
-          'remaining_budget': remainingBudget - expenseAmountValue,
+        batch.update(budgetDoc, {
+          'used_budget': FieldValue.increment(expenseAmountValue),
+          'remaining_budget': FieldValue.increment(-expenseAmountValue),
         });
       } else {
-        // If the document does not exist, create it (you could also initialize it based on default values)
-        await budgetDoc.set({
+        batch.set(budgetDoc, {
           'used_budget': expenseAmountValue,
-          'remaining_budget': 0.0, // This assumes the initial remaining_budget is not set
+          'remaining_budget': -expenseAmountValue,
+          'total_budget': 0.0,
         });
       }
-      // Reset form fields after submission
-      setState(() {
-        expenseTitle = '';
-        expenseAmount = '';
-        expenseCategory = 'Food & Grocery';
-        expenseDate = DateTime.now();
-      });
+
+      await batch.commit();
+
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Expense recorded successfully!')),
       );
+      setState(() {
+        _ocrData = null;
+      });
+    } on FormatException {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Invalid amount format')),
+      );
     } catch (e) {
+      debugPrint("Submit Expense Error: $e");
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Failed to record expense. Please try again.')),
       );
-    } finally {
-      setState(() {
-        _isLoading = false;
-      });
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final arguments = ModalRoute.of(context)?.settings.arguments as Map<String, String>?;
+    final initialTitle = arguments?['initialTitle'] ?? '';
+    final initialAmount = arguments?['initialAmount'] ?? '';
+
+    final formInitialTitle = _ocrData?['title'] ?? initialTitle;
+    final formInitialAmount = _ocrData?['amount'] ?? initialAmount;
+
     return Scaffold(
       backgroundColor: const Color(0xFFF2F2F2),
       body: SafeArea(
@@ -146,27 +161,26 @@ class ExpenseScreenState extends State<ExpenseScreen> {
                     child: Row(
                       children: [
                         Padding(
-                          padding: EdgeInsets.fromLTRB(25.w, 12.h, 0.w, 0.h),
+                          padding: EdgeInsets.fromLTRB(25.w, 12.h, 0, 0),
                           child: SvgPicture.asset(
                             'assets/spence.svg',
-                            height: 14.h, 
+                            height: 14.h,
                           ),
                         ),
                         const Spacer(),
                         Padding(
-                          padding: EdgeInsets.fromLTRB(40.w, 12.h, 20.w, 0.h),
+                          padding: EdgeInsets.fromLTRB(40.w, 12.h, 20.w, 0),
                           child: Container(
                             width: 38.w,
                             height: 38.w,
-                            decoration: BoxDecoration(
+                            decoration: const BoxDecoration(
                               shape: BoxShape.circle,
                               color: Colors.white,
                             ),
                             child: IconButton(
-                              icon: Icon(Icons.arrow_back_rounded, size: 20.w, color: Colors.black),
-                              onPressed: () {
-                                Navigator.of(context).pop();
-                              },
+                              icon: Icon(Icons.arrow_back_rounded,
+                                  size: 20.w, color: Colors.black),
+                              onPressed: () => Navigator.of(context).pop(),
                             ),
                           ),
                         ),
@@ -175,11 +189,21 @@ class ExpenseScreenState extends State<ExpenseScreen> {
                   ),
                   SizedBox(height: 70.h),
                   const BudgetDisplay(),
-                  SizedBox(height: 80.h), 
+                  SizedBox(height: 80.h),
                   ExpenseForm(
-                    onFormDataChange: _updateFormData,
+                    key: _formKey, // Assign the GlobalKey here
+                    initialTitle: formInitialTitle,
+                    initialAmount: formInitialAmount,
+                    onSubmit: (title, amount, category, date) async {
+                      setState(() => _isLoading = true);
+                      try {
+                        await _submitExpense(title, amount, category, date);
+                        _formKey.currentState?.resetForm(); // Reset form after successful submission
+                      } finally {
+                        setState(() => _isLoading = false);
+                      }
+                    },
                   ),
-                  SizedBox(height: 0.h), 
                 ],
               ),
             ),
@@ -190,11 +214,11 @@ class ExpenseScreenState extends State<ExpenseScreen> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    ImageRecordButton(onPressed: () {
-                      
+                    ImageRecordButton(onPressed: _captureAndProcessImage),
+                    SizedBox(width: 11.w),
+                    RecordExpenseButton(onPressed: () {
+                      _formKey.currentState?.submit(); // Trigger form submission
                     }),
-                    SizedBox(width: 11.w), 
-                    RecordExpenseButton(onPressed: _submitExpense),
                   ],
                 ),
               ),
