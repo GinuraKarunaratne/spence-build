@@ -4,6 +4,9 @@ import 'package:spence/buttons/confirmbudget.dart';
 import 'package:spence/forms/budgetform.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:provider/provider.dart';
+import 'package:spence/theme/theme.dart';
+import 'package:spence/theme/theme_provider.dart';
 
 class BudgetScreen extends StatefulWidget {
   const BudgetScreen({super.key});
@@ -29,39 +32,42 @@ class BudgetScreenState extends State<BudgetScreen> {
   }
 
   Future<void> _saveBudgetToFirestore(BuildContext context) async {
-  try {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user != null) {
-      double remainingBudget = _budgetAmount;
-      double usedBudget = 0.0;
-      await FirebaseFirestore.instance
-          .collection('budgets')
-          .doc(user.uid)
-          .set({
-        'monthly_budget': _budgetAmount,
-        'remaining_budget': remainingBudget,
-        'used_budget': usedBudget,
-        'currency': _currency,
-        'created_at': FieldValue.serverTimestamp(),
-      });
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        double remainingBudget = _budgetAmount;
+        double usedBudget = 0.0;
+        await FirebaseFirestore.instance.collection('budgets').doc(user.uid).set({
+          'monthly_budget': _budgetAmount,
+          'remaining_budget': remainingBudget,
+          'used_budget': usedBudget,
+          'currency': _currency,
+          'created_at': FieldValue.serverTimestamp(),
+        });
 
-      Navigator.pushReplacementNamed(context, '/home');
-    } else {
-      _showErrorSnackbar(context, 'User not logged in.');
+        Navigator.pushReplacementNamed(context, '/home');
+      } else {
+        _showErrorSnackbar(context, 'User not logged in.');
+      }
+    } catch (e) {
+      _showErrorSnackbar(context, 'Failed to save budget: $e');
     }
-  } catch (e) {
-    _showErrorSnackbar(context, 'Failed to save budget: $e');
   }
-}
-
 
   // Display error messages as SnackBar
   void _showErrorSnackbar(BuildContext context, String message) {
+    final themeMode = Provider.of<ThemeProvider>(context, listen: false).themeMode;
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.red, // Red background
-        duration: const Duration(seconds: 2), // Set duration to 2 seconds
+        content: Text(
+          message,
+          style: TextStyle(
+            color: AppColors.whiteColor[themeMode], // Ensure text is readable on error background
+          ),
+        ),
+        backgroundColor: AppColors.errorColor[themeMode],
+        duration: const Duration(seconds: 2),
       ),
     );
   }
@@ -130,8 +136,11 @@ class BudgetScreenState extends State<BudgetScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final themeMode = themeProvider.themeMode;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF2F2F2),
+      backgroundColor: AppColors.primaryBackground[themeMode],
       body: _buildBody(context),
     );
   }

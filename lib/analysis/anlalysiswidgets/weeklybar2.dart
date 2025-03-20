@@ -4,12 +4,17 @@ import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:provider/provider.dart';
+import 'package:spence/theme/theme.dart';
+import 'package:spence/theme/theme_provider.dart';
 
 class WeeklyBar2Widget extends StatelessWidget {
   const WeeklyBar2Widget({super.key, required List<double> weeklyExpenses});
 
   @override
   Widget build(BuildContext context) {
+    final themeMode = Provider.of<ThemeProvider>(context).themeMode;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -20,29 +25,45 @@ class WeeklyBar2Widget extends StatelessWidget {
             height: 240.h,
             padding: EdgeInsets.fromLTRB(16.w, 60.h, 16.w, 0.h),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: AppColors.whiteColor[themeMode],
               borderRadius: BorderRadius.circular(12.r),
             ),
             child: StreamBuilder<List<double>>(
               stream: _getDailyExpenses(),
-              builder: (context, snapshot) {
+              builder: (BuildContext streamContext, snapshot) {
+                final themeMode = Provider.of<ThemeProvider>(streamContext).themeMode;
+
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(
+                  return Center(
                     child: SpinKitThreeBounce(
-                      color: Color.fromARGB(255, 204, 242, 13),
+                      color: AppColors.accentColor[themeMode],
                       size: 40.0,
                     ),
                   );
                 }
                 if (snapshot.hasError) {
-                  return Center(child: Text('Error: \${snapshot.error}'));
+                  return Center(
+                    child: Text(
+                      'Error: ${snapshot.error}',
+                      style: GoogleFonts.poppins(
+                        color: AppColors.errorColor[themeMode],
+                      ),
+                    ),
+                  );
                 }
                 if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                  return const Center(child: Text('No data available'));
+                  return Center(
+                    child: Text(
+                      'No data available',
+                      style: GoogleFonts.poppins(
+                        color: AppColors.secondaryTextColor[themeMode],
+                      ),
+                    ),
+                  );
                 }
 
                 final List<double> dailyExpenses = snapshot.data!;
-                return _buildBarChart(dailyExpenses);
+                return _buildBarChart(streamContext, dailyExpenses);
               },
             ),
           ),
@@ -52,7 +73,9 @@ class WeeklyBar2Widget extends StatelessWidget {
     );
   }
 
-  Widget _buildBarChart(List<double> dailyExpenses) {
+  Widget _buildBarChart(BuildContext context, List<double> dailyExpenses) {
+    final themeMode = Provider.of<ThemeProvider>(context).themeMode;
+
     double maxExpense = dailyExpenses.isNotEmpty
         ? dailyExpenses.reduce((a, b) => a > b ? a : b)
         : 1;
@@ -73,27 +96,34 @@ class WeeklyBar2Widget extends StatelessWidget {
               children: [
                 Container(
                   width: 34.w,
-                  height: barHeight > 0
-                      ? barHeight
-                      : 10.h,
+                  height: expense > 0 ? barHeight : 10.h,
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(60.r),
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        Color(0xFFCCF20D),
-                        Color(0xFFBBE000),
-                      ],
-                    ),
+                    gradient: expense > 0
+                        ? LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              AppColors.barColor[themeMode]!,
+                              AppColors.barGradientEnd[themeMode]!,
+                            ],
+                          )
+                        : LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              AppColors.customLightGray[themeMode]!,
+                              AppColors.customLightGray[themeMode]!,
+                            ],
+                          ),
                   ),
                 ),
                 SizedBox(height: 8.h),
                 Text(
                   days[index],
                   style: GoogleFonts.poppins(
-                    fontSize: 8.sp, // Reduced font size for day names
-                    color: Colors.grey[600],
+                    fontSize: 8.sp,
+                    color: AppColors.logoutDialogCancelColor[themeMode],
                   ),
                 ),
               ],
@@ -109,8 +139,7 @@ class WeeklyBar2Widget extends StatelessWidget {
     if (userId == null) return Stream.value(List.filled(7, 0.0));
 
     final now = DateTime.now();
-    final weekStart =
-        now.subtract(Duration(days: now.weekday - 1)); // Monday start
+    final weekStart = now.subtract(Duration(days: now.weekday - 1)); // Monday start
 
     List<double> dailyExpenses = List.filled(7, 0.0);
 
@@ -120,6 +149,7 @@ class WeeklyBar2Widget extends StatelessWidget {
         .where('date', isGreaterThanOrEqualTo: weekStart)
         .snapshots()
         .map((querySnapshot) {
+      dailyExpenses = List.filled(7, 0.0); // Reset to avoid accumulation
       for (var doc in querySnapshot.docs) {
         final expense = doc.data();
         final expenseAmount = expense['amount'] as double?;

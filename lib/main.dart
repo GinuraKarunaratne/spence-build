@@ -58,11 +58,6 @@ void main() async {
     debugPrint("No user is currently logged in. Skipping background task setup.");
   }
 
-  SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
-    statusBarColor: const Color.fromARGB(0, 242, 242, 242),
-    statusBarIconBrightness: Brightness.dark,
-  ));
-
   runApp(
     ChangeNotifierProvider(
       create: (_) => ThemeProvider(),
@@ -101,6 +96,29 @@ class MyApp extends StatelessWidget {
                 '/addexpense': (context) => const ExpenseScreen(),
                 '/allexpenses': (context) => const AllExpensesScreen(),
                 '/addrecurring': (context) => const AddRecurringScreen(),
+              },
+              builder: (context, child) {
+                // Access the current theme mode from ThemeProvider
+                final themeMode = Provider.of<ThemeProvider>(context).themeMode;
+
+                // Define the SystemUiOverlayStyle based on the theme mode
+                final overlayStyle = themeMode == ThemeMode.light
+                    ? SystemUiOverlayStyle(
+                        statusBarColor: Colors.transparent,
+                        statusBarIconBrightness: Brightness.dark, // Dark icons for light mode
+                        statusBarBrightness: Brightness.dark, // Dark text for iOS
+                      )
+                    : SystemUiOverlayStyle(
+                        statusBarColor: Colors.transparent,
+                        statusBarIconBrightness: Brightness.light, // White icons for dark mode
+                        statusBarBrightness: Brightness.light, // White text for iOS
+                      );
+
+                // Wrap the app with AnnotatedRegion to apply the style
+                return AnnotatedRegion<SystemUiOverlayStyle>(
+                  value: overlayStyle,
+                  child: child!,
+                );
               },
               home: child,
             );

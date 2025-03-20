@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
+import 'package:spence/theme/theme.dart';
+import 'package:spence/theme/theme_provider.dart';
 
 class IntervalButton extends StatelessWidget {
   final VoidCallback onPressed;
@@ -8,11 +11,14 @@ class IntervalButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final themeMode = themeProvider.themeMode;
+
     return ElevatedButton(
       onPressed: onPressed,
       style: ElevatedButton.styleFrom(
         elevation: 0,
-        backgroundColor: Color(0xFFE6E6E6),
+        backgroundColor: AppColors.categoryButtonBackground[themeMode],
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 15),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(700),
@@ -24,13 +30,13 @@ class IntervalButton extends StatelessWidget {
           Icon(
             Icons.schedule_outlined,
             size: 18,
-            color: Color(0xFF1C1B1F),
+            color: AppColors.iconColor[themeMode],
           ),
           const SizedBox(width: 7),
           Text(
             'Repeat Intervals',
             style: GoogleFonts.poppins(
-              color: Colors.black,
+              color: AppColors.textColor[themeMode],
               fontSize: 11,
               fontWeight: FontWeight.w400,
             ),

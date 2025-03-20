@@ -51,9 +51,12 @@ flutter:
     - assets/dark.svg
     - assets/pattern.svg
     - assets/bubo.svg
+    - assets/bubo_dark.svg
     - assets/predict.svg
     - assets/happy.svg
     - assets/happy.json
+    - assets/spence_dark.svg
+    - assets/predict_dark.svg
 
 flutter_icons:
   android: true

@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
+import 'package:spence/theme/theme.dart';
+import 'package:spence/theme/theme_provider.dart';
 
 class ConfirmButton extends StatelessWidget {
   final VoidCallback onPressed;
@@ -8,11 +11,14 @@ class ConfirmButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final themeMode = themeProvider.themeMode;
+
     return ElevatedButton(
       onPressed: onPressed,
       style: ElevatedButton.styleFrom(
         elevation: 0,
-        backgroundColor: const Color(0xFFCCF20D),
+        backgroundColor: AppColors.accentColor[themeMode],
         padding: const EdgeInsets.symmetric(horizontal: 105, vertical: 15),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(700),
@@ -24,13 +30,13 @@ class ConfirmButton extends StatelessWidget {
           Icon(
             Icons.check_circle_outline_rounded,
             size: 18,
-            color: const Color(0xFF1C1B1F),
+            color: AppColors.iconColor[themeMode],
           ),
           const SizedBox(width: 7),
           Text(
             'Confirm Budget',
             style: GoogleFonts.poppins(
-              color: Colors.black,
+              color: AppColors.textColor[themeMode],
               fontSize: 11,
               fontWeight: FontWeight.w400,
             ),

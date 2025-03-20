@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
+import 'package:spence/theme/theme.dart';
+import 'package:spence/theme/theme_provider.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class ImageRecordButton extends StatelessWidget {
   final VoidCallback onPressed;
@@ -8,14 +12,17 @@ class ImageRecordButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final themeMode = themeProvider.themeMode;
+
     return ElevatedButton(
       onPressed: onPressed,
       style: ElevatedButton.styleFrom(
         elevation: 0,
-        backgroundColor: Color(0xFFE6E6E6),
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 15),
+        backgroundColor: AppColors.categoryButtonBackground[themeMode],
+        padding: EdgeInsets.symmetric(horizontal: 18.w, vertical: 15.h),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(700),
+          borderRadius: BorderRadius.circular(700.r),
         ),
       ),
       child: Row(
@@ -23,15 +30,15 @@ class ImageRecordButton extends StatelessWidget {
         children: [
           Icon(
             Icons.center_focus_strong_outlined,
-            size: 18,
-            color: Color(0xFF1C1B1F),
+            size: 18.w,
+            color: AppColors.iconColor[themeMode],
           ),
-          const SizedBox(width: 7),
+          SizedBox(width: 7.w),
           Text(
             'Record with Image',
             style: GoogleFonts.poppins(
-              color: Colors.black,
-              fontSize: 11,
+              color: AppColors.textColor[themeMode],
+              fontSize: 11.sp,
               fontWeight: FontWeight.w400,
             ),
           ),

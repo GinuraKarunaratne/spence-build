@@ -5,6 +5,9 @@ import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:provider/provider.dart';
+import 'package:spence/theme/theme.dart';
+import 'package:spence/theme/theme_provider.dart';
 
 /// Custom ScrollPhysics to reduce bounce effect
 class LessBounceScrollPhysics extends BouncingScrollPhysics {
@@ -34,6 +37,8 @@ class _MonthlyBar2WidgetState extends State<MonthlyBar2Widget> {
 
   @override
   Widget build(BuildContext context) {
+    final themeMode = Provider.of<ThemeProvider>(context).themeMode;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -44,29 +49,45 @@ class _MonthlyBar2WidgetState extends State<MonthlyBar2Widget> {
             height: 240.h,
             padding: EdgeInsets.fromLTRB(16.w, 60.h, 16.w, 8.h),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: AppColors.whiteColor[themeMode],
               borderRadius: BorderRadius.circular(12.r),
             ),
             child: StreamBuilder<List<double>>(
               stream: _getMonthlyExpenses(),
-              builder: (context, snapshot) {
+              builder: (BuildContext streamContext, snapshot) {
+                final themeMode = Provider.of<ThemeProvider>(streamContext).themeMode;
+
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(
+                  return Center(
                     child: SpinKitThreeBounce(
-                      color: Color.fromARGB(255, 204, 242, 13),
+                      color: AppColors.accentColor[themeMode],
                       size: 40.0,
                     ),
                   );
                 }
                 if (snapshot.hasError) {
-                  return Center(child: Text('Error: ${snapshot.error}'));
+                  return Center(
+                    child: Text(
+                      'Error: ${snapshot.error}',
+                      style: GoogleFonts.poppins(
+                        color: AppColors.errorColor[themeMode],
+                      ),
+                    ),
+                  );
                 }
                 if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                  return const Center(child: Text('No data available'));
+                  return Center(
+                    child: Text(
+                      'No data available',
+                      style: GoogleFonts.poppins(
+                        color: AppColors.secondaryTextColor[themeMode],
+                      ),
+                    ),
+                  );
                 }
 
                 final List<double> dailyExpenses = snapshot.data!;
-                return _buildBarChart(dailyExpenses);
+                return _buildBarChart(streamContext, dailyExpenses);
               },
             ),
           ),
@@ -76,7 +97,9 @@ class _MonthlyBar2WidgetState extends State<MonthlyBar2Widget> {
     );
   }
 
-  Widget _buildBarChart(List<double> dailyExpenses) {
+  Widget _buildBarChart(BuildContext context, List<double> dailyExpenses) {
+    final themeMode = Provider.of<ThemeProvider>(context).themeMode;
+
     // Determine the max expense for scaling the bar heights
     double maxExpense = dailyExpenses.isNotEmpty
         ? dailyExpenses.reduce((a, b) => a > b ? a : b)
@@ -112,16 +135,19 @@ class _MonthlyBar2WidgetState extends State<MonthlyBar2Widget> {
                       borderRadius: BorderRadius.circular(60.r),
                       // Gradient for non-zero expense, gray for zero
                       gradient: expense > 0
-                          ? const LinearGradient(
+                          ? LinearGradient(
                               begin: Alignment.topCenter,
                               end: Alignment.bottomCenter,
                               colors: [
-                                Color(0xFFCCF20D),
-                                Color(0xFFBBE000),
+                                AppColors.barColor[themeMode]!,
+                                AppColors.barGradientEnd[themeMode]!,
                               ],
                             )
-                          : const LinearGradient(
-                              colors: [Color(0xFFE0E0E0), Color(0xFFE0E0E0)],
+                          : LinearGradient(
+                              colors: [
+                                AppColors.customLightGray[themeMode]!,
+                                AppColors.customLightGray[themeMode]!,
+                              ],
                             ),
                     ),
                   ),
@@ -131,7 +157,7 @@ class _MonthlyBar2WidgetState extends State<MonthlyBar2Widget> {
                     '$dayNumber',
                     style: GoogleFonts.poppins(
                       fontSize: 8.sp,
-                      color: Colors.grey[600],
+                      color: AppColors.logoutDialogCancelColor[themeMode],
                     ),
                   ),
                 ],
@@ -202,7 +228,7 @@ class _MonthlyBar2WidgetState extends State<MonthlyBar2Widget> {
     double spacing = 8.w;
     double barBlockWidth = barWidth + spacing;
     double offset = currentDayIndex * barBlockWidth;
-    double approximateContainerWidth = 240.w - 32.w; 
+    double approximateContainerWidth = 240.w - 32.w;
     double centerOffset = offset - (approximateContainerWidth / 2) + (barWidth / 2);
     double totalWidth = daysInMonth * barBlockWidth;
     double finalOffset = centerOffset.clamp(0, totalWidth);

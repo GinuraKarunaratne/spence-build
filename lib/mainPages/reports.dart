@@ -10,6 +10,9 @@ import 'package:spence/widgets/piechart.dart';
 import 'package:spence/widgets/totalexpense.dart';
 import 'package:spence/widgets/topexpense.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
+import 'package:provider/provider.dart';
+import 'package:spence/theme/theme.dart';
+import 'package:spence/theme/theme_provider.dart';
 
 class ReportsScreen extends StatelessWidget {
   const ReportsScreen({super.key});
@@ -25,14 +28,14 @@ class ReportsScreen extends StatelessWidget {
         .snapshots();
   }
 
-  Widget _buildExpensesList(String currencySymbol, double height) {
+  Widget _buildExpensesList(String currencySymbol, double height, ThemeMode themeMode) {
     return StreamBuilder<QuerySnapshot>(
       stream: _fetchExpenses(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(
+          return Center(
             child: SpinKitThreeBounce(
-              color: Color.fromARGB(255, 255, 255, 255),
+              color: AppColors.spinnerColor[themeMode],
               size: 40.0,
             ),
           );
@@ -44,7 +47,7 @@ class ReportsScreen extends StatelessWidget {
         if (expenses.isEmpty) {
           return Container(
             width: 288.w,
-            height: height,
+            height: 570.h,
             alignment: Alignment.center,
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -52,7 +55,7 @@ class ReportsScreen extends StatelessWidget {
                 Icon(
                   Icons.summarize_rounded,
                   size: 50.w,
-                  color: const Color.fromARGB(80, 149, 149, 149),
+                  color: AppColors.disabledIconColor[themeMode],
                 ),
                 const SizedBox(height: 10),
                 Text(
@@ -60,7 +63,7 @@ class ReportsScreen extends StatelessWidget {
                   style: GoogleFonts.poppins(
                     fontSize: 14.sp,
                     fontWeight: FontWeight.w500,
-                    color: const Color(0xFF272727),
+                    color: AppColors.secondaryTextColor[themeMode],
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -70,14 +73,13 @@ class ReportsScreen extends StatelessWidget {
                   style: GoogleFonts.poppins(
                     fontSize: 9.sp,
                     fontWeight: FontWeight.w400,
-                    color: const Color.fromARGB(80, 0, 0, 0),
+                    color: AppColors.disabledTextColor[themeMode],
                   ),
                 ),
               ],
             ),
           );
         }
-        // Wrap the list in a SingleChildScrollView so that it can scroll if needed
         return SingleChildScrollView(
           child: Column(
             children: [
@@ -95,8 +97,11 @@ class ReportsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final themeMode = themeProvider.themeMode;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF2F2F2),
+      backgroundColor: AppColors.primaryBackground[themeMode],
       body: Stack(
         children: [
           Column(
@@ -105,7 +110,7 @@ class ReportsScreen extends StatelessWidget {
               SizedBox(height: 20.h),
               Expanded(
                 child: SingleChildScrollView(
-                  child: _buildExpensesList('', 700.h),
+                  child: _buildExpensesList('', 700.h, themeMode),
                 ),
               ),
               SizedBox(height: 87.h),

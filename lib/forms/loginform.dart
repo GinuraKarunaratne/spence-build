@@ -1,6 +1,9 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
+import 'package:spence/theme/theme.dart';
+import 'package:spence/theme/theme_provider.dart';
 
 class LoginForm extends StatefulWidget {
   const LoginForm({super.key});
@@ -21,22 +24,28 @@ class LoginFormState extends State<LoginForm> {
     super.dispose();
   }
 
-  Widget _buildInputField(String label, TextEditingController controller,
-      TextInputType inputType, {bool isPassword = false, EdgeInsets? contentPadding}) {
+  Widget _buildInputField(
+    String label,
+    TextEditingController controller,
+    TextInputType inputType, {
+    bool isPassword = false,
+    EdgeInsets? contentPadding,
+    required ThemeMode themeMode,
+  }) {
     return Row(
       children: [
-        _buildLabel(label),
+        _buildLabel(label, themeMode),
         Expanded(
           child: Container(
             height: 36,
-            decoration: const BoxDecoration(
-              color: Color(0xFFCCF20D),
+            decoration: BoxDecoration(
+              color: AppColors.accentColor[themeMode],
             ),
             child: TextFormField(
               controller: controller,
               keyboardType: inputType,
               obscureText: isPassword && !_isPasswordVisible,
-              cursorColor: Colors.black,
+              cursorColor: AppColors.textColor[themeMode],
               decoration: InputDecoration(
                 border: InputBorder.none,
                 contentPadding: contentPadding ?? const EdgeInsets.fromLTRB(14, 0, 14, 10),
@@ -49,13 +58,16 @@ class LoginFormState extends State<LoginForm> {
                           _isPasswordVisible
                               ? Icons.visibility_outlined
                               : Icons.visibility_off_outlined,
-                          color: const Color(0xFF1C1B1F),
+                          color: AppColors.iconColor[themeMode],
                           size: 15,
                         ),
                       )
                     : null,
               ),
-              style: GoogleFonts.poppins(fontSize: 10, color: Colors.black),
+              style: GoogleFonts.poppins(
+                fontSize: 10,
+                color: AppColors.textColor[themeMode],
+              ),
             ),
           ),
         ),
@@ -63,22 +75,30 @@ class LoginFormState extends State<LoginForm> {
     );
   }
 
-  void _showSnackBar(String message) {
+  void _showSnackBar(String message, ThemeMode themeMode) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.red,
+        content: Text(
+          message,
+          style: GoogleFonts.poppins(
+            color: AppColors.whiteColor[themeMode],
+            fontSize: 12,
+          ),
+        ),
+        backgroundColor: AppColors.errorColor[themeMode],
       ),
     );
   }
 
   Future<void> _login() async {
+    final themeMode = Provider.of<ThemeProvider>(context, listen: false).themeMode;
+
     if (_emailController.text.isEmpty) {
-      _showSnackBar('Please enter Email Address');
+      _showSnackBar('Please enter Email Address', themeMode);
       return;
     }
     if (_passwordController.text.isEmpty) {
-      _showSnackBar('Please enter Password');
+      _showSnackBar('Please enter Password', themeMode);
       return;
     }
 
@@ -88,15 +108,15 @@ class LoginFormState extends State<LoginForm> {
         password: _passwordController.text,
       );
     } catch (e) {
-      _showSnackBar('Login failed: ${e.toString()}');
+      _showSnackBar('Login failed: ${e.toString()}', themeMode);
     }
   }
 
-  Widget _buildLabel(String label) {
+  Widget _buildLabel(String label, ThemeMode themeMode) {
     return Container(
       width: 115,
       height: 37,
-      decoration: const BoxDecoration(color: Color(0xFFF8FDDB)),
+      decoration: BoxDecoration(color: AppColors.budgetLabelBackground[themeMode]),
       child: Align(
         alignment: Alignment.centerLeft,
         child: Padding(
@@ -104,7 +124,10 @@ class LoginFormState extends State<LoginForm> {
           child: Text(
             label,
             style: GoogleFonts.poppins(
-                color: Colors.black, fontSize: 10, fontWeight: FontWeight.w400),
+              color: AppColors.alttextColor[themeMode],
+              fontSize: 10,
+              fontWeight: FontWeight.w400,
+            ),
           ),
         ),
       ),
@@ -113,18 +136,21 @@ class LoginFormState extends State<LoginForm> {
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final themeMode = themeProvider.themeMode;
+
     return Container(
       width: 325,
       decoration: ShapeDecoration(
-        color: Colors.white,
+        color: AppColors.whiteColor[themeMode],
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
         ),
-        shadows: const [
+        shadows: [
           BoxShadow(
-            color: Color.fromARGB(255, 209, 209, 209),
+            color: AppColors.budgetShadowColor[themeMode]!,
             blurRadius: 1,
-            offset: Offset(0, 0),
+            offset: const Offset(0, 0),
           ),
         ],
       ),
@@ -136,24 +162,33 @@ class LoginFormState extends State<LoginForm> {
             Text(
               'Welcome Back',
               style: GoogleFonts.poppins(
-                color: Colors.black,
+                color: AppColors.textColor[themeMode],
                 fontSize: 17,
                 fontWeight: FontWeight.w500,
               ),
             ),
             const SizedBox(height: 25),
             _buildInputField(
-                'Email Address', _emailController, TextInputType.emailAddress),
+              'Email Address',
+              _emailController,
+              TextInputType.emailAddress,
+              themeMode: themeMode,
+            ),
             const SizedBox(height: 12),
             _buildInputField(
-                'Password', _passwordController, TextInputType.text,
-                isPassword: true, contentPadding: const EdgeInsets.fromLTRB(14, 5, 14, 10)),
+              'Password',
+              _passwordController,
+              TextInputType.text,
+              isPassword: true,
+              contentPadding: const EdgeInsets.fromLTRB(14, 5, 14, 10),
+              themeMode: themeMode,
+            ),
             const SizedBox(height: 20),
             Text(
               '* All previous analytics and records can be accessed after login. You will be redirected to Home Page after verification.',
               textAlign: TextAlign.justify,
               style: GoogleFonts.poppins(
-                color: Colors.black38,
+                color: AppColors.budgetNoteColor[themeMode],
                 fontSize: 9,
                 fontWeight: FontWeight.w300,
               ),
@@ -163,7 +198,7 @@ class LoginFormState extends State<LoginForm> {
               onPressed: _login,
               style: ElevatedButton.styleFrom(
                 elevation: 0,
-                backgroundColor: const Color(0xFFCCF20D),
+                backgroundColor: AppColors.accentColor[themeMode],
                 padding: const EdgeInsets.symmetric(horizontal: 85, vertical: 15),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(700),
@@ -172,16 +207,16 @@ class LoginFormState extends State<LoginForm> {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.meeting_room_outlined,
                     size: 18,
-                    color: Color(0xFF1C1B1F),
+                    color: AppColors.iconColor[themeMode],
                   ),
                   const SizedBox(width: 7),
                   Text(
                     'Login to Account',
                     style: GoogleFonts.poppins(
-                      color: Colors.black,
+                      color: AppColors.textColor[themeMode],
                       fontSize: 11,
                       fontWeight: FontWeight.w400,
                     ),

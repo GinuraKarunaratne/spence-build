@@ -2,14 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:spence/buttons/loginbutton_alt.dart';
 import 'package:spence/forms/signupform.dart';
+import 'package:provider/provider.dart';
+import 'package:spence/theme/theme.dart';
+import 'package:spence/theme/theme_provider.dart';
 
 class SignupScreen extends StatelessWidget {
   const SignupScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final themeMode = themeProvider.themeMode;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF2F2F2),
+      backgroundColor: AppColors.primaryBackground[themeMode],
       body: Stack(
         children: [
           // Background pattern remains fixed
@@ -41,7 +47,9 @@ class SignupScreen extends StatelessWidget {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 20.0, vertical: 30.0),
                           child: Center(
-                            child: SignupForm(onSubmit: (String fullName, String email, String password, String country) {  },),
+                            child: SignupForm(
+                              onSubmit: (String fullName, String email, String password, String country) {},
+                            ),
                           ),
                         ),
                         Padding(

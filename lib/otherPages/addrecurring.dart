@@ -9,6 +9,9 @@ import 'package:spence/widgets/budgetdisplay.dart';
 import 'package:loading_indicator/loading_indicator.dart';
 import '../forms/recurringform.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:provider/provider.dart';
+import 'package:spence/theme/theme.dart';
+import 'package:spence/theme/theme_provider.dart';
 
 bool isSameOrBeforeDay(DateTime a, DateTime b) {
   final dA = DateTime(a.year, a.month, a.day);
@@ -21,7 +24,8 @@ DateTime calculateInitialNextDate(DateTime chosenDate, int intervalMonths) {
   final todayDate = DateTime(today.year, today.month, today.day);
   var nextDate = DateTime(chosenDate.year, chosenDate.month, chosenDate.day);
   while (nextDate.isBefore(todayDate)) {
-    nextDate = DateTime(nextDate.year, nextDate.month + intervalMonths, nextDate.day);
+    nextDate =
+        DateTime(nextDate.year, nextDate.month + intervalMonths, nextDate.day);
   }
   return nextDate;
 }
@@ -40,7 +44,7 @@ class _AddRecurringScreenState extends State<AddRecurringScreen> {
   DateTime recurringDate = DateTime.now();
   int repeatIntervalMonths = 1;
   bool _isLoading = false;
-  List<String> selectedCategories = []; // For interval dialog selection
+  List<String> selectedCategories = [];
 
   void _updateFormData({
     String? title,
@@ -56,7 +60,9 @@ class _AddRecurringScreenState extends State<AddRecurringScreen> {
           if (amount != null) recurringAmount = amount;
           if (category != null) recurringCategory = category;
           if (date != null) recurringDate = date;
-          if (repeatInterval != null) repeatIntervalMonths = _parseInterval(repeatInterval);
+          if (repeatInterval != null) {
+            repeatIntervalMonths = _parseInterval(repeatInterval);
+          }
         });
       }
     });
@@ -84,12 +90,15 @@ class _AddRecurringScreenState extends State<AddRecurringScreen> {
     }
     try {
       final recurringAmountValue = double.parse(recurringAmount);
-      var nextDate = calculateInitialNextDate(recurringDate, repeatIntervalMonths);
+      var nextDate =
+          calculateInitialNextDate(recurringDate, repeatIntervalMonths);
       final now = DateTime.now();
       final todayOnly = DateTime(now.year, now.month, now.day);
-      final nextDateOnly = DateTime(nextDate.year, nextDate.month, nextDate.day);
+      final nextDateOnly =
+          DateTime(nextDate.year, nextDate.month, nextDate.day);
       if (todayOnly == nextDateOnly) {
-        final expenseDoc = FirebaseFirestore.instance.collection('expenses').doc();
+        final expenseDoc =
+            FirebaseFirestore.instance.collection('expenses').doc();
         await expenseDoc.set({
           'amount': recurringAmountValue,
           'category': recurringCategory,
@@ -106,7 +115,8 @@ class _AddRecurringScreenState extends State<AddRecurringScreen> {
         final totExpensesSnapshot = await totExpensesDoc.get();
         if (totExpensesSnapshot.exists) {
           final currentCount = totExpensesSnapshot['count'] ?? 0;
-          final currentTotalExpense = totExpensesSnapshot['total_expense'] ?? 0.0;
+          final currentTotalExpense =
+              totExpensesSnapshot['total_expense'] ?? 0.0;
           await totExpensesDoc.update({
             'count': currentCount + 1,
             'total_expense': currentTotalExpense + recurringAmountValue,
@@ -117,7 +127,8 @@ class _AddRecurringScreenState extends State<AddRecurringScreen> {
             'total_expense': recurringAmountValue,
           });
         }
-        final budgetDoc = FirebaseFirestore.instance.collection('budgets').doc(userId);
+        final budgetDoc =
+            FirebaseFirestore.instance.collection('budgets').doc(userId);
         final budgetSnapshot = await budgetDoc.get();
         if (budgetSnapshot.exists) {
           final usedBudget = budgetSnapshot['used_budget'] ?? 0.0;
@@ -132,9 +143,11 @@ class _AddRecurringScreenState extends State<AddRecurringScreen> {
             'remaining_budget': 0.0,
           });
         }
-        nextDate = DateTime(nextDate.year, nextDate.month + repeatIntervalMonths, nextDate.day);
+        nextDate = DateTime(
+            nextDate.year, nextDate.month + repeatIntervalMonths, nextDate.day);
       }
-      final recurringDoc = FirebaseFirestore.instance.collection('recurringExpenses').doc();
+      final recurringDoc =
+          FirebaseFirestore.instance.collection('recurringExpenses').doc();
       await recurringDoc.set({
         'userId': userId,
         'title': recurringTitle,
@@ -145,7 +158,8 @@ class _AddRecurringScreenState extends State<AddRecurringScreen> {
         'createdAt': Timestamp.now(),
       });
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Recurring expense scheduled successfully!')),
+        const SnackBar(
+            content: Text('Recurring expense scheduled successfully!')),
       );
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
@@ -160,7 +174,9 @@ class _AddRecurringScreenState extends State<AddRecurringScreen> {
       });
     } catch (_) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to schedule recurring expense. Please try again.')),
+        const SnackBar(
+            content: Text(
+                'Failed to schedule recurring expense. Please try again.')),
       );
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -168,13 +184,23 @@ class _AddRecurringScreenState extends State<AddRecurringScreen> {
   }
 
   void _showIntervalDialog(BuildContext context) async {
-    final intervals = ['1 Month', '2 Months', '3 Months', '6 Months', '12 Months', '24 Months'];
+    final themeMode =
+        Provider.of<ThemeProvider>(context, listen: false).themeMode;
+    final intervals = [
+      '1 Month',
+      '2 Months',
+      '3 Months',
+      '6 Months',
+      '12 Months',
+      '24 Months'
+    ];
     await showDialog(
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, dialogSetState) => Dialog(
-          backgroundColor: Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
+          backgroundColor: AppColors.whiteColor[themeMode],
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
           child: Padding(
             padding: EdgeInsets.all(16.w),
             child: Column(
@@ -184,23 +210,32 @@ class _AddRecurringScreenState extends State<AddRecurringScreen> {
                 SizedBox(height: 5.h),
                 Text(
                   '  Select Repeat Interval',
-                  style: GoogleFonts.poppins(fontSize: 12.sp, fontWeight: FontWeight.w500, color: Colors.black),
+                  style: GoogleFonts.poppins(
+                    fontSize: 12.sp,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.textColor[themeMode],
+                  ),
                 ),
                 SizedBox(height: 15.h),
                 ...intervals.map((interval) {
-                  final isSelected = repeatIntervalMonths == _parseInterval(interval);
+                  final isSelected =
+                      repeatIntervalMonths == _parseInterval(interval);
                   return GestureDetector(
                     onTap: () {
-                      dialogSetState(() => repeatIntervalMonths = _parseInterval(interval));
+                      dialogSetState(() =>
+                          repeatIntervalMonths = _parseInterval(interval));
                       setState(() {});
                       Navigator.of(context).pop();
                       _updateFormData(repeatInterval: interval);
                     },
                     child: Container(
-                      padding: EdgeInsets.symmetric(vertical: 10.h, horizontal: 16.w),
+                      padding: EdgeInsets.symmetric(
+                          vertical: 10.h, horizontal: 16.w),
                       margin: EdgeInsets.only(bottom: 8.h),
                       decoration: BoxDecoration(
-                        color: isSelected ? const Color(0xFFCCF20D) : const Color(0xFFF9FAFB),
+                        color: isSelected
+                            ? AppColors.accentColor[themeMode]
+                            : AppColors.lightBackground[themeMode],
                         borderRadius: BorderRadius.circular(12.r),
                       ),
                       child: Row(
@@ -208,13 +243,19 @@ class _AddRecurringScreenState extends State<AddRecurringScreen> {
                         children: [
                           Text(
                             interval,
-                            style: GoogleFonts.poppins(fontSize: 12.sp, fontWeight: FontWeight.w400, color: isSelected ? Colors.black : const Color(0xFF374151)),
+                            style: GoogleFonts.poppins(
+                              fontSize: 12.sp,
+                              fontWeight: FontWeight.w400,
+                              color: isSelected
+                                  ? AppColors.textColor[themeMode]
+                                  : AppColors.secondaryTextColor[themeMode],
+                            ),
                           ),
                           if (isSelected)
-                            const Icon(
+                            Icon(
                               Icons.check,
                               size: 18,
-                              color: Colors.black,
+                              color: AppColors.textColor[themeMode],
                             ),
                         ],
                       ),
@@ -231,10 +272,12 @@ class _AddRecurringScreenState extends State<AddRecurringScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final themeMode = themeProvider.themeMode;
     final h = MediaQuery.of(context).size.height;
     final layout = _adjustLayout(h);
     return Scaffold(
-      backgroundColor: const Color(0xFFF2F2F2),
+      backgroundColor: AppColors.primaryBackground[themeMode],
       body: SafeArea(
         child: Stack(
           children: [
@@ -248,8 +291,10 @@ class _AddRecurringScreenState extends State<AddRecurringScreen> {
                         Padding(
                           padding: EdgeInsets.fromLTRB(25.w, 12.h, 0.w, 0.h),
                           child: SvgPicture.asset(
-                            'assets/spence.svg',
-                            height: 14.h, 
+                            themeMode == ThemeMode.light
+                                ? 'assets/spence.svg'
+                                : 'assets/spence_dark.svg',
+                            height: 14.h,
                           ),
                         ),
                         const Spacer(),
@@ -260,10 +305,14 @@ class _AddRecurringScreenState extends State<AddRecurringScreen> {
                             height: 38.w,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              color: Colors.white,
+                              color: AppColors.whiteColor[themeMode],
                             ),
                             child: IconButton(
-                              icon: Icon(Icons.arrow_back_rounded, size: 20.w, color: Colors.black),
+                              icon: Icon(
+                                Icons.arrow_back_rounded,
+                                size: 20.w,
+                                color: AppColors.textColor[themeMode],
+                              ),
                               onPressed: () {
                                 Navigator.of(context).pop();
                               },
@@ -288,7 +337,8 @@ class _AddRecurringScreenState extends State<AddRecurringScreen> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    IntervalButton(onPressed: () => _showIntervalDialog(context)),
+                    IntervalButton(
+                        onPressed: () => _showIntervalDialog(context)),
                     SizedBox(width: 11.w),
                     ScheduleButton(onPressed: _submitRecurringExpense),
                   ],
@@ -298,11 +348,11 @@ class _AddRecurringScreenState extends State<AddRecurringScreen> {
             if (_isLoading)
               Positioned.fill(
                 child: Container(
-                  color: Colors.black.withOpacity(0.5),
-                  child: const Center(
+                  color: AppColors.overlayColor[themeMode],
+                  child: Center(
                     child: LoadingIndicator(
                       indicatorType: Indicator.ballPulse,
-                      colors: [Color(0xFFCCF20D)],
+                      colors: [AppColors.accentColor[themeMode] ?? Colors.grey],
                       strokeWidth: 2,
                     ),
                   ),

@@ -3,6 +3,10 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
+import 'package:provider/provider.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart'; // Ensure this import is added
+import 'package:spence/theme/theme.dart';
+import 'package:spence/theme/theme_provider.dart';
 
 class DailyExpenses extends StatelessWidget {
   const DailyExpenses({super.key});
@@ -30,145 +34,201 @@ class DailyExpenses extends StatelessWidget {
   Widget build(BuildContext context) {
     return FutureBuilder<String?>(
       future: _fetchCurrencySymbol(),
-      builder: (context, snapshot) {
+      builder: (BuildContext futureContext, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(
+          return Center(
             child: SpinKitThreeBounce(
-              color: Color(0xFFCCF20D),
-              size: 40.0,
+              color: AppColors.accentColor[Provider.of<ThemeProvider>(futureContext).themeMode],
+              size: 40.h, // Scaled size
             ),
           );
         }
 
         if (snapshot.hasError) {
-          return const Center(child: Text('Error loading currency symbol'));
+          return Center(
+            child: Text(
+              'Error loading currency symbol',
+              style: GoogleFonts.poppins(
+                color: AppColors.errorColor[Provider.of<ThemeProvider>(futureContext).themeMode],
+                fontSize: 14.sp, // Scaled font size
+              ),
+            ),
+          );
         }
 
         final currencySymbol = snapshot.data ?? 'Rs';
 
-        return Column(children: [_buildExpenseContainer(context, currencySymbol)]);
+        return Column(
+          children: [
+            _buildExpenseContainer(context, currencySymbol),
+          ],
+        );
       },
     );
   }
 
   Widget _buildExpenseContainer(BuildContext context, String currencySymbol) {
-    final screenHeight = MediaQuery.of(context).size.height;
-    
+    final themeMode = Provider.of<ThemeProvider>(context).themeMode;
+    final screenHeight = ScreenUtil().screenHeight; // Use ScreenUtil for consistency
+
     double containerHeight;
     double viewAllExpensesTop;
     double expensesListTop;
     double expensesListHeight;
 
-    if (screenHeight > 800) {
-      containerHeight = 370;
-      viewAllExpensesTop = 317;
-      expensesListTop = 58;
-      expensesListHeight = 252;
-    } else if (screenHeight < 600) {
-      containerHeight = 300;
-      viewAllExpensesTop = 250;
-      expensesListTop = 50;
-      expensesListHeight = 200;
+    // Adjust heights based on screen height, scaled with .h
+    if (screenHeight > 800.h) {
+      containerHeight = 370.h;
+      viewAllExpensesTop = 317.h;
+      expensesListTop = 58.h;
+      expensesListHeight = 252.h;
+    } else if (screenHeight < 600.h) {
+      containerHeight = 300.h;
+      viewAllExpensesTop = 250.h;
+      expensesListTop = 50.h;
+      expensesListHeight = 200.h;
     } else {
-      containerHeight = 305;
-      viewAllExpensesTop = 252;
-      expensesListTop = 45;
-      expensesListHeight = 225;
+      containerHeight = 305.h;
+      viewAllExpensesTop = 252.h;
+      expensesListTop = 45.h;
+      expensesListHeight = 225.h;
     }
 
     return Container(
-      width: 320,
-      height: containerHeight,
+      width: 320.w, // Scaled width
+      height: containerHeight, // Already scaled above
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
+        color: AppColors.whiteColor[themeMode],
+        borderRadius: BorderRadius.circular(18.r), // Scaled radius
       ),
       child: Stack(
         children: [
-          Positioned(top: 24, left: 24, child: _buildTitle()),
-          Positioned(left: 16, top: expensesListTop, child: _buildExpensesList(currencySymbol, expensesListHeight)),
-          Positioned(left: 16, top: viewAllExpensesTop, child: _buildViewAllExpenses(context)),
+          Positioned(
+            top: 24.h, // Scaled position
+            left: 24.w, // Scaled position
+            child: _buildTitle(context),
+          ),
+          Positioned(
+            left: 16.w, // Scaled position
+            top: expensesListTop, // Already scaled above
+            child: _buildExpensesList(context, currencySymbol, expensesListHeight),
+          ),
+          Positioned(
+            left: 16.w, // Scaled position
+            top: viewAllExpensesTop, // Already scaled above
+            child: _buildViewAllExpenses(context),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildTitle() {
+  Widget _buildTitle(BuildContext context) {
+    final themeMode = Provider.of<ThemeProvider>(context).themeMode;
+
     return Text(
       'Expenses Today',
-      style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.w500),
+      style: GoogleFonts.poppins(
+        fontSize: 11.sp, // Scaled font size
+        fontWeight: FontWeight.w500,
+        color: AppColors.textColor[themeMode],
+      ),
     );
   }
 
   Widget _buildViewAllExpenses(BuildContext context) {
+    final themeMode = Provider.of<ThemeProvider>(context).themeMode;
+
     return GestureDetector(
       onTap: () {
         Navigator.pushNamed(context, '/allexpenses');
       },
       child: Container(
-        width: 289,
-        height: 37,
-        padding: const EdgeInsets.symmetric(horizontal: 12),
+        width: 289.w, // Scaled width
+        height: 37.h, // Scaled height
+        padding: EdgeInsets.symmetric(horizontal: 12.w), // Scaled padding
         decoration: BoxDecoration(
-          color: const Color(0xFFCCF20D),
-          borderRadius: BorderRadius.circular(11),
+          color: AppColors.accentColor[themeMode],
+          borderRadius: BorderRadius.circular(11.r), // Scaled radius
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text('View All Expenses', style: GoogleFonts.poppins(fontSize: 11)),
-            Icon(Icons.arrow_forward_ios_rounded,
-                size: 13, color: const Color(0xFF272727)),
+            Text(
+              'View All Expenses',
+              style: GoogleFonts.poppins(
+                fontSize: 11.sp, // Scaled font size
+                color: AppColors.textColor[themeMode],
+              ),
+            ),
+            Icon(
+              Icons.arrow_forward_ios_rounded,
+              size: 13.w, // Scaled icon size
+              color: AppColors.secondaryTextColor[themeMode],
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildExpensesList(String currencySymbol, double height) {
+  Widget _buildExpensesList(BuildContext context, String currencySymbol, double height) {
     return StreamBuilder<QuerySnapshot>(
       stream: _fetchExpenses(),
-      builder: (context, snapshot) {
+      builder: (BuildContext streamContext, snapshot) {
+        final themeMode = Provider.of<ThemeProvider>(streamContext).themeMode;
+
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(
+          return Center(
             child: SpinKitThreeBounce(
-              color: Color.fromARGB(255, 255, 255, 255),
-              size: 40.0,
+              color: AppColors.spinnerColor[themeMode],
+              size: 40.h, // Scaled size
             ),
           );
         }
         if (snapshot.hasError) {
-          return const Center(child: Text('Error loading expenses'));
+          return Center(
+            child: Text(
+              'Error loading expenses',
+              style: GoogleFonts.poppins(
+                color: AppColors.errorColor[themeMode],
+                fontSize: 14.sp, // Scaled font size
+              ),
+            ),
+          );
         }
 
         final expenses = snapshot.data?.docs ?? [];
         if (expenses.isEmpty) {
           return Container(
-            width: 288,
-            height: height,
+            width: 288.w, // Scaled width
+            height: height, // Already scaled
             alignment: Alignment.center,
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.pending_actions_rounded,
-                    size: 50, color: const Color.fromARGB(80, 149, 149, 149)),
-                const SizedBox(height: 10),
+                Icon(
+                  Icons.pending_actions_rounded,
+                  size: 50.w, // Scaled icon size
+                  color: AppColors.disabledIconColor[themeMode],
+                ),
+                SizedBox(height: 10.h), // Scaled spacing
                 Text(
                   'No expenses recorded today',
                   style: GoogleFonts.poppins(
-                    fontSize: 14,
+                    fontSize: 14.sp, // Scaled font size
                     fontWeight: FontWeight.w500,
-                    color: const Color(0xFF272727),
+                    color: AppColors.secondaryTextColor[themeMode],
                   ),
                 ),
-                const SizedBox(height: 8),
+                SizedBox(height: 8.h), // Scaled spacing
                 Text(
                   'Start recording your expenses to see them here',
                   textAlign: TextAlign.center,
                   style: GoogleFonts.poppins(
-                    fontSize: 9,
+                    fontSize: 9.sp, // Scaled font size
                     fontWeight: FontWeight.w400,
-                    color: const Color.fromARGB(80, 0, 0, 0),
+                    color: AppColors.disabledTextColor[themeMode],
                   ),
                 ),
               ],
@@ -178,9 +238,11 @@ class DailyExpenses extends StatelessWidget {
 
         // List of Expenses
         return Container(
-          width: 288,
-          height: height,
-          decoration: BoxDecoration(borderRadius: BorderRadius.circular(12)),
+          width: 288.w, // Scaled width
+          height: height, // Already scaled
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12.r), // Scaled radius
+          ),
           child: ListView.builder(
             padding: EdgeInsets.zero,
             itemCount: expenses.length,
@@ -190,8 +252,8 @@ class DailyExpenses extends StatelessWidget {
               final amount = '$currencySymbol ${expense['amount']?.toInt() ?? 0}';
 
               return Padding(
-                padding: const EdgeInsets.only(bottom: 10),
-                child: _buildExpenseItem(title, amount),
+                padding: EdgeInsets.only(bottom: 10.h), // Scaled padding
+                child: _buildExpenseItem(context, title, amount),
               );
             },
           ),
@@ -200,14 +262,16 @@ class DailyExpenses extends StatelessWidget {
     );
   }
 
-  Widget _buildExpenseItem(String title, String amount) {
+  Widget _buildExpenseItem(BuildContext context, String title, String amount) {
+    final themeMode = Provider.of<ThemeProvider>(context).themeMode;
+
     return Container(
       width: double.infinity,
-      height: 37,
-      padding: const EdgeInsets.symmetric(horizontal: 10),
+      height: 37.h, // Scaled height
+      padding: EdgeInsets.symmetric(horizontal: 10.w), // Scaled padding
       decoration: BoxDecoration(
-        color: const Color(0xFFF2F2F2),
-        borderRadius: BorderRadius.circular(12),
+        color: AppColors.primaryBackground[themeMode],
+        borderRadius: BorderRadius.circular(12.r), // Scaled radius
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -215,18 +279,24 @@ class DailyExpenses extends StatelessWidget {
           Text(
             title,
             style: GoogleFonts.poppins(
-              color: const Color.fromARGB(255, 0, 0, 0),
-              fontSize: 12,
+              color: AppColors.textColor[themeMode],
+              fontSize: 12.sp, // Scaled font size
               fontWeight: FontWeight.w400,
             ),
           ),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+            padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h), // Scaled padding
             decoration: BoxDecoration(
-              color: const Color(0xFFCCF20D),
-              borderRadius: BorderRadius.circular(6),
+              color: AppColors.accentColor[themeMode],
+              borderRadius: BorderRadius.circular(6.r), // Scaled radius
             ),
-            child: Text(amount, style: GoogleFonts.poppins(fontSize: 10)),
+            child: Text(
+              amount,
+              style: GoogleFonts.poppins(
+                fontSize: 10.sp, // Scaled font size
+                color: AppColors.textColor[themeMode],
+              ),
+            ),
           ),
         ],
       ),

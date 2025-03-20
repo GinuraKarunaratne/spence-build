@@ -9,6 +9,9 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:spence/analysis/anlalysiswidgets/dailymessage.dart';
 import 'package:spence/analysis/anlalysiswidgets/summarydaily.dart';
 import 'package:lottie/lottie.dart';
+import 'package:provider/provider.dart';
+import 'package:spence/theme/theme.dart';
+import 'package:spence/theme/theme_provider.dart';
 
 class DailyAnalysis extends StatefulWidget {
   const DailyAnalysis({super.key});
@@ -28,8 +31,11 @@ class _DailyAnalysisState extends State<DailyAnalysis> {
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final themeMode = themeProvider.themeMode;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF2F2F2),
+      backgroundColor: AppColors.primaryBackground[themeMode],
       body: Stack(
         children: [
           // Scrollable content
@@ -73,23 +79,33 @@ class _DailyAnalysisState extends State<DailyAnalysis> {
   }
 
   Widget _buildHeader() {
+    final themeMode = Provider.of<ThemeProvider>(context).themeMode;
+
     return Padding(
       padding: EdgeInsets.only(top: 2.h),
       child: Row(
         children: [
           Padding(
             padding: EdgeInsets.fromLTRB(25.w, 12.h, 0, 0),
-            child: SvgPicture.asset('assets/spence.svg', height: 14.h),
+            child: SvgPicture.asset(
+              themeMode == ThemeMode.light
+                  ? 'assets/spence.svg'
+                  : 'assets/spence_dark.svg',
+              height: 14.h,
+            ),
           ),
           const Spacer(),
           Padding(
             padding: EdgeInsets.fromLTRB(40.w, 12.h, 20.w, 0),
             child: CircleAvatar(
               radius: 19.w,
-              backgroundColor: Colors.white,
+              backgroundColor: AppColors.whiteColor[themeMode],
               child: IconButton(
-                icon: Icon(Icons.arrow_back_rounded,
-                    size: 20.w, color: Colors.black),
+                icon: Icon(
+                  Icons.arrow_back_rounded,
+                  size: 20.w,
+                  color: AppColors.textColor[themeMode],
+                ),
                 onPressed: () => Navigator.of(context).pop(),
               ),
             ),
@@ -99,62 +115,87 @@ class _DailyAnalysisState extends State<DailyAnalysis> {
     );
   }
 
-  Widget _buildLoading() => const Center(
-        child: SpinKitThreeBounce(
-          color: Color(0xFFCCF20D),
-          size: 40.0,
-        ),
-      );
+  Widget _buildLoading() {
+    final themeMode = Provider.of<ThemeProvider>(context).themeMode;
 
-  Widget _buildErrorPage(String message) => Center(
-        child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 20.w),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.error_outline, size: 60.w, color: Colors.red),
-              SizedBox(height: 20.h),
-              Text(
-                message,
-                textAlign: TextAlign.center,
-                style: GoogleFonts.poppins(
-                    fontSize: 14.sp,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.redAccent),
-              ),
-            ],
-          ),
-        ),
-      );
+    return Center(
+      child: SpinKitThreeBounce(
+        color: AppColors.accentColor[themeMode],
+        size: 40.0,
+      ),
+    );
+  }
 
-  Widget _noExpensesMessage() => Center(
+  Widget _buildErrorPage(String message) {
+    final themeMode = Provider.of<ThemeProvider>(context).themeMode;
+
+    return Center(
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: 20.w),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.summarize_rounded,
-                size: 50.w, color: const Color.fromARGB(80, 149, 149, 149)),
-            SizedBox(height: 10.h),
-            Text(
-              'No expense record available',
-              style: GoogleFonts.poppins(
-                  fontSize: 14.sp,
-                  fontWeight: FontWeight.w500,
-                  color: const Color(0xFF272727)),
+            Icon(
+              Icons.error_outline,
+              size: 60.w,
+              color: AppColors.errorColor[themeMode],
             ),
-            SizedBox(height: 8.h),
+            SizedBox(height: 20.h),
             Text(
-              'Record at least one expense to access the Analysis.',
+              message,
               textAlign: TextAlign.center,
               style: GoogleFonts.poppins(
-                  fontSize: 9.sp,
-                  fontWeight: FontWeight.w400,
-                  color: const Color.fromARGB(80, 0, 0, 0)),
+                fontSize: 14.sp,
+                fontWeight: FontWeight.w500,
+                color: AppColors.errorColor[themeMode],
+              ),
             ),
           ],
         ),
-      );
+      ),
+    );
+  }
+
+  Widget _noExpensesMessage() {
+    final themeMode = Provider.of<ThemeProvider>(context).themeMode;
+
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          SizedBox(height: 230.h),
+          Icon(
+            Icons.summarize_rounded,
+            size: 50.w,
+            color: AppColors.disabledIconColor[themeMode],
+          ),
+          SizedBox(height: 10.h),
+          Text(
+            'No expense record available',
+            style: GoogleFonts.poppins(
+              fontSize: 14.sp,
+              fontWeight: FontWeight.w500,
+              color: AppColors.secondaryTextColor[themeMode],
+            ),
+          ),
+          SizedBox(height: 8.h),
+          Text(
+            'Record at least one expense to access the Analysis.',
+            textAlign: TextAlign.center,
+            style: GoogleFonts.poppins(
+              fontSize: 9.sp,
+              fontWeight: FontWeight.w400,
+              color: AppColors.disabledTextColor[themeMode],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
   Widget _buildGraphWithMessages(Map<String, dynamic> data) {
+    final themeMode = Provider.of<ThemeProvider>(context).themeMode;
+
     final List<double> hourlyExpenses =
         List<double>.from(data['hourlyExpenses'] ?? List.filled(24, 0.0));
     final double dailyAllowableExpenditure =
@@ -201,9 +242,10 @@ class _DailyAnalysisState extends State<DailyAnalysis> {
             message,
             textAlign: TextAlign.justify,
             style: GoogleFonts.poppins(
-                fontSize: 9.sp,
-                fontWeight: FontWeight.w400,
-                color: const Color(0xFF7F7F7F)),
+              fontSize: 9.sp,
+              fontWeight: FontWeight.w400,
+              color: AppColors.notificationTextColor[themeMode],
+            ),
           ),
         ),
         SizedBox(height: 27.h),

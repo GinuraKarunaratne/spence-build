@@ -4,6 +4,9 @@ import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:provider/provider.dart';
+import 'package:spence/theme/theme.dart';
+import 'package:spence/theme/theme_provider.dart';
 
 class DailyBarWidget extends StatelessWidget {
   const DailyBarWidget({super.key});
@@ -14,6 +17,8 @@ class DailyBarWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final themeMode = Provider.of<ThemeProvider>(context).themeMode;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -24,7 +29,7 @@ class DailyBarWidget extends StatelessWidget {
             style: GoogleFonts.poppins(
               fontSize: 17.sp,
               fontWeight: FontWeight.w500,
-              color: Colors.black,
+              color: AppColors.textColor[themeMode],
             ),
           ),
         ),
@@ -36,25 +41,41 @@ class DailyBarWidget extends StatelessWidget {
             height: 240.h,
             padding: EdgeInsets.fromLTRB(16.w, 60.h, 16.w, 0),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: AppColors.whiteColor[themeMode],
               borderRadius: BorderRadius.circular(12.r),
             ),
             child: StreamBuilder<List<double>>(
               stream: _getDailyExpensesByHour(),
-              builder: (context, snapshot) {
+              builder: (BuildContext streamContext, snapshot) {
+                final themeMode = Provider.of<ThemeProvider>(streamContext).themeMode;
+
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(
+                  return Center(
                     child: SpinKitThreeBounce(
-                      color: Color.fromARGB(255, 204, 242, 13),
+                      color: AppColors.accentColor[themeMode],
                       size: 40.0,
                     ),
                   );
                 } else if (snapshot.hasError) {
-                  return Center(child: Text('Error: ${snapshot.error}'));
+                  return Center(
+                    child: Text(
+                      'Error: ${snapshot.error}',
+                      style: GoogleFonts.poppins(
+                        color: AppColors.errorColor[themeMode],
+                      ),
+                    ),
+                  );
                 } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                  return const Center(child: Text('No data available'));
+                  return Center(
+                    child: Text(
+                      'No data available',
+                      style: GoogleFonts.poppins(
+                        color: AppColors.secondaryTextColor[themeMode],
+                      ),
+                    ),
+                  );
                 }
-                return _buildBarChart(snapshot.data!);
+                return _buildBarChart(streamContext, snapshot.data!);
               },
             ),
           ),
@@ -64,7 +85,8 @@ class DailyBarWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildBarChart(List<double> hourlyExpenses) {
+  Widget _buildBarChart(BuildContext context, List<double> hourlyExpenses) {
+    final themeMode = Provider.of<ThemeProvider>(context).themeMode;
     final maxExpense = hourlyExpenses.isNotEmpty ? hourlyExpenses.reduce((a, b) => a > b ? a : b) : 1;
 
     return Column(
@@ -78,15 +100,18 @@ class DailyBarWidget extends StatelessWidget {
               width: 9.w,
               height: expense == 0 ? 9.w : barHeight,
               decoration: BoxDecoration(
-                color: expense == 0 ? const Color(0xFFE6E6E6) : null,
+                color: expense == 0 ? AppColors.categoryButtonBackground[themeMode] : null,
                 shape: expense == 0 ? BoxShape.circle : BoxShape.rectangle,
                 borderRadius: expense == 0 ? null : BorderRadius.circular(60.r),
                 gradient: expense == 0
                     ? null
-                    : const LinearGradient(
+                    : LinearGradient(
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
-                        colors: [Color(0xFFCCF20D), Color(0xFFBBE000)],
+                        colors: [
+                          AppColors.barColor[themeMode]!,
+                          AppColors.barGradientEnd[themeMode]!,
+                        ],
                       ),
               ),
             );
@@ -100,7 +125,7 @@ class DailyBarWidget extends StatelessWidget {
               label,
               style: GoogleFonts.poppins(
                 fontSize: 9.sp,
-                color: Colors.grey[600],
+                color: AppColors.logoutDialogCancelColor[themeMode],
               ),
             );
           }).toList(),

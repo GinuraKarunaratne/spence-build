@@ -3,6 +3,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
+import 'package:provider/provider.dart';
+import 'package:spence/theme/theme.dart';
+import 'package:spence/theme/theme_provider.dart';
 
 class BudgetDisplay extends StatefulWidget {
   const BudgetDisplay({super.key});
@@ -62,6 +65,9 @@ class BudgetDisplayState extends State<BudgetDisplay>
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final themeMode = themeProvider.themeMode;
+
     return StreamBuilder<DocumentSnapshot>(
       stream: FirebaseFirestore.instance
           .collection('budgets')
@@ -71,18 +77,32 @@ class BudgetDisplayState extends State<BudgetDisplay>
         if (snapshot.connectionState == ConnectionState.waiting) {
           return Center(
             child: SpinKitThreeBounce(
-              color: const Color(0xFFFFFFFF),
+              color: AppColors.spinnerColor[themeMode],
               size: 40.0,
             ),
           );
         }
 
         if (snapshot.hasError) {
-          return Center(child: Text('Error: ${snapshot.error}'));
+          return Center(
+            child: Text(
+              'Error: ${snapshot.error}',
+              style: GoogleFonts.poppins(
+                color: AppColors.errorColor[themeMode],
+              ),
+            ),
+          );
         }
 
         if (!snapshot.hasData || !snapshot.data!.exists) {
-          return Center(child: Text('No Budget Data Available'));
+          return Center(
+            child: Text(
+              'No Budget Data Available',
+              style: GoogleFonts.poppins(
+                color: AppColors.secondaryTextColor[themeMode],
+              ),
+            ),
+          );
         }
 
         var budgetData = snapshot.data!;
@@ -106,6 +126,8 @@ class BudgetDisplayState extends State<BudgetDisplay>
   }
 
   Widget _buildRemainingBudgetDisplay() {
+    final themeMode = Provider.of<ThemeProvider>(context).themeMode;
+
     double fontSize = MediaQuery.of(context).size.width * 0.15;
     if (remainingBudget.toString().length > 9) {
       fontSize = MediaQuery.of(context).size.width * 0.12;
@@ -119,7 +141,7 @@ class BudgetDisplayState extends State<BudgetDisplay>
           child: Text(
             currency,
             style: GoogleFonts.urbanist(
-              color: Colors.black,
+              color: AppColors.budgettextColor[themeMode],
               fontSize: 12,
               fontWeight: FontWeight.w600,
             ),
@@ -129,7 +151,7 @@ class BudgetDisplayState extends State<BudgetDisplay>
         Text(
           remainingBudget.toStringAsFixed(2),
           style: GoogleFonts.urbanist(
-            color: Colors.black,
+            color: AppColors.textColor[themeMode],
             fontSize: fontSize,
             fontWeight: FontWeight.w400,
           ),
@@ -139,16 +161,20 @@ class BudgetDisplayState extends State<BudgetDisplay>
   }
 
   Widget _buildUsedBudgetSection() {
+    final themeMode = Provider.of<ThemeProvider>(context).themeMode;
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
-          decoration: const BoxDecoration(color: Color(0x26CCF20D)),
+          decoration: BoxDecoration(
+            color: AppColors.budgetLabelBackground[themeMode],
+          ),
           child: Text(
             'Used Budget',
             style: GoogleFonts.poppins(
-              color: Colors.black,
+              color: AppColors.alttextColor[themeMode],
               fontSize: 10,
               fontWeight: FontWeight.w400,
             ),
@@ -157,13 +183,15 @@ class BudgetDisplayState extends State<BudgetDisplay>
         Container(
           width: MediaQuery.of(context).size.width * 0.3,
           padding: const EdgeInsets.all(7),
-          decoration: const BoxDecoration(color: Color(0xFFCCF20D)),
+          decoration: BoxDecoration(
+            color: AppColors.accentColor[themeMode],
+          ),
           alignment: Alignment.centerRight,
           child: Text(
             '$currency ${usedBudget.toStringAsFixed(2)}',
             textAlign: TextAlign.right,
             style: GoogleFonts.poppins(
-              color: Colors.black,
+              color: AppColors.textColor[themeMode],
               fontSize: 10,
               fontWeight: FontWeight.w400,
             ),

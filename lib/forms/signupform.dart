@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:provider/provider.dart';
+import 'package:spence/theme/theme.dart';
+import 'package:spence/theme/theme_provider.dart';
 
 class SignupForm extends StatefulWidget {
   final Function(String fullName, String email, String password, String country) onSubmit;
@@ -28,26 +31,34 @@ class SignupFormState extends State<SignupForm> {
     super.dispose();
   }
 
-  void _showSnackBar(String message) {
+  void _showSnackBar(String message, ThemeMode themeMode) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.red,
+        content: Text(
+          message,
+          style: GoogleFonts.poppins(
+            color: AppColors.whiteColor[themeMode],
+            fontSize: 12,
+          ),
+        ),
+        backgroundColor: AppColors.errorColor[themeMode],
       ),
     );
   }
 
   Future<void> _createAccount() async {
+    final themeMode = Provider.of<ThemeProvider>(context, listen: false).themeMode;
+
     if (fullNameController.text.isEmpty) {
-      _showSnackBar('Please enter Full Name');
+      _showSnackBar('Please enter Full Name', themeMode);
       return;
     }
     if (emailController.text.isEmpty) {
-      _showSnackBar('Please enter Email Address');
+      _showSnackBar('Please enter Email Address', themeMode);
       return;
     }
     if (passwordController.text.isEmpty) {
-      _showSnackBar('Please enter Password');
+      _showSnackBar('Please enter Password', themeMode);
       return;
     }
 
@@ -76,30 +87,38 @@ class SignupFormState extends State<SignupForm> {
         Navigator.pushNamed(context, '/budget');
       } catch (e) {
         // Show error with SnackBar
-        _showSnackBar('Error: ${e.toString()}');
+        _showSnackBar('Error: ${e.toString()}', themeMode);
       }
     }
   }
 
-  Widget _buildInputField(String label, TextInputType inputType, {TextEditingController? controller}) {
+  Widget _buildInputField(
+    String label,
+    TextInputType inputType, {
+    TextEditingController? controller,
+    required ThemeMode themeMode,
+  }) {
     return Row(
       children: [
-        _buildLabel(label),
+        _buildLabel(label, themeMode),
         Expanded(
           child: Container(
             height: 36,
-            decoration: const BoxDecoration(color: Color(0xFFCCF20D)),
+            decoration: BoxDecoration(color: AppColors.accentColor[themeMode]),
             child: TextFormField(
               controller: controller,
               keyboardType: inputType,
               obscureText: label == 'Password',
-              cursorColor: Colors.black,
+              cursorColor: AppColors.textColor[themeMode],
               maxLines: 1,
               decoration: const InputDecoration(
                 border: InputBorder.none,
                 contentPadding: EdgeInsets.fromLTRB(14, 0, 14, 10),
               ),
-              style: GoogleFonts.poppins(fontSize: 10, color: Colors.black),
+              style: GoogleFonts.poppins(
+                fontSize: 10,
+                color: AppColors.textColor[themeMode],
+              ),
               validator: (value) => value?.isEmpty ?? true ? 'This field cannot be empty' : null,
               onSaved: (value) {
                 if (label == 'Full Name') fullName = value ?? '';
@@ -113,23 +132,29 @@ class SignupFormState extends State<SignupForm> {
     );
   }
 
-  Widget _buildCountryField() {
+  Widget _buildCountryField(ThemeMode themeMode) {
     return Row(
       children: [
-        _buildLabel('Country'),
+        _buildLabel('Country', themeMode),
         Expanded(
           child: Container(
             height: 37,
-            decoration: const BoxDecoration(color: Color(0xFFCCF20D)),
+            decoration: BoxDecoration(color: AppColors.accentColor[themeMode]),
             child: DropdownButtonFormField<String>(
               value: _selectedCountry,
-              icon: const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF1C1B1F)),
-              iconSize: 18,
+              icon: Icon(
+                Icons.keyboard_arrow_down_rounded,
+                color: AppColors.iconColor[themeMode],
+                size: 18,
+              ),
               decoration: const InputDecoration(
                 border: InputBorder.none,
                 contentPadding: EdgeInsets.fromLTRB(14, 0, 12, 10),
               ),
-              style: GoogleFonts.poppins(fontSize: 10, color: Colors.black),
+              style: GoogleFonts.poppins(
+                fontSize: 10,
+                color: AppColors.textColor[themeMode],
+              ),
               validator: (value) => value == null ? 'Please select a country' : null,
               onChanged: (newValue) {
                 setState(() {
@@ -144,7 +169,13 @@ class SignupFormState extends State<SignupForm> {
               ].map((value) {
                 return DropdownMenuItem<String>(
                   value: value,
-                  child: Text(value, style: GoogleFonts.poppins(fontSize: 10, color: Colors.black)),
+                  child: Text(
+                    value,
+                    style: GoogleFonts.poppins(
+                      fontSize: 10,
+                      color: AppColors.textColor[themeMode],
+                    ),
+                  ),
                 );
               }).toList(),
             ),
@@ -154,16 +185,23 @@ class SignupFormState extends State<SignupForm> {
     );
   }
 
-  Widget _buildLabel(String label) {
+  Widget _buildLabel(String label, ThemeMode themeMode) {
     return Container(
       width: 115,
       height: 37,
-      decoration: const BoxDecoration(color: Color(0xFFF8FDDB)),
+      decoration: BoxDecoration(color: AppColors.budgetLabelBackground[themeMode]),
       child: Align(
         alignment: Alignment.centerLeft,
         child: Padding(
           padding: const EdgeInsets.only(left: 14.0),
-          child: Text(label, style: GoogleFonts.poppins(color: Colors.black, fontSize: 10, fontWeight: FontWeight.w400)),
+          child: Text(
+            label,
+            style: GoogleFonts.poppins(
+              color: AppColors.alttextColor[themeMode],
+              fontSize: 10,
+              fontWeight: FontWeight.w400,
+            ),
+          ),
         ),
       ),
     );
@@ -171,13 +209,19 @@ class SignupFormState extends State<SignupForm> {
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final themeMode = themeProvider.themeMode;
+
     return Container(
       width: 325,
       decoration: ShapeDecoration(
-        color: Colors.white,
+        color: AppColors.whiteColor[themeMode],
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        shadows: const [
-          BoxShadow(color: Color.fromARGB(255, 209, 209, 209), blurRadius: 1),
+        shadows: [
+          BoxShadow(
+            color: AppColors.budgetShadowColor[themeMode]!,
+            blurRadius: 1,
+          ),
         ],
       ),
       child: Padding(
@@ -187,37 +231,74 @@ class SignupFormState extends State<SignupForm> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Join Spence Today', style: GoogleFonts.poppins(color: Colors.black, fontSize: 17, fontWeight: FontWeight.w500)),
+              Text(
+                'Join Spence Today',
+                style: GoogleFonts.poppins(
+                  color: AppColors.textColor[themeMode],
+                  fontSize: 17,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
               const SizedBox(height: 30),
-              _buildInputField('Full Name', TextInputType.name, controller: fullNameController),
+              _buildInputField(
+                'Full Name',
+                TextInputType.name,
+                controller: fullNameController,
+                themeMode: themeMode,
+              ),
               const SizedBox(height: 12),
-              _buildInputField('Email Address', TextInputType.emailAddress, controller: emailController),
+              _buildInputField(
+                'Email Address',
+                TextInputType.emailAddress,
+                controller: emailController,
+                themeMode: themeMode,
+              ),
               const SizedBox(height: 12),
-              _buildCountryField(),
+              _buildCountryField(themeMode),
               const SizedBox(height: 12),
-              _buildInputField('Password', TextInputType.visiblePassword, controller: passwordController),
+              _buildInputField(
+                'Password',
+                TextInputType.visiblePassword,
+                controller: passwordController,
+                themeMode: themeMode,
+              ),
               const SizedBox(height: 20),
               Text(
                 '* Passwords entered, usernames collected, and email addresses provided will be securely stored. '
                 'Your information will remain private and used for account-related purposes.',
                 textAlign: TextAlign.justify,
-                style: GoogleFonts.poppins(color: Colors.black38, fontSize: 9, fontWeight: FontWeight.w300),
+                style: GoogleFonts.poppins(
+                  color: AppColors.budgetNoteColor[themeMode],
+                  fontSize: 9,
+                  fontWeight: FontWeight.w300,
+                ),
               ),
               const SizedBox(height: 20),
               ElevatedButton(
                 onPressed: _createAccount,
                 style: ElevatedButton.styleFrom(
                   elevation: 0,
-                  backgroundColor: const Color(0xFFCCF20D),
+                  backgroundColor: AppColors.accentColor[themeMode],
                   padding: const EdgeInsets.symmetric(horizontal: 78.5, vertical: 15),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(700)),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.person_add_alt_outlined, size: 18, color: Color(0xFF1C1B1F)),
+                    Icon(
+                      Icons.person_add_alt_outlined,
+                      size: 18,
+                      color: AppColors.iconColor[themeMode],
+                    ),
                     const SizedBox(width: 7),
-                    Text('Create An Account', style: GoogleFonts.poppins(color: Colors.black, fontSize: 11, fontWeight: FontWeight.w400)),
+                    Text(
+                      'Create An Account',
+                      style: GoogleFonts.poppins(
+                        color: AppColors.textColor[themeMode],
+                        fontSize: 11,
+                        fontWeight: FontWeight.w400,
+                      ),
+                    ),
                   ],
                 ),
               ),

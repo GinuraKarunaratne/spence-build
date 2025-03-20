@@ -4,12 +4,17 @@ import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:provider/provider.dart';
+import 'package:spence/theme/theme.dart';
+import 'package:spence/theme/theme_provider.dart';
 
 class MonthlyBarWidget extends StatelessWidget {
   const MonthlyBarWidget({super.key, required List<double> expenses});
 
   @override
   Widget build(BuildContext context) {
+    final themeMode = Provider.of<ThemeProvider>(context).themeMode;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -20,7 +25,7 @@ class MonthlyBarWidget extends StatelessWidget {
             style: GoogleFonts.poppins(
               fontSize: 17.sp,
               fontWeight: FontWeight.w500,
-              color: Colors.black,
+              color: AppColors.textColor[themeMode],
             ),
           ),
         ),
@@ -32,26 +37,42 @@ class MonthlyBarWidget extends StatelessWidget {
             height: 240.h,
             padding: EdgeInsets.fromLTRB(16.w, 60.h, 16.w, 0.h),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: AppColors.whiteColor[themeMode],
               borderRadius: BorderRadius.circular(12.r),
             ),
             child: StreamBuilder<List<double>>(
               stream: _getMonthlyExpenses(),
-              builder: (context, snapshot) {
+              builder: (BuildContext streamContext, snapshot) {
+                final themeMode = Provider.of<ThemeProvider>(streamContext).themeMode;
+
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(
+                  return Center(
                     child: SpinKitThreeBounce(
-                      color: Color.fromARGB(255, 204, 242, 13),
+                      color: AppColors.accentColor[themeMode],
                       size: 40.0,
                     ),
                   );
                 } else if (snapshot.hasError) {
-                  return Center(child: Text('Error: \${snapshot.error}'));
+                  return Center(
+                    child: Text(
+                      'Error: ${snapshot.error}',
+                      style: GoogleFonts.poppins(
+                        color: AppColors.errorColor[themeMode],
+                      ),
+                    ),
+                  );
                 } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                  return const Center(child: Text('No data available'));
+                  return Center(
+                    child: Text(
+                      'No data available',
+                      style: GoogleFonts.poppins(
+                        color: AppColors.secondaryTextColor[themeMode],
+                      ),
+                    ),
+                  );
                 } else {
                   final List<double> monthlyExpenses = snapshot.data!;
-                  return _buildBarChart(monthlyExpenses);
+                  return _buildBarChart(streamContext, monthlyExpenses);
                 }
               },
             ),
@@ -62,7 +83,8 @@ class MonthlyBarWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildBarChart(List<double> monthlyExpenses) {
+  Widget _buildBarChart(BuildContext context, List<double> monthlyExpenses) {
+    final themeMode = Provider.of<ThemeProvider>(context).themeMode;
     double maxExpense = monthlyExpenses.reduce((a, b) => a > b ? a : b);
     maxExpense = maxExpense > 0 ? maxExpense : 1; // Avoid division by zero
     int currentMonth = DateTime.now().month - 1;
@@ -76,17 +98,17 @@ class MonthlyBarWidget extends StatelessWidget {
             double barHeight = (monthlyExpenses[index] / maxExpense) * 145.h;
             Color barColor = index == currentMonth
                 ? Colors.transparent
-                : const Color(0xFFF5FCCF);
-            
+                : AppColors.monthlyBarColor[themeMode]!;
+
             BoxDecoration decoration = index == currentMonth
                 ? BoxDecoration(
                     borderRadius: BorderRadius.circular(60.r),
-                    gradient: const LinearGradient(
+                    gradient: LinearGradient(
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
                       colors: [
-                        Color(0xFFCCF20D),
-                        Color(0xFFBBE000),
+                        AppColors.barColor[themeMode]!,
+                        AppColors.barGradientEnd[themeMode]!,
                       ],
                     ),
                   )
@@ -100,7 +122,7 @@ class MonthlyBarWidget extends StatelessWidget {
                     width: 19.w,
                     height: 19.w,
                     decoration: BoxDecoration(
-                      color: const Color(0xFFE6E6E6),
+                      color: AppColors.categoryButtonBackground[themeMode],
                       shape: BoxShape.circle,
                     ),
                   )
@@ -121,7 +143,7 @@ class MonthlyBarWidget extends StatelessWidget {
               month,
               style: GoogleFonts.poppins(
                 fontSize: 9.sp,
-                color: Colors.grey[600],
+                color: AppColors.logoutDialogCancelColor[themeMode],
               ),
             );
           }).toList(),

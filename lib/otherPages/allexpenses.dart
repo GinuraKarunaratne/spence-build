@@ -4,7 +4,10 @@ import 'package:spence/buttons/categorybutton.dart';
 import 'package:spence/buttons/recordbutton.dart';
 import 'package:spence/widgets/expenselist.dart';
 import 'package:spence/widgets/header.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart'; // Import ScreenUtil
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:provider/provider.dart';
+import 'package:spence/theme/theme.dart';
+import 'package:spence/theme/theme_provider.dart';
 
 class AllExpensesScreen extends StatefulWidget {
   const AllExpensesScreen({super.key});
@@ -27,21 +30,24 @@ class AllExpensesScreenState extends State<AllExpensesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final themeMode = themeProvider.themeMode;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFf2f2f2),
+      backgroundColor: AppColors.primaryBackground[themeMode],
       body: Stack(
         children: [
           Column(
             children: [
-              const Header(), 
-              SizedBox(height: 40.h), 
-              _buildExpenseContainer(context),
+              const Header(),
+              SizedBox(height: 40.h),
+              _buildExpenseContainer(context, themeMode),
             ],
           ),
           Positioned(
-            bottom: 20.h, 
-            left: 20.w, 
-            right: 20.w, 
+            bottom: 20.h,
+            left: 20.w,
+            right: 20.w,
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -50,7 +56,7 @@ class AllExpensesScreenState extends State<AllExpensesScreen> {
                     _showCategoryFilterDialog(context);
                   },
                 ),
-                SizedBox(width: 11.w), 
+                SizedBox(width: 11.w),
                 RecordExpenseButton(onPressed: () {
                   Navigator.of(context).pushNamed('/addexpense');
                 }),
@@ -62,15 +68,15 @@ class AllExpensesScreenState extends State<AllExpensesScreen> {
     );
   }
 
-  Widget _buildExpenseContainer(BuildContext context) {
+  Widget _buildExpenseContainer(BuildContext context, ThemeMode themeMode) {
     return Container(
-      width: 320.w, 
-      height: 610.h, 
-      padding: EdgeInsets.all(24.w), 
+      width: 320.w,
+      height: 610.h,
+      padding: EdgeInsets.all(24.w),
       decoration: ShapeDecoration(
-        color: Colors.white,
+        color: AppColors.whiteColor[themeMode],
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12.w), 
+          borderRadius: BorderRadius.circular(12.w),
         ),
       ),
       child: Column(
@@ -79,49 +85,49 @@ class AllExpensesScreenState extends State<AllExpensesScreen> {
           Text(
             'All Expenses',
             style: GoogleFonts.poppins(
-              color: Colors.black,
-              fontSize: 17.sp, 
+              color: AppColors.textColor[themeMode],
+              fontSize: 17.sp,
               fontWeight: FontWeight.w500,
             ),
           ),
-          SizedBox(height: 21.h), 
-          _buildTimePeriodSelector(),
-          SizedBox(height: 24.h), 
+          SizedBox(height: 21.h),
+          _buildTimePeriodSelector(themeMode),
+          SizedBox(height: 24.h),
           Expanded(child: _buildExpensesList(context)),
         ],
       ),
     );
   }
 
-  Widget _buildTimePeriodSelector() {
+  Widget _buildTimePeriodSelector(ThemeMode themeMode) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.start,
       children: ['Daily', 'Weekly', 'Monthly'].map((label) {
-        return _buildTimePeriodButton(label, const Color(0x26CCF20D));
+        return _buildTimePeriodButton(label, AppColors.accentColor[themeMode]!.withOpacity(0.15), themeMode);
       }).toList(),
     );
   }
 
-  Widget _buildTimePeriodButton(String label, Color color) {
+  Widget _buildTimePeriodButton(String label, Color color, ThemeMode themeMode) {
     bool isSelected = selectedTimePeriod == label;
     return GestureDetector(
       onTap: () {
         setState(() {
-          selectedTimePeriod = isSelected ? '' : label; 
+          selectedTimePeriod = isSelected ? '' : label;
         });
       },
       child: Container(
-        width: 90.w, 
-        height: 25.h, 
+        width: 90.w,
+        height: 25.h,
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFFCCF20D) : color,
+          color: isSelected ? AppColors.accentColor[themeMode] : color,
         ),
         child: Center(
           child: Text(
             label,
             style: GoogleFonts.poppins(
-              color: Colors.black,
-              fontSize: 10.sp, 
+              color: AppColors.textColor[themeMode],
+              fontSize: 10.sp,
               fontWeight: FontWeight.w400,
             ),
           ),
@@ -138,32 +144,33 @@ class AllExpensesScreenState extends State<AllExpensesScreen> {
   }
 
   Future<void> _showCategoryFilterDialog(BuildContext context) async {
+    final themeMode = Provider.of<ThemeProvider>(context, listen: false).themeMode;
     await showDialog(
       context: context,
       builder: (context) {
         return StatefulBuilder(
           builder: (context, dialogSetState) {
             return Dialog(
-              backgroundColor: Colors.white,
+              backgroundColor: AppColors.whiteColor[themeMode],
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16.w), 
+                borderRadius: BorderRadius.circular(16.w),
               ),
               child: Padding(
-                padding: EdgeInsets.all(16.w), 
+                padding: EdgeInsets.all(16.w),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    SizedBox(height: 5.h), 
+                    SizedBox(height: 5.h),
                     Text(
                       '  Filter by Category',
                       style: GoogleFonts.poppins(
-                        fontSize: 12.sp, 
+                        fontSize: 12.sp,
                         fontWeight: FontWeight.w500,
-                        color: Colors.black,
+                        color: AppColors.textColor[themeMode],
                       ),
                     ),
-                    SizedBox(height: 15.h), 
+                    SizedBox(height: 15.h),
                     ...categories.map((category) {
                       final isSelected = selectedCategories.contains(category);
                       return GestureDetector(
@@ -179,13 +186,13 @@ class AllExpensesScreenState extends State<AllExpensesScreen> {
                         },
                         child: Container(
                           padding: EdgeInsets.symmetric(
-                              vertical: 10.h, horizontal: 16.w), 
-                          margin: EdgeInsets.only(bottom: 8.h), 
+                              vertical: 10.h, horizontal: 16.w),
+                          margin: EdgeInsets.only(bottom: 8.h),
                           decoration: BoxDecoration(
                             color: isSelected
-                                ? const Color(0xFFCCF20D)
-                                : const Color(0xFFF9FAFB),
-                            borderRadius: BorderRadius.circular(12.w), 
+                                ? AppColors.accentColor[themeMode]
+                                : AppColors.lightBackground[themeMode],
+                            borderRadius: BorderRadius.circular(12.w),
                           ),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -193,18 +200,18 @@ class AllExpensesScreenState extends State<AllExpensesScreen> {
                               Text(
                                 category,
                                 style: GoogleFonts.poppins(
-                                  fontSize: 12.sp, 
+                                  fontSize: 12.sp,
                                   fontWeight: FontWeight.w400,
                                   color: isSelected
-                                      ? Colors.black
-                                      : const Color(0xFF374151),
+                                      ? AppColors.textColor[themeMode]
+                                      : AppColors.secondaryTextColor[themeMode],
                                 ),
                               ),
                               if (isSelected)
-                                const Icon(
+                                Icon(
                                   Icons.remove,
-                                  size: 18, 
-                                  color: Colors.black,
+                                  size: 18,
+                                  color: AppColors.textColor[themeMode],
                                 ),
                             ],
                           ),

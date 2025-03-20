@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -8,6 +9,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:provider/provider.dart';
+import 'package:spence/theme/theme.dart';
+import 'package:spence/theme/theme_provider.dart';
 
 class Notifications extends StatefulWidget {
   const Notifications({super.key});
@@ -25,7 +29,8 @@ class NotificationsState extends State<Notifications> {
   @override
   void initState() {
     super.initState();
-    _loadLastClearTimestamp().then((_) => _setupListeners(_auth.currentUser?.uid));
+    _loadLastClearTimestamp()
+        .then((_) => _setupListeners(_auth.currentUser?.uid));
     _setupDailyCheckTimer();
   }
 
@@ -38,22 +43,26 @@ class NotificationsState extends State<Notifications> {
   Future<void> _loadLastClearTimestamp() async {
     final userId = _auth.currentUser?.uid;
     if (userId == null) return;
-    final doc = await _firestore.collection('notification_settings').doc(userId).get();
+    final doc =
+        await _firestore.collection('notification_settings').doc(userId).get();
     setState(() {
-      _lastClearTimestamp = doc.exists ? doc['lastCleared'] as Timestamp? : null;
+      _lastClearTimestamp =
+          doc.exists ? doc['lastCleared'] as Timestamp? : null;
     });
   }
 
   void _setupListeners(String? userId) {
     if (userId == null) return;
 
-    _firestore.collection('expenses')
+    _firestore
+        .collection('expenses')
         .where('userId', isEqualTo: userId)
         .snapshots()
         .listen((s) => s.docChanges
             .where((c) =>
                 c.type == DocumentChangeType.added &&
-                (_lastClearTimestamp == null || _isAfterLastClear(c.doc.data()!['date'])))
+                (_lastClearTimestamp == null ||
+                    _isAfterLastClear(c.doc.data()!['date'])))
             .forEach((c) async => _addNotification(
                   userId,
                   'Expense Added',
@@ -61,7 +70,8 @@ class NotificationsState extends State<Notifications> {
                   expenseId: c.doc.id,
                 )));
 
-    _firestore.collection('recurring_expenses')
+    _firestore
+        .collection('recurring_expenses')
         .where('userId', isEqualTo: userId)
         .snapshots()
         .listen((s) => s.docChanges
@@ -95,17 +105,17 @@ class NotificationsState extends State<Notifications> {
 
   bool _isAfterLastClear(dynamic timestamp) {
     if (_lastClearTimestamp == null) return true;
-    final eventTime = timestamp is Timestamp ? timestamp : _parseDate(timestamp);
+    final eventTime =
+        timestamp is Timestamp ? timestamp : _parseDate(timestamp);
     return eventTime.toDate().isAfter(_lastClearTimestamp!.toDate());
   }
 
   Future<void> _addNotification(String userId, String title, String message,
       {String? expenseId, dynamic timestamp}) async {
     final ref = _firestore.collection('notifications');
-    final query = ref
-        .where('userId', isEqualTo: userId)
-        .where(expenseId != null ? 'expenseId' : 'message',
-            isEqualTo: expenseId ?? message);
+    final query = ref.where('userId', isEqualTo: userId).where(
+        expenseId != null ? 'expenseId' : 'message',
+        isEqualTo: expenseId ?? message);
     if ((await query.get()).docs.isNotEmpty) return;
     await ref.add({
       'userId': userId,
@@ -118,7 +128,6 @@ class NotificationsState extends State<Notifications> {
               : FieldValue.serverTimestamp(),
       if (expenseId != null) 'expenseId': expenseId,
     });
-    // Trigger system notification with vibration
     await NotificationService.showNotification(title, message);
   }
 
@@ -130,7 +139,6 @@ class NotificationsState extends State<Notifications> {
     final currency = await _fetchCurrency();
     final now = DateTime.now();
 
-    // Calculate weekly budget based on remaining amount and weeks left
     final remainingWeeks = _remainingWeeksInMonth(now);
     final weeklyBudget = remaining / remainingWeeks;
 
@@ -138,8 +146,8 @@ class NotificationsState extends State<Notifications> {
       _addNotification(userId, 'Budget Exceeded',
           'You’ve exceeded your monthly budget by $currency ${(spent - total).toStringAsFixed(2)}.');
     } else if (percent >= 80) {
-      _addNotification(userId, 'Budget Alert',
-          'You’ve spent 80% of your monthly budget.');
+      _addNotification(
+          userId, 'Budget Alert', 'You’ve spent 80% of your monthly budget.');
     }
 
     final weekStart = now.subtract(Duration(days: now.weekday % 7));
@@ -147,7 +155,6 @@ class NotificationsState extends State<Notifications> {
             userId, weekStart, weekStart.add(Duration(days: 7))))
         .fold(0.0, (sum, doc) => sum + (doc['amount'] as num).toDouble());
 
-    // Weekly notification only on Wednesday (day 3) if overspent
     if (_isThirdDayOfWeek(now) && weekSpent > weeklyBudget) {
       _addNotification(userId, 'Weekly Overspending',
           'You’ve spent more than your weekly budget of $currency ${weeklyBudget.toStringAsFixed(2)} this week.');
@@ -163,9 +170,8 @@ class NotificationsState extends State<Notifications> {
     final daysInMonth = DateTime(now.year, now.month + 1, 0).day;
     final dailyBudget = total / daysInMonth;
 
-    // Updated to use full day range
-    final todayStart = DateTime(now.year, now.month, now.day); // Midnight today
-    final todayEnd = todayStart.add(Duration(days: 1)); // Midnight tomorrow
+    final todayStart = DateTime(now.year, now.month, now.day);
+    final todayEnd = todayStart.add(Duration(days: 1));
     final todaySpent = (await _queryExpenses(userId, todayStart, todayEnd))
         .fold(0.0, (sum, doc) => sum + (doc['amount'] as num).toDouble());
 
@@ -199,8 +205,8 @@ class NotificationsState extends State<Notifications> {
   Timestamp _parseDate(dynamic raw) => raw is Timestamp
       ? raw
       : raw is String
-          ? Timestamp.fromDate(
-              DateFormat('dd MMMM yyyy \'at\' HH:mm:ss').parse(raw.split(' UTC')[0], true))
+          ? Timestamp.fromDate(DateFormat('dd MMMM yyyy \'at\' HH:mm:ss')
+              .parse(raw.split(' UTC')[0], true))
           : Timestamp.now();
 
   Future<String> _fetchCurrency() async => (_auth.currentUser?.uid) == null
@@ -252,54 +258,69 @@ class NotificationsState extends State<Notifications> {
   }
 
   bool _isThirdDayOfWeek(DateTime now) {
-    return now.weekday == 3; // Wednesday (1 = Monday, 3 = Wednesday)
+    return now.weekday == 3;
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-        backgroundColor: const Color(0xFFF2F2F2),
-        body: SafeArea(
-          child: Column(
-            children: [
-              Padding(
-                padding: EdgeInsets.fromLTRB(25.w, 14.h, 20.w, 0),
-                child: Row(
-                  children: [
-                    SvgPicture.asset('assets/spence.svg', height: 14.h),
-                    const Spacer(),
-                    CircleAvatar(
-                      radius: 19.w,
-                      backgroundColor: Colors.white,
-                      child: IconButton(
-                        icon: Icon(Icons.arrow_back_rounded, size: 20.w),
-                        onPressed: () => Navigator.pop(context),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              SizedBox(height: 20.h),
-              Expanded(
-                child: Padding(
-                  padding: EdgeInsets.only(bottom: 30.h),
-                  child: _buildNotifications(_auth.currentUser?.uid),
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
+  Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final themeMode = themeProvider.themeMode;
 
-  Widget _buildNotifications(String? userId) => userId == null
-      ? _emptyState()
+    return Scaffold(
+      backgroundColor: AppColors.primaryBackground[themeMode],
+      body: SafeArea(
+        child: Column(
+          children: [
+            Padding(
+              padding: EdgeInsets.fromLTRB(25.w, 14.h, 20.w, 0),
+              child: Row(
+                children: [
+                  SvgPicture.asset(
+                    themeMode == ThemeMode.light
+                        ? 'assets/spence.svg'
+                        : 'assets/spence_dark.svg',
+                    height: 14.h,
+                  ),
+                  const Spacer(),
+                  CircleAvatar(
+                    radius: 19.w,
+                    backgroundColor: AppColors.whiteColor[themeMode],
+                    child: IconButton(
+                      icon: Icon(
+                        Icons.arrow_back_rounded,
+                        size: 20.w,
+                        color: AppColors.textColor[themeMode],
+                      ),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(height: 20.h),
+            Expanded(
+              child: Padding(
+                padding: EdgeInsets.only(bottom: 30.h),
+                child: _buildNotifications(_auth.currentUser?.uid, themeMode),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNotifications(String? userId, ThemeMode themeMode) => userId ==
+          null
+      ? _emptyState(themeMode)
       : Builder(
           builder: (context) {
             final currentUserId = _auth.currentUser!.uid;
             return Container(
-              width: 320.w,
-              padding: EdgeInsets.all(24.w),
+              width: 330.w,
+              padding: EdgeInsets.fromLTRB(15.w, 10.h, 15.w, 15.h),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: AppColors.whiteColor[themeMode],
                 borderRadius: BorderRadius.circular(12.r),
               ),
               child: Stack(
@@ -310,56 +331,85 @@ class NotificationsState extends State<Notifications> {
                         .where('userId', isEqualTo: currentUserId)
                         .where('timestamp',
                             isGreaterThanOrEqualTo: Timestamp.fromDate(
-                                DateTime.now().toUtc().subtract(Duration(days: 7))))
+                                DateTime.now()
+                                    .toUtc()
+                                    .subtract(Duration(days: 7))))
                         .orderBy('timestamp', descending: true)
                         .snapshots(),
-                    builder: (context, s) => s.connectionState == ConnectionState.waiting
-                        ? const Center(child: CircularProgressIndicator())
+                    builder: (context, s) => s.connectionState ==
+                            ConnectionState.waiting
+                        ? Center (child: SpinKitThreeBounce(color: AppColors.spinnerColor[themeMode]))
                         : s.hasError
-                            ? const Center(child: Text('Error loading notifications'))
+                            ? const Center(
+                                child: Text('Error loading notifications'))
                             : s.data!.docs.isEmpty
-                                ? _emptyState()
+                                ? _emptyState(themeMode)
                                 : ListView.builder(
                                     padding: EdgeInsets.zero,
                                     itemCount: s.data!.docs.length,
                                     itemBuilder: (context, i) {
-                                      final n = s.data!.docs[i].data() as Map<String, dynamic>;
+                                      final n = s.data!.docs[i].data()
+                                          as Map<String, dynamic>;
                                       return Padding(
                                         padding: EdgeInsets.only(top: 10.h),
                                         child: Container(
-                                          padding:
-                                              EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+                                          padding: EdgeInsets.symmetric(
+                                              horizontal: 16.w, vertical: 12.h),
                                           decoration: BoxDecoration(
-                                            color: const Color(0xFFF9FAFB),
-                                            borderRadius: BorderRadius.circular(12.r),
+                                            color: AppColors
+                                                .lightBackground[themeMode],
+                                            borderRadius:
+                                                BorderRadius.circular(12.r),
                                           ),
                                           child: Row(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
                                             children: [
                                               Expanded(
                                                 child: Column(
-                                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.start,
                                                   children: [
-                                                    Text(n['title'] ?? 'Notification',
-                                                        style: GoogleFonts.poppins(
-                                                            fontSize: 12.sp,
-                                                            fontWeight: FontWeight.w500)),
+                                                    Text(
+                                                      n['title'] ??
+                                                          'Notification',
+                                                      style:
+                                                          GoogleFonts.poppins(
+                                                        fontSize: 12.sp,
+                                                        fontWeight:
+                                                            FontWeight.w500,
+                                                        color:
+                                                            AppColors.textColor[
+                                                                themeMode],
+                                                      ),
+                                                    ),
                                                     SizedBox(height: 4.h),
-                                                    Text(n['message'] ?? '',
-                                                        style: GoogleFonts.poppins(
-                                                            fontSize: 10.sp,
-                                                            color: const Color(0xFF7F7F7F))),
+                                                    Text(
+                                                      n['message'] ?? '',
+                                                      style:
+                                                          GoogleFonts.poppins(
+                                                        fontSize: 10.sp,
+                                                        color: AppColors
+                                                                .notificationTextColor[
+                                                            themeMode],
+                                                      ),
+                                                    ),
                                                   ],
                                                 ),
                                               ),
                                               SizedBox(width: 10.w),
                                               Text(
-                                                  n['timestamp'] != null
-                                                      ? _formatTime(n['timestamp'])
-                                                      : 'Unknown',
-                                                  style: GoogleFonts.poppins(
-                                                      fontSize: 9.sp,
-                                                      color: const Color(0xFF7F7F7F))),
+                                                n['timestamp'] != null
+                                                    ? _formatTime(
+                                                        n['timestamp'])
+                                                    : 'Unknown',
+                                                style: GoogleFonts.poppins(
+                                                  fontSize: 9.sp,
+                                                  color: AppColors
+                                                          .notificationTextColor[
+                                                      themeMode],
+                                                ),
+                                              ),
                                             ],
                                           ),
                                         ),
@@ -373,15 +423,19 @@ class NotificationsState extends State<Notifications> {
                     child: GestureDetector(
                       onTap: () => _clearNotifications(currentUserId),
                       child: Container(
-                        padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 5.h),
+                        padding: EdgeInsets.symmetric(
+                            horizontal: 10.w, vertical: 5.h),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFF2F2F2),
+                          color: AppColors.primaryBackground[themeMode],
                           borderRadius: BorderRadius.circular(16.r),
                         ),
                         child: Text(
                           'Clear Notifications',
                           style: GoogleFonts.poppins(
-                              fontSize: 10.sp, fontWeight: FontWeight.w400, color: Colors.black),
+                            fontSize: 10.sp,
+                            fontWeight: FontWeight.w400,
+                            color: AppColors.textColor[themeMode],
+                          ),
                         ),
                       ),
                     ),
@@ -392,27 +446,38 @@ class NotificationsState extends State<Notifications> {
           },
         );
 
-  Widget _emptyState() => Center(
+  Widget _emptyState(ThemeMode themeMode) => Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.notifications_off_outlined,
-                size: 50.w, color: const Color.fromARGB(80, 149, 149, 149)),
+            Icon(
+              Icons.notifications_off_outlined,
+              size: 50.w,
+              color: AppColors.disabledIconColor[themeMode],
+            ),
             SizedBox(height: 10.h),
-            Text('No Notifications',
-                style: GoogleFonts.poppins(
-                    fontSize: 14.sp, fontWeight: FontWeight.w500, color: const Color(0xFF272727))),
+            Text(
+              'No Notifications',
+              style: GoogleFonts.poppins(
+                fontSize: 14.sp,
+                fontWeight: FontWeight.w500,
+                color: AppColors.secondaryTextColor[themeMode],
+              ),
+            ),
             SizedBox(height: 8.h),
-            Text('You’ll see updates here when there’s activity.',
-                textAlign: TextAlign.center,
-                style: GoogleFonts.poppins(
-                    fontSize: 9.sp, color: const Color.fromARGB(80, 0, 0, 0))),
+            Text(
+              'You’ll see updates here when there’s activity.',
+              textAlign: TextAlign.center,
+              style: GoogleFonts.poppins(
+                fontSize: 9.sp,
+                color: AppColors.disabledTextColor[themeMode],
+              ),
+            ),
           ],
         ),
       );
 }
 
-// NotificationService class to handle system notifications
 class NotificationService {
   static final _notifications = FlutterLocalNotificationsPlugin();
 
@@ -425,14 +490,15 @@ class NotificationService {
 
   static Future<void> showNotification(String title, String body) async {
     final androidDetails = AndroidNotificationDetails(
-      'channel_id', // Unique ID for the notification channel
-      'channel_name', // Name shown in settings
+      'channel_id',
+      'channel_name',
       importance: Importance.max,
       priority: Priority.high,
-      vibrationPattern: Int64List.fromList([0, 1000, 500, 1000]), // Vibration pattern
+      vibrationPattern: Int64List.fromList([0, 1000, 500, 1000]),
     );
     const iosDetails = DarwinNotificationDetails();
-    final details = NotificationDetails(android: androidDetails, iOS: iosDetails);
+    final details =
+        NotificationDetails(android: androidDetails, iOS: iosDetails);
     await _notifications.show(0, title, body, details);
   }
 }

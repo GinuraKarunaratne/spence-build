@@ -3,6 +3,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
+import 'package:provider/provider.dart';
+import 'package:spence/theme/theme.dart';
+import 'package:spence/theme/theme_provider.dart';
 
 class RecurringList extends StatelessWidget {
   final List<String> selectedCategories;
@@ -30,36 +33,43 @@ class RecurringList extends StatelessWidget {
   Widget build(BuildContext context) {
     return FutureBuilder<String>(
       future: _fetchCurrencySymbol(),
-      builder: (context, currencySnapshot) {
+      builder: (BuildContext futureContext, currencySnapshot) {
+        final themeMode = Provider.of<ThemeProvider>(futureContext).themeMode;
+
         if (currencySnapshot.connectionState == ConnectionState.waiting) {
-          return _buildLoadingIndicator();
+          return _buildLoadingIndicator(themeMode);
         }
 
         if (currencySnapshot.hasError || !currencySnapshot.hasData) {
-          return _buildErrorMessage('Error loading currency symbol');
+          return _buildErrorMessage(
+              futureContext, 'Error loading currency symbol');
         }
 
         final currencySymbol = currencySnapshot.data!;
         return StreamBuilder<QuerySnapshot>(
           stream: _fetchRecurringExpenses(),
-          builder: (context, expenseSnapshot) {
+          builder: (BuildContext streamContext, expenseSnapshot) {
+            final themeMode =
+                Provider.of<ThemeProvider>(streamContext).themeMode;
+
             if (expenseSnapshot.connectionState == ConnectionState.waiting) {
-              return _buildLoadingIndicator();
+              return _buildLoadingIndicator(themeMode);
             }
 
             if (expenseSnapshot.hasError || !expenseSnapshot.hasData) {
-              return _buildErrorMessage('Error loading recurring expenses');
+              return _buildErrorMessage(
+                  streamContext, 'Error loading recurring expenses');
             }
 
             final recurringDocs = expenseSnapshot.data!.docs;
             final filteredDocs = _filterRecurringDocs(recurringDocs);
 
             if (filteredDocs.isEmpty) {
-              return _buildEmptyMessage();
+              return _buildEmptyMessage(streamContext);
             }
 
             return _buildRecurringListView(
-                filteredDocs, context, currencySymbol);
+                filteredDocs, streamContext, currencySymbol);
           },
         );
       },
@@ -102,6 +112,7 @@ class RecurringList extends StatelessWidget {
           child: GestureDetector(
             onLongPress: () => _showDeleteConfirmation(context, recurring.id),
             child: _buildRecurringItem(
+              context: context,
               title: recurring['title'] as String? ?? 'Unknown',
               amount: '$currencySymbol ${recurring['amount']?.toInt() ?? 0}',
               category: recurring['category'] as String? ?? 'Unknown',
@@ -114,11 +125,13 @@ class RecurringList extends StatelessWidget {
   }
 
   Widget _buildRecurringItem({
+    required BuildContext context,
     required String title,
     required String amount,
     required String category,
     DateTime? nextDate,
   }) {
+    final themeMode = Provider.of<ThemeProvider>(context).themeMode;
     final nextDateText = _calculateDaysDifference(nextDate);
 
     return Container(
@@ -126,7 +139,7 @@ class RecurringList extends StatelessWidget {
       height: 85,
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        color: const Color(0xFFF2F2F2),
+        color: AppColors.primaryBackground[themeMode],
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
@@ -138,7 +151,7 @@ class RecurringList extends StatelessWidget {
                 child: Text(
                   title,
                   style: GoogleFonts.poppins(
-                    color: Colors.black,
+                    color: AppColors.textColor[themeMode],
                     fontSize: 13,
                     fontWeight: FontWeight.w400,
                   ),
@@ -148,7 +161,7 @@ class RecurringList extends StatelessWidget {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFCCF20D),
+                  color: AppColors.accentColor[themeMode],
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
@@ -156,6 +169,7 @@ class RecurringList extends StatelessWidget {
                   style: GoogleFonts.poppins(
                     fontSize: 11,
                     fontWeight: FontWeight.w400,
+                    color: AppColors.textColor[themeMode],
                   ),
                 ),
               ),
@@ -168,7 +182,7 @@ class RecurringList extends StatelessWidget {
               Text(
                 category,
                 style: GoogleFonts.poppins(
-                  color: const Color(0xFF7F7F7F),
+                  color: AppColors.notificationTextColor[themeMode],
                   fontSize: 11,
                   fontWeight: FontWeight.w400,
                 ),
@@ -176,7 +190,7 @@ class RecurringList extends StatelessWidget {
               Text(
                 nextDateText,
                 style: GoogleFonts.poppins(
-                  color: Colors.black87,
+                  color: AppColors.logoutDialogContentColor[themeMode],
                   fontSize: 11,
                 ),
               ),
@@ -188,10 +202,13 @@ class RecurringList extends StatelessWidget {
   }
 
   void _showDeleteConfirmation(BuildContext context, String docId) {
+    final themeMode =
+        Provider.of<ThemeProvider>(context, listen: false).themeMode;
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFFF5F5F5),
+        backgroundColor: AppColors.lightBackground[themeMode],
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
         ),
@@ -200,7 +217,7 @@ class RecurringList extends StatelessWidget {
           style: GoogleFonts.poppins(
             fontSize: 18,
             fontWeight: FontWeight.w500,
-            color: Colors.black,
+            color: AppColors.textColor[themeMode],
           ),
         ),
         content: Text(
@@ -208,7 +225,7 @@ class RecurringList extends StatelessWidget {
           style: GoogleFonts.poppins(
             fontWeight: FontWeight.w400,
             fontSize: 12,
-            color: const Color(0xFF7F7F7F),
+            color: AppColors.notificationTextColor[themeMode],
           ),
         ),
         actions: [
@@ -219,7 +236,7 @@ class RecurringList extends StatelessWidget {
               style: GoogleFonts.poppins(
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
-                color: const Color.fromARGB(255, 0, 0, 0),
+                color: AppColors.logoutDialogCancelColor[themeMode],
               ),
             ),
           ),
@@ -233,7 +250,7 @@ class RecurringList extends StatelessWidget {
               style: GoogleFonts.poppins(
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
-                color: const Color.fromARGB(255, 255, 9, 9),
+                color: AppColors.errorColor[themeMode],
               ),
             ),
           ),
@@ -256,36 +273,40 @@ class RecurringList extends StatelessWidget {
     }
   }
 
-  Widget _buildLoadingIndicator() {
-    return const Center(
+  Widget _buildLoadingIndicator(ThemeMode themeMode) {
+    return Center(
       child: SpinKitThreeBounce(
-        color: Color(0xFFCCF20D),
+        color: AppColors.accentColor[themeMode],
         size: 40.0,
       ),
     );
   }
 
-  Widget _buildErrorMessage(String message) {
+  Widget _buildErrorMessage(BuildContext context, String message) {
+    final themeMode = Provider.of<ThemeProvider>(context).themeMode;
+
     return Center(
       child: Text(
         message,
         style: GoogleFonts.poppins(
-          color: Colors.red,
+          color: AppColors.errorColor[themeMode],
           fontSize: 14,
         ),
       ),
     );
   }
 
-  Widget _buildEmptyMessage() {
+  Widget _buildEmptyMessage(BuildContext context) {
+    final themeMode = Provider.of<ThemeProvider>(context).themeMode;
+
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(
+          Icon(
             Icons.receipt_rounded,
             size: 50,
-            color: Color.fromARGB(80, 149, 149, 149),
+            color: AppColors.disabledIconColor[themeMode],
           ),
           const SizedBox(height: 10),
           Text(
@@ -293,7 +314,7 @@ class RecurringList extends StatelessWidget {
             style: GoogleFonts.poppins(
               fontSize: 15,
               fontWeight: FontWeight.w500,
-              color: const Color(0xFF272727),
+              color: AppColors.secondaryTextColor[themeMode],
             ),
           ),
           const SizedBox(height: 8),
@@ -303,7 +324,7 @@ class RecurringList extends StatelessWidget {
             style: GoogleFonts.poppins(
               fontSize: 10,
               fontWeight: FontWeight.w400,
-              color: const Color.fromARGB(80, 0, 0, 0),
+              color: AppColors.disabledTextColor[themeMode],
             ),
           ),
         ],

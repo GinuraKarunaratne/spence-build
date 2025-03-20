@@ -10,6 +10,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:spence/services/ocrservice.dart';
+import 'package:provider/provider.dart';
+import 'package:spence/theme/theme.dart';
+import 'package:spence/theme/theme_provider.dart';
 
 class ExpenseScreen extends StatefulWidget {
   const ExpenseScreen({super.key});
@@ -22,7 +25,6 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
   bool _isLoading = false;
   Map<String, String>? _ocrData;
   late final OcrService _ocrService;
-  // Add a GlobalKey to access the ExpenseForm state
   final _formKey = GlobalKey<ExpenseFormState>();
 
   @override
@@ -64,7 +66,8 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
     }
   }
 
-  Future<void> _submitExpense(String title, String amount, String category, DateTime date) async {
+  Future<void> _submitExpense(
+      String title, String amount, String category, DateTime date) async {
     if (title.isEmpty || amount.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please fill in all required fields')),
@@ -84,7 +87,8 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
       final double expenseAmountValue = double.parse(amount);
       final batch = FirebaseFirestore.instance.batch();
 
-      final expenseDoc = FirebaseFirestore.instance.collection('expenses').doc();
+      final expenseDoc =
+          FirebaseFirestore.instance.collection('expenses').doc();
       batch.set(expenseDoc, {
         'amount': expenseAmountValue,
         'category': category,
@@ -99,12 +103,16 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
           .doc(userId)
           .collection('totExpenses')
           .doc('summary');
-      batch.set(totExpensesDoc, {
-        'count': FieldValue.increment(1),
-        'total_expense': FieldValue.increment(expenseAmountValue),
-      }, SetOptions(merge: true));
+      batch.set(
+          totExpensesDoc,
+          {
+            'count': FieldValue.increment(1),
+            'total_expense': FieldValue.increment(expenseAmountValue),
+          },
+          SetOptions(merge: true));
 
-      final budgetDoc = FirebaseFirestore.instance.collection('budgets').doc(userId);
+      final budgetDoc =
+          FirebaseFirestore.instance.collection('budgets').doc(userId);
       final budgetSnapshot = await budgetDoc.get();
       if (budgetSnapshot.exists) {
         batch.update(budgetDoc, {
@@ -134,14 +142,18 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
     } catch (e) {
       debugPrint("Submit Expense Error: $e");
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to record expense. Please try again.')),
+        const SnackBar(
+            content: Text('Failed to record expense. Please try again.')),
       );
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final arguments = ModalRoute.of(context)?.settings.arguments as Map<String, String>?;
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final themeMode = themeProvider.themeMode;
+    final arguments =
+        ModalRoute.of(context)?.settings.arguments as Map<String, String>?;
     final initialTitle = arguments?['initialTitle'] ?? '';
     final initialAmount = arguments?['initialAmount'] ?? '';
 
@@ -149,7 +161,7 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
     final formInitialAmount = _ocrData?['amount'] ?? initialAmount;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF2F2F2),
+      backgroundColor: AppColors.primaryBackground[themeMode],
       body: SafeArea(
         child: Stack(
           children: [
@@ -163,7 +175,9 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
                         Padding(
                           padding: EdgeInsets.fromLTRB(25.w, 12.h, 0, 0),
                           child: SvgPicture.asset(
-                            'assets/spence.svg',
+                            themeMode == ThemeMode.light
+                                ? 'assets/spence.svg'
+                                : 'assets/spence_dark.svg',
                             height: 14.h,
                           ),
                         ),
@@ -173,13 +187,14 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
                           child: Container(
                             width: 38.w,
                             height: 38.w,
-                            decoration: const BoxDecoration(
+                            decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              color: Colors.white,
+                              color: AppColors.whiteColor[themeMode],
                             ),
                             child: IconButton(
                               icon: Icon(Icons.arrow_back_rounded,
-                                  size: 20.w, color: Colors.black),
+                                  size: 20.w,
+                                  color: AppColors.textColor[themeMode]),
                               onPressed: () => Navigator.of(context).pop(),
                             ),
                           ),
@@ -191,14 +206,14 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
                   const BudgetDisplay(),
                   SizedBox(height: 80.h),
                   ExpenseForm(
-                    key: _formKey, // Assign the GlobalKey here
+                    key: _formKey,
                     initialTitle: formInitialTitle,
                     initialAmount: formInitialAmount,
                     onSubmit: (title, amount, category, date) async {
                       setState(() => _isLoading = true);
                       try {
                         await _submitExpense(title, amount, category, date);
-                        _formKey.currentState?.resetForm(); // Reset form after successful submission
+                        _formKey.currentState?.resetForm();
                       } finally {
                         setState(() => _isLoading = false);
                       }
@@ -217,7 +232,7 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
                     ImageRecordButton(onPressed: _captureAndProcessImage),
                     SizedBox(width: 11.w),
                     RecordExpenseButton(onPressed: () {
-                      _formKey.currentState?.submit(); // Trigger form submission
+                      _formKey.currentState?.submit();
                     }),
                   ],
                 ),
@@ -226,11 +241,13 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
             if (_isLoading)
               Positioned.fill(
                 child: Container(
-                  color: Colors.black.withOpacity(0.5),
-                  child: const Center(
+                  color: AppColors.overlayColor[themeMode],
+                  child: Center(
                     child: LoadingIndicator(
                       indicatorType: Indicator.ballPulse,
-                      colors: [Color(0xFFCCF20D)],
+                      colors: [
+                        AppColors.accentColor[themeMode] ?? Colors.grey
+                      ], // Fallback to grey if null
                       strokeWidth: 2,
                     ),
                   ),

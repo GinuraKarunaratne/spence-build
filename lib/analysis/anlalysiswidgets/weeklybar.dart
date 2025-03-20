@@ -4,12 +4,17 @@ import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:provider/provider.dart';
+import 'package:spence/theme/theme.dart';
+import 'package:spence/theme/theme_provider.dart';
 
 class WeeklyBarWidget extends StatelessWidget {
   const WeeklyBarWidget({super.key, required List<double> weeklyExpenses});
 
   @override
   Widget build(BuildContext context) {
+    final themeMode = Provider.of<ThemeProvider>(context).themeMode;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -20,7 +25,7 @@ class WeeklyBarWidget extends StatelessWidget {
             style: GoogleFonts.poppins(
               fontSize: 17.sp,
               fontWeight: FontWeight.w500,
-              color: Colors.black,
+              color: AppColors.textColor[themeMode],
             ),
           ),
         ),
@@ -32,29 +37,45 @@ class WeeklyBarWidget extends StatelessWidget {
             height: 240.h,
             padding: EdgeInsets.fromLTRB(16.w, 60.h, 16.w, 0.h),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: AppColors.whiteColor[themeMode],
               borderRadius: BorderRadius.circular(12.r),
             ),
             child: StreamBuilder<List<double>>(
               stream: _getWeeklyExpensesByWeek(),
-              builder: (context, snapshot) {
+              builder: (BuildContext streamContext, snapshot) {
+                final themeMode = Provider.of<ThemeProvider>(streamContext).themeMode;
+
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(
+                  return Center(
                     child: SpinKitThreeBounce(
-                      color: Color.fromARGB(255, 204, 242, 13),
+                      color: AppColors.accentColor[themeMode],
                       size: 40.0,
                     ),
                   );
                 }
                 if (snapshot.hasError) {
-                  return Center(child: Text('Error: ${snapshot.error}'));
+                  return Center(
+                    child: Text(
+                      'Error: ${snapshot.error}',
+                      style: GoogleFonts.poppins(
+                        color: AppColors.errorColor[themeMode],
+                      ),
+                    ),
+                  );
                 }
                 if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                  return const Center(child: Text('No data available'));
+                  return Center(
+                    child: Text(
+                      'No data available',
+                      style: GoogleFonts.poppins(
+                        color: AppColors.secondaryTextColor[themeMode],
+                      ),
+                    ),
+                  );
                 }
 
                 final List<double> weeklyExpenses = snapshot.data!;
-                return _buildBarChart(weeklyExpenses);
+                return _buildBarChart(streamContext, weeklyExpenses);
               },
             ),
           ),
@@ -64,7 +85,9 @@ class WeeklyBarWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildBarChart(List<double> weeklyExpenses) {
+  Widget _buildBarChart(BuildContext context, List<double> weeklyExpenses) {
+    final themeMode = Provider.of<ThemeProvider>(context).themeMode;
+
     double maxExpense = weeklyExpenses.isNotEmpty
         ? weeklyExpenses.reduce((a, b) => a > b ? a : b)
         : 1;
@@ -81,7 +104,7 @@ class WeeklyBarWidget extends StatelessWidget {
             double expense = entry.value;
             double barHeight = (expense / maxExpense) * 145.h;
 
-            return _buildBar(expense, barHeight, index, activeWeekIndex);
+            return _buildBar(expense, barHeight, index, activeWeekIndex, themeMode);
           }).toList(),
         ),
         SizedBox(height: 12.h),
@@ -93,7 +116,9 @@ class WeeklyBarWidget extends StatelessWidget {
               child: Text(
                 "Week ${index + 1}",
                 style: GoogleFonts.poppins(
-                    fontSize: 8.sp, color: Colors.grey[600]),
+                  fontSize: 8.sp,
+                  color: AppColors.logoutDialogCancelColor[themeMode],
+                ),
               ),
             );
           }),
@@ -103,7 +128,12 @@ class WeeklyBarWidget extends StatelessWidget {
   }
 
   Widget _buildBar(
-      double expense, double barHeight, int index, int activeWeekIndex) {
+    double expense,
+    double barHeight,
+    int index,
+    int activeWeekIndex,
+    ThemeMode themeMode,
+  ) {
     bool isCurrentWeek = index == activeWeekIndex;
 
     return expense == 0
@@ -112,7 +142,7 @@ class WeeklyBarWidget extends StatelessWidget {
             height: 21.h,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(60.r),
-              color: const Color(0xFFE6E6E6),
+              color: AppColors.categoryButtonBackground[themeMode],
             ),
           )
         : Container(
@@ -121,15 +151,21 @@ class WeeklyBarWidget extends StatelessWidget {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(60.r),
               gradient: isCurrentWeek
-                  ? const LinearGradient(
+                  ? LinearGradient(
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
-                      colors: [Color(0xFFCCF20D), Color(0xFFBBE000)],
+                      colors: [
+                        AppColors.barColor[themeMode]!,
+                        AppColors.barGradientEnd[themeMode]!,
+                      ],
                     )
-                  : const LinearGradient(
+                  : LinearGradient(
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
-                      colors: [Color(0xFFF5FCCF), Color(0xFFF5FCCF)],
+                      colors: [
+                        AppColors.monthlyBarColor[themeMode]!,
+                        AppColors.monthlyBarColor[themeMode]!,
+                      ],
                     ),
             ),
           );
@@ -168,6 +204,7 @@ class WeeklyBarWidget extends StatelessWidget {
         .where('date', isGreaterThanOrEqualTo: firstDayOfMonth)
         .snapshots()
         .map((querySnapshot) {
+      weeklyExpenses = List.filled(5, 0.0); // Reset to avoid accumulation
       for (var doc in querySnapshot.docs) {
         final expense = doc.data();
         final expenseAmount = expense['amount'] as double?;

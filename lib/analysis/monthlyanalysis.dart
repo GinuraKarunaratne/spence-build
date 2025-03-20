@@ -12,6 +12,9 @@ import 'package:spence/analysis/anlalysiswidgets/monthlymessage.dart';
 import 'package:spence/analysis/anlalysiswidgets/monthlypie.dart';
 import 'package:spence/analysis/anlalysiswidgets/monthlypiemessage.dart';
 import 'package:spence/analysis/anlalysiswidgets/summarymonthly.dart';
+import 'package:provider/provider.dart';
+import 'package:spence/theme/theme.dart';
+import 'package:spence/theme/theme_provider.dart';
 
 class MonthlyAnalysis extends StatefulWidget {
   const MonthlyAnalysis({super.key});
@@ -31,8 +34,11 @@ class _MonthlyAnalysisState extends State<MonthlyAnalysis> {
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final themeMode = themeProvider.themeMode;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF2F2F2),
+      backgroundColor: AppColors.primaryBackground[themeMode],
       body: SafeArea(
         child: SingleChildScrollView(
           child: Column(
@@ -62,22 +68,33 @@ class _MonthlyAnalysisState extends State<MonthlyAnalysis> {
   }
 
   Widget _buildHeader() {
+    final themeMode = Provider.of<ThemeProvider>(context).themeMode;
+
     return Padding(
       padding: EdgeInsets.only(top: 2.h),
       child: Row(
         children: [
           Padding(
             padding: EdgeInsets.fromLTRB(25.w, 12.h, 0, 0),
-            child: SvgPicture.asset('assets/spence.svg', height: 14.h),
+            child: SvgPicture.asset(
+              themeMode == ThemeMode.light
+                  ? 'assets/spence.svg'
+                  : 'assets/spence_dark.svg',
+              height: 14.h,
+            ),
           ),
           const Spacer(),
           Padding(
             padding: EdgeInsets.fromLTRB(40.w, 12.h, 20.w, 0),
             child: CircleAvatar(
               radius: 19.w,
-              backgroundColor: Colors.white,
+              backgroundColor: AppColors.whiteColor[themeMode],
               child: IconButton(
-                icon: Icon(Icons.arrow_back_rounded, size: 20.w, color: Colors.black),
+                icon: Icon(
+                  Icons.arrow_back_rounded,
+                  size: 20.w,
+                  color: AppColors.textColor[themeMode],
+                ),
                 onPressed: () => Navigator.of(context).pop(),
               ),
             ),
@@ -88,28 +105,39 @@ class _MonthlyAnalysisState extends State<MonthlyAnalysis> {
   }
 
   Widget _buildLoading() {
-    return const Center(
+    final themeMode = Provider.of<ThemeProvider>(context).themeMode;
+
+    return Center(
       child: SpinKitThreeBounce(
-        color: Color(0xFFCCF20D),
+        color: AppColors.accentColor[themeMode],
         size: 40.0,
       ),
     );
   }
 
   Widget _buildErrorPage(String message) {
+    final themeMode = Provider.of<ThemeProvider>(context).themeMode;
+
     return Center(
       child: Padding(
         padding: EdgeInsets.symmetric(horizontal: 20.w),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.error_outline, size: 60.w, color: Colors.red),
+            Icon(
+              Icons.error_outline,
+              size: 60.w,
+              color: AppColors.errorColor[themeMode],
+            ),
             SizedBox(height: 20.h),
             Text(
               message,
               textAlign: TextAlign.center,
               style: GoogleFonts.poppins(
-                  fontSize: 14.sp, fontWeight: FontWeight.w500, color: Colors.redAccent),
+                fontSize: 14.sp,
+                fontWeight: FontWeight.w500,
+                color: AppColors.errorColor[themeMode],
+              ),
             ),
           ],
         ),
@@ -118,26 +146,36 @@ class _MonthlyAnalysisState extends State<MonthlyAnalysis> {
   }
 
   Widget _noExpensesMessage() {
+    final themeMode = Provider.of<ThemeProvider>(context).themeMode;
+
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.summarize_rounded,
-              size: 50.w, color: const Color.fromARGB(80, 149, 149, 149)),
+          SizedBox(height: 230.h),
+          Icon(
+            Icons.summarize_rounded,
+            size: 50.w,
+            color: AppColors.disabledIconColor[themeMode],
+          ),
           SizedBox(height: 10.h),
           Text(
             'No expense record available',
             style: GoogleFonts.poppins(
-                fontSize: 14.sp, fontWeight: FontWeight.w500, color: const Color(0xFF272727)),
+              fontSize: 14.sp,
+              fontWeight: FontWeight.w500,
+              color: AppColors.secondaryTextColor[themeMode],
+            ),
           ),
           SizedBox(height: 8.h),
           Text(
             'Record at least one expense to access the Analysis.',
             textAlign: TextAlign.center,
             style: GoogleFonts.poppins(
-                fontSize: 9.sp,
-                fontWeight: FontWeight.w400,
-                color: const Color.fromARGB(80, 0, 0, 0)),
+              fontSize: 9.sp,
+              fontWeight: FontWeight.w400,
+              color: AppColors.disabledTextColor[themeMode],
+            ),
           ),
         ],
       ),
@@ -145,6 +183,8 @@ class _MonthlyAnalysisState extends State<MonthlyAnalysis> {
   }
 
   Widget _buildGraphWithMessages(Map<String, dynamic> data) {
+    final themeMode = Provider.of<ThemeProvider>(context).themeMode;
+
     final List<double> monthlyExpenses = List<double>.from(data['monthlyExpenses']);
     final double monthlyAllowableExpenditure = data['monthlyAllowableExpenditure'];
     final double totalMonthlyExpenditure = monthlyExpenses.reduce((a, b) => a + b);
@@ -202,7 +242,10 @@ class _MonthlyAnalysisState extends State<MonthlyAnalysis> {
             message,
             textAlign: TextAlign.justify,
             style: GoogleFonts.poppins(
-                fontSize: 9.sp, fontWeight: FontWeight.w400, color: const Color(0xFF7F7F7F)),
+              fontSize: 9.sp,
+              fontWeight: FontWeight.w400,
+              color: AppColors.notificationTextColor[themeMode],
+            ),
           ),
         ),
         SizedBox(height: 27.h),
@@ -214,11 +257,14 @@ class _MonthlyAnalysisState extends State<MonthlyAnalysis> {
             pieMessage,
             textAlign: TextAlign.justify,
             style: GoogleFonts.poppins(
-                fontSize: 9.sp, fontWeight: FontWeight.w400, color: const Color(0xFF7F7F7F)),
+              fontSize: 9.sp,
+              fontWeight: FontWeight.w400,
+              color: AppColors.notificationTextColor[themeMode],
+            ),
           ),
         ),
         SizedBox(height: 35.h),
-        MonthlyBar2Widget(expenses: monthlyExpenses), // Assuming it accepts expenses
+        MonthlyBar2Widget(expenses: monthlyExpenses),
         SizedBox(height: 15.h),
         SummaryMonthly(
           totalExpense: totalMonthlyExpenditure,
@@ -243,119 +289,131 @@ class _MonthlyAnalysisState extends State<MonthlyAnalysis> {
   }
 
   Future<Map<String, dynamic>> _getMonthlyExpensesAndBudgetData() async {
-    final userId = FirebaseAuth.instance.currentUser?.uid;
-    if (userId == null) return {};
+  final userId = FirebaseAuth.instance.currentUser?.uid;
+  if (userId == null) return {};
 
-    final today = DateTime.now();
-    final firstDayOfMonth = DateTime(today.year, today.month, 1);
-    final lastDayOfMonth = DateTime(today.year, today.month + 1, 0, 23, 59, 59, 999);
+  final today = DateTime.now();
+  final firstDayOfMonth = DateTime(today.year, today.month, 1);
+  final lastDayOfMonth = DateTime(today.year, today.month + 1, 0, 23, 59, 59, 999);
 
-    final budgetDoc = await FirebaseFirestore.instance
-        .collection('budgets')
-        .doc(userId)
-        .get();
-    final budgetData = budgetDoc.data() ?? {};
-    final remainingBudget = (budgetData['remaining_budget'] as double?) ?? 0.0;
-    final String currency = budgetData['currency'] ?? '';
-    final monthlyAllowable = remainingBudget; // Full budget for the month
+  // Fetch budget data
+  final budgetDoc = await FirebaseFirestore.instance
+      .collection('budgets')
+      .doc(userId)
+      .get();
+  final budgetData = budgetDoc.data() ?? {};
+  final remainingBudget = (budgetData['remaining_budget'] as double?) ?? 0.0;
+  final String currency = budgetData['currency'] ?? '';
+  final monthlyAllowable = remainingBudget; // Full budget for the month
 
-    // Fetch this month's expenses
-    final monthlyExpensesSnapshot = await FirebaseFirestore.instance
-        .collection('expenses')
-        .where('userId', isEqualTo: userId)
-        .where('date', isGreaterThanOrEqualTo: firstDayOfMonth)
-        .where('date', isLessThanOrEqualTo: lastDayOfMonth)
-        .get();
+  // Fetch this month's expenses
+  final monthlyExpensesSnapshot = await FirebaseFirestore.instance
+      .collection('expenses')
+      .where('userId', isEqualTo: userId)
+      .where('date', isGreaterThanOrEqualTo: firstDayOfMonth)
+      .where('date', isLessThanOrEqualTo: lastDayOfMonth)
+      .get();
 
-    // Fetch last month's expenses
-    final firstDayOfLastMonth = DateTime(today.year, today.month - 1, 1);
-    final lastDayOfLastMonth =
-        DateTime(today.year, today.month, 0, 23, 59, 59, 999);
-    final lastMonthSnapshot = await FirebaseFirestore.instance
-        .collection('expenses')
-        .where('userId', isEqualTo: userId)
-        .where('date', isGreaterThanOrEqualTo: firstDayOfLastMonth)
-        .where('date', isLessThanOrEqualTo: lastDayOfLastMonth)
-        .get();
+  // Fetch last month's expenses
+  final firstDayOfLastMonth = DateTime(today.year, today.month - 1, 1);
+  final lastDayOfLastMonth =
+      DateTime(today.year, today.month, 0, 23, 59, 59, 999);
+  final lastMonthSnapshot = await FirebaseFirestore.instance
+      .collection('expenses')
+      .where('userId', isEqualTo: userId)
+      .where('date', isGreaterThanOrEqualTo: firstDayOfLastMonth)
+      .where('date', isLessThanOrEqualTo: lastDayOfLastMonth)
+      .get();
 
-    final List<double> monthlyExpenses = List.filled(lastDayOfMonth.day, 0.0);
-    final Map<String, Map<String, dynamic>> categoryDetails = {};
-    final Map<int, double> dayOfWeekTotals = {0: 0.0, 1: 0.0, 2: 0.0, 3: 0.0, 4: 0.0, 5: 0.0, 6: 0.0};
-    int expenseCount = 0;
-    Map<String, dynamic> firstExpenseInfo = {};
-    Map<String, dynamic>? latestExpense;
-    Map<String, dynamic> topExpense = {};
+  // Initialize monthly expenses list
+  final List<double> monthlyExpenses = List.filled(lastDayOfMonth.day, 0.0);
+  final Map<String, Map<String, dynamic>> categoryDetails = {};
+  final Map<int, double> dayOfWeekTotals = {0: 0.0, 1: 0.0, 2: 0.0, 3: 0.0, 4: 0.0, 5: 0.0, 6: 0.0};
+  int expenseCount = 0;
+  Map<String, dynamic> firstExpenseInfo = {};
+  Map<String, dynamic>? latestExpense;
+  Map<String, dynamic> topExpense = {};
 
-    for (var doc in monthlyExpensesSnapshot.docs) {
-      final expense = doc.data();
-      final amount = (expense['amount'] as num?)?.toDouble() ?? 0.0;
-      final timestamp = expense['date'] as Timestamp?;
-      final category = expense['category']?.toString() ?? "Other";
-      final title = expense['title']?.toString() ?? "Expense";
+  // Process this month's expenses
+  for (var doc in monthlyExpensesSnapshot.docs) {
+    final expense = doc.data();
+    final amount = (expense['amount'] as num?)?.toDouble() ?? 0.0;
+    final timestamp = expense['date'] as Timestamp?;
+    final category = expense['category']?.toString() ?? "Other";
+    final title = expense['title']?.toString() ?? "Expense";
 
-      expenseCount++;
+    expenseCount++;
 
-      if (expenseCount == 1) {
-        int day = 0;
-        if (timestamp != null) {
-          final date = timestamp.toDate();
-          day = date.day;
-        }
-        firstExpenseInfo = {
-          'day': day,
-          'category': category,
-          'title': title,
-          'amount': amount,
-        };
-      }
-
+    if (expenseCount == 1) {
+      int day = 0;
       if (timestamp != null) {
         final date = timestamp.toDate();
-        latestExpense = {'title': title, 'amount': amount};
-        final dayIndex = date.day - 1;
-        if (dayIndex >= 0 && dayIndex < monthlyExpenses.length) {
-          monthlyExpenses[dayIndex] += amount;
-        }
-        final weekdayIndex = date.weekday - 1; // 0 = Monday, 6 = Sunday
-        dayOfWeekTotals[weekdayIndex] = (dayOfWeekTotals[weekdayIndex] ?? 0.0) + amount;
+        day = date.day;
       }
-
-      if (amount > (topExpense['amount'] as double? ?? 0.0)) {
-        topExpense = {'title': title, 'amount': amount};
-      }
-
-      categoryDetails.update(
-        category,
-        (existing) => {
-          'total': (existing['total'] as double) + amount,
-          'count': (existing['count'] as int) + 1,
-        },
-        ifAbsent: () => {'total': amount, 'count': 1},
-      );
+      firstExpenseInfo = {
+        'day': day,
+        'category': category,
+        'title': title,
+        'amount': amount,
+      };
     }
 
-    final double totalMonthlyExpenditure =
-        monthlyExpenses.fold(0.0, (sum, amount) => sum + amount);
-    final double lastMonthTotal = lastMonthSnapshot.docs.fold<double>(
-        0.0, (sum, doc) => sum + ((doc['amount'] as num?)?.toDouble() ?? 0.0));
-    final daysInMonth = lastDayOfMonth.day;
-    final double averageSpendPerDay = totalMonthlyExpenditure / daysInMonth;
-    final String mostSpentDayOfWeek = _findMostSpentDayOfWeek(dayOfWeekTotals);
+    if (timestamp != null) {
+      final date = timestamp.toDate();
+      latestExpense = {'title': title, 'amount': amount};
+      final dayIndex = date.day - 1;
+      if (dayIndex >= 0 && dayIndex < monthlyExpenses.length) {
+        monthlyExpenses[dayIndex] += amount;
+      }
+      final weekdayIndex = date.weekday - 1; // 0 = Monday, 6 = Sunday
+      dayOfWeekTotals[weekdayIndex] = (dayOfWeekTotals[weekdayIndex] ?? 0.0) + amount;
+    }
 
-    return {
-      'monthlyExpenses': monthlyExpenses,
-      'monthlyAllowableExpenditure': monthlyAllowable,
-      'categoryDetails': categoryDetails,
-      'expenseCount': expenseCount,
-      'firstExpenseInfo': firstExpenseInfo,
-      'latestExpense': latestExpense,
-      'topExpense': topExpense,
-      'currency': currency,
-      'lastMonthTotal': lastMonthTotal,
-      'averageSpendPerDay': averageSpendPerDay,
-      'mostSpentDayOfWeek': mostSpentDayOfWeek,
-    };
+    if (amount > (topExpense['amount'] as double? ?? 0.0)) {
+      topExpense = {'title': title, 'amount': amount};
+    }
+
+    categoryDetails.update(
+      category,
+      (existing) => {
+        'total': (existing['total'] as double) + amount,
+        'count': (existing['count'] as int) + 1,
+      },
+      ifAbsent: () => {'total': amount, 'count': 1},
+    );
   }
+
+  // Calculate total monthly expenditure
+  final double totalMonthlyExpenditure =
+      monthlyExpenses.fold(0.0, (sum, amount) => sum + amount);
+
+  // Calculate last month's total
+  final double lastMonthTotal = lastMonthSnapshot.docs.fold<double>(
+      0.0, (sum, doc) => sum + ((doc['amount'] as num?)?.toDouble() ?? 0.0));
+
+  // Calculate average spend per day based on days with expenses
+  int daysWithExpenses = monthlyExpenses.where((expense) => expense > 0).length;
+  final double averageSpendPerDay =
+      daysWithExpenses > 0 ? totalMonthlyExpenditure / daysWithExpenses : 0.0;
+
+  // Find the most spent day of the week
+  final String mostSpentDayOfWeek = _findMostSpentDayOfWeek(dayOfWeekTotals);
+
+  // Return the data map
+  return {
+    'monthlyExpenses': monthlyExpenses,
+    'monthlyAllowableExpenditure': monthlyAllowable,
+    'categoryDetails': categoryDetails,
+    'expenseCount': expenseCount,
+    'firstExpenseInfo': firstExpenseInfo,
+    'latestExpense': latestExpense,
+    'topExpense': topExpense,
+    'currency': currency,
+    'lastMonthTotal': lastMonthTotal,
+    'averageSpendPerDay': averageSpendPerDay,
+    'mostSpentDayOfWeek': mostSpentDayOfWeek,
+  };
+}
 
   String _findMostSpentDayOfWeek(Map<int, double> dayTotals) {
     const days = [

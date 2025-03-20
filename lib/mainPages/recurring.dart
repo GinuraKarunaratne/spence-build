@@ -3,21 +3,27 @@ import 'package:spence/buttons/recordbutton_alt.dart';
 import 'package:spence/buttons/schedulebutton.dart';
 import 'package:spence/widgets/header.dart';
 import '../widgets/allrecurring.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart'; 
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:provider/provider.dart';
+import 'package:spence/theme/theme.dart';
+import 'package:spence/theme/theme_provider.dart';
 
 class RecurringScreen extends StatelessWidget {
   const RecurringScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final themeMode = themeProvider.themeMode;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF2F2F2),
+      backgroundColor: AppColors.primaryBackground[themeMode],
       body: Stack(
         children: [
           Column(
             children: [
-              const Header(), 
-              SizedBox(height: 35.h), 
+              const Header(),
+              SizedBox(height: 35.h),
               const Expanded(
                 child: AllRecurringWidget(),
               ),

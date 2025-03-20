@@ -12,7 +12,9 @@ import './analysis.dart';
 import './reports.dart';
 import './recurring.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:flutter/services.dart' show SystemUiOverlayStyle; // Import for SystemUiOverlayStyle
+import 'package:provider/provider.dart';
+import 'package:spence/theme/theme.dart';
+import 'package:spence/theme/theme_provider.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -90,37 +92,45 @@ class HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final screenHeight = MediaQuery.of(context).size.height;
-    final screenWidth = MediaQuery.of(context).size.width;
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final themeMode = themeProvider.themeMode;
+    final screenHeight = ScreenUtil().screenHeight;
+    final screenWidth = ScreenUtil().screenWidth;
 
     double spacingHeight;
     double budgetSpacing;
-    double buttonSpacing;
 
-    if (screenHeight > 800) {
+    if (screenHeight > 800.h) {
       spacingHeight = 55.h;
-      budgetSpacing = 40.h;
-      buttonSpacing = 20.h;
-    } else if (screenHeight < 600) {
+      budgetSpacing = 36.h;
+    } else if (screenHeight < 600.h) {
       spacingHeight = 28.h;
-      budgetSpacing = 30.h;
-      buttonSpacing = 20.h;
+      budgetSpacing = 26.h;
     } else {
       spacingHeight = 70.h;
-      budgetSpacing = 70.h;
-      buttonSpacing = 20.h;
+      budgetSpacing = 66.h;
     }
 
-    final Widget homeContent = Column(
+    final Widget homeContent = Stack(
       children: [
-        const Header(),
-        SizedBox(height: spacingHeight),
-        const BudgetDisplay(),
-        SizedBox(height: budgetSpacing),
-        const DailyExpenses(),
-        const Spacer(),
-        Padding(
-          padding: EdgeInsets.symmetric(horizontal: 0.w),
+        // Scrollable content
+        SingleChildScrollView(
+          child: Column(
+            children: [
+              const Header(),
+              SizedBox(height: spacingHeight),
+              const BudgetDisplay(),
+              SizedBox(height: budgetSpacing),
+              const DailyExpenses(),
+              SizedBox(height: 90.h), // Space so content doesn’t hide under buttons when scrolled to bottom
+            ],
+          ),
+        ),
+        // Fixed buttons at the bottom
+        Positioned(
+          bottom: 20.h,
+          left: 0,
+          right: 0,
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -134,43 +144,27 @@ class HomeScreenState extends State<HomeScreen> {
             ],
           ),
         ),
-        SizedBox(height: buttonSpacing),
       ],
     );
 
     final List<Widget> screens = [
-      LayoutBuilder(
-        builder: (context, constraints) {
-          return SingleChildScrollView(
-            child: ConstrainedBox(
-              constraints: BoxConstraints(minHeight: constraints.maxHeight),
-              child: IntrinsicHeight(child: homeContent),
-            ),
-          );
-        },
-      ),
+      homeContent,
       const AnalysisScreen(),
       const ReportsScreen(),
       const RecurringScreen(),
       const AllExpensesScreen(),
     ];
 
-    return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: SystemUiOverlayStyle(
-        statusBarColor: Colors.transparent, // Transparent status bar
-        statusBarIconBrightness: Brightness.dark, // Dark icons for contrast
-      ),
-      child: Scaffold(
-        backgroundColor: const Color(0xFFF2F2F2),
-        body: screens[_currentIndex],
-        bottomNavigationBar: CustomNavigationBar(
-          currentIndex: _currentIndex,
-          onTap: (int index) {
-            setState(() {
-              _currentIndex = index;
-            });
-          },
-        ),
+    return Scaffold(
+      backgroundColor: AppColors.primaryBackground[themeMode],
+      body: screens[_currentIndex],
+      bottomNavigationBar: CustomNavigationBar(
+        currentIndex: _currentIndex,
+        onTap: (int index) {
+          setState(() {
+            _currentIndex = index;
+          });
+        },
       ),
     );
   }

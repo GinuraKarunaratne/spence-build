@@ -4,6 +4,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
+import 'package:provider/provider.dart';
+import 'package:spence/theme/theme.dart';
+import 'package:spence/theme/theme_provider.dart';
 
 class MonthlyPie extends StatelessWidget {
   const MonthlyPie({super.key});
@@ -12,7 +15,7 @@ class MonthlyPie extends StatelessWidget {
   Future<Map<String, double>> fetchMonthlyExpenses() async {
     final userId = FirebaseAuth.instance.currentUser?.uid;
     if (userId == null) return {};
-    
+
     // Get the start and end of the current month
     final now = DateTime.now();
     final startOfMonth = DateTime(now.year, now.month, 1);
@@ -46,28 +49,49 @@ class MonthlyPie extends StatelessWidget {
   Widget build(BuildContext context) {
     return FutureBuilder<Map<String, double>>(
       future: fetchMonthlyExpenses(),
-      builder: (context, snapshot) {
+      builder: (BuildContext futureContext, snapshot) {
+        final themeMode = Provider.of<ThemeProvider>(futureContext).themeMode;
+
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(
+          return Center(
             child: SpinKitThreeBounce(
-              color: Color.fromARGB(255, 204, 242, 13),
+              color: AppColors.accentColor[themeMode],
               size: 40.0,
             ),
           );
         }
         if (snapshot.hasError) {
-          return const Center(child: Text('Error loading data'));
+          return Center(
+            child: Text(
+              'Error loading data',
+              style: GoogleFonts.poppins(
+                color: AppColors.errorColor[themeMode],
+              ),
+            ),
+          );
         }
         final data = snapshot.data ?? {};
-        return _buildExpenseContainer(context, data);
+        if (data.isEmpty) {
+          return Center(
+            child: Text(
+              'No expenses recorded',
+              style: GoogleFonts.poppins(
+                color: AppColors.secondaryTextColor[themeMode],
+              ),
+            ),
+          );
+        }
+        return _buildExpenseContainer(futureContext, data);
       },
     );
   }
 
   Widget _buildExpenseContainer(BuildContext context, Map<String, double> data) {
+    final themeMode = Provider.of<ThemeProvider>(context).themeMode;
+
     final List<PieChartSectionData> pieSections = data.entries.map((entry) {
       return PieChartSectionData(
-        color: _getColorForCategory(entry.key),
+        color: AppColors.categoryPieColors[entry.key] ?? AppColors.categoryPieColors['Food & Grocery']!,
         value: entry.value,
         radius: 17,
         title: '',
@@ -78,7 +102,7 @@ class MonthlyPie extends StatelessWidget {
       width: 330,
       height: 250,
       decoration: BoxDecoration(
-        color: Colors.transparent,
+        color: AppColors.transparentColor[themeMode],
         borderRadius: BorderRadius.circular(12),
       ),
       child: Stack(
@@ -114,7 +138,7 @@ class MonthlyPie extends StatelessWidget {
                         width: 7,
                         height: 7,
                         decoration: BoxDecoration(
-                          color: _getColorForCategory(category),
+                          color: AppColors.categoryPieColors[category] ?? AppColors.categoryPieColors['Food & Grocery']!,
                           borderRadius: BorderRadius.circular(5),
                         ),
                       ),
@@ -123,7 +147,7 @@ class MonthlyPie extends StatelessWidget {
                         category,
                         style: GoogleFonts.poppins(
                           fontSize: 9,
-                          color: Colors.black,
+                          color: AppColors.textColor[themeMode],
                         ),
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -136,17 +160,5 @@ class MonthlyPie extends StatelessWidget {
         ],
       ),
     );
-  }
-
-  Color _getColorForCategory(String category) {
-    final Map<String, Color> categoryColors = {
-      'Food & Grocery': const Color(0xFF2AE123),
-      'Transportation': const Color(0xFF2A00FF),
-      'Entertainment': const Color(0xFFFFD400),
-      'Recurring Payments': const Color(0xFF9747FF),
-      'Shopping': const Color(0xFFFF5900),
-      'Other Expenses': const Color(0xFFFF00AA),
-    };
-    return categoryColors[category] ?? const Color(0xFF2AE123);
   }
 }

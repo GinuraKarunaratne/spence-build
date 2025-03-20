@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
+import 'package:spence/theme/theme.dart';
+import 'package:spence/theme/theme_provider.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class RecurringForm extends StatefulWidget {
   final void Function({
@@ -77,6 +81,7 @@ class RecurringFormState extends State<RecurringForm> {
   }
 
   Future<void> _selectDate(BuildContext context) async {
+    final themeMode = Provider.of<ThemeProvider>(context, listen: false).themeMode;
     final DateTime? pickedDate = await showDatePicker(
       context: context,
       initialDate: selectedDate,
@@ -85,13 +90,13 @@ class RecurringFormState extends State<RecurringForm> {
       builder: (context, child) {
         return Theme(
           data: ThemeData.dark().copyWith(
-            primaryColor: const Color(0xFFCCF20D),
+            primaryColor: AppColors.accentColor[themeMode],
             buttonTheme: const ButtonThemeData(textTheme: ButtonTextTheme.primary),
-            scaffoldBackgroundColor: const Color(0xFFf2f2f2),
-            dialogBackgroundColor: const Color(0xFFf2f2f2),
+            scaffoldBackgroundColor: AppColors.primaryBackground[themeMode],
+            dialogBackgroundColor: AppColors.primaryBackground[themeMode],
             colorScheme: ColorScheme.fromSwatch(primarySwatch: Colors.green).copyWith(
-              primary: const Color(0xFF000000),
-              secondary: const Color(0xFFCCF20D),
+              primary: AppColors.textColor[themeMode],
+              secondary: AppColors.accentColor[themeMode],
             ),
           ),
           child: child!,
@@ -116,26 +121,30 @@ class RecurringFormState extends State<RecurringForm> {
     Widget? suffixIcon,
     VoidCallback? onTap,
     EdgeInsets? contentPadding,
+    required ThemeMode themeMode,
   }) {
     return Row(
       children: [
-        _buildLabel(label),
+        _buildLabel(label, themeMode),
         Expanded(
           child: Container(
-            height: 36,
-            decoration: const BoxDecoration(color: Color(0xFFCCF20D)),
+            height: 36.h,
+            decoration: BoxDecoration(color: AppColors.accentColor[themeMode]),
             child: TextFormField(
               controller: controller,
               keyboardType: inputType,
-              cursorColor: Colors.black,
+              cursorColor: AppColors.textColor[themeMode],
               maxLines: 1,
               readOnly: isReadOnly,
               decoration: InputDecoration(
                 border: InputBorder.none,
-                contentPadding: contentPadding ?? const EdgeInsets.fromLTRB(14, 0, 14, 10),
+                contentPadding: contentPadding ?? EdgeInsets.fromLTRB(14.w, 0, 14.w, 10.h),
                 suffixIcon: suffixIcon,
               ),
-              style: GoogleFonts.poppins(fontSize: 10, color: Colors.black),
+              style: GoogleFonts.poppins(
+                fontSize: 10.sp,
+                color: AppColors.textColor[themeMode],
+              ),
               onChanged: (_) => _triggerParentUpdate(),
               onTap: onTap,
             ),
@@ -145,23 +154,29 @@ class RecurringFormState extends State<RecurringForm> {
     );
   }
 
-  Widget _buildCategoryField() {
+  Widget _buildCategoryField(ThemeMode themeMode) {
     return Row(
       children: [
-        _buildLabel('Expense Category'),
+        _buildLabel('Expense Category', themeMode),
         Expanded(
           child: Container(
-            height: 37,
-            decoration: const BoxDecoration(color: Color(0xFFCCF20D)),
+            height: 37.h,
+            decoration: BoxDecoration(color: AppColors.accentColor[themeMode]),
             child: DropdownButtonFormField<String>(
               value: _selectedCategory,
-              icon: const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF1C1B1F)),
-              iconSize: 18,
-              decoration: const InputDecoration(
-                border: InputBorder.none,
-                contentPadding: EdgeInsets.fromLTRB(14, 0, 12, 10),
+              icon: Icon(
+                Icons.keyboard_arrow_down_rounded,
+                color: AppColors.iconColor[themeMode],
+                size: 18.w,
               ),
-              style: GoogleFonts.poppins(fontSize: 10, color: Colors.black),
+              decoration: InputDecoration(
+                border: InputBorder.none,
+                contentPadding: EdgeInsets.fromLTRB(14.w, 0, 12.w, 10.h),
+              ),
+              style: GoogleFonts.poppins(
+                fontSize: 10.sp,
+                color: AppColors.textColor[themeMode],
+              ),
               onChanged: (newValue) {
                 setState(() {
                   _selectedCategory = newValue!;
@@ -171,7 +186,13 @@ class RecurringFormState extends State<RecurringForm> {
               items: categories.map((value) {
                 return DropdownMenuItem<String>(
                   value: value,
-                  child: Text(value, style: GoogleFonts.poppins(fontSize: 10, color: Colors.black)),
+                  child: Text(
+                    value,
+                    style: GoogleFonts.poppins(
+                      fontSize: 10.sp,
+                      color: AppColors.textColor[themeMode],
+                    ),
+                  ),
                 );
               }).toList(),
             ),
@@ -181,20 +202,20 @@ class RecurringFormState extends State<RecurringForm> {
     );
   }
 
-  Widget _buildLabel(String label) {
+  Widget _buildLabel(String label, ThemeMode themeMode) {
     return Container(
-      width: 132,
-      height: 37,
-      decoration: const BoxDecoration(color: Color(0xFFF8FDDB)),
+      width: 132.w,
+      height: 37.h,
+      decoration: BoxDecoration(color: AppColors.budgetLabelBackground[themeMode]),
       child: Align(
         alignment: Alignment.centerLeft,
         child: Padding(
-          padding: const EdgeInsets.only(left: 14.0),
+          padding: EdgeInsets.only(left: 14.w),
           child: Text(
             label,
             style: GoogleFonts.poppins(
-              color: Colors.black,
-              fontSize: 10,
+              color: AppColors.alttextColor[themeMode],
+              fontSize: 10.sp,
               fontWeight: FontWeight.w400,
             ),
           ),
@@ -205,51 +226,72 @@ class RecurringFormState extends State<RecurringForm> {
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final themeMode = themeProvider.themeMode;
+
     return Container(
-      width: 325,
+      width: 325.w,
       decoration: ShapeDecoration(
-        color: Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        color: AppColors.whiteColor[themeMode],
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r)),
         shadows: [
-          BoxShadow(color: const Color.fromARGB(255, 209, 209, 209), blurRadius: 1),
+          BoxShadow(
+            color: AppColors.budgetShadowColor[themeMode]!,
+            blurRadius: 1.r,
+          ),
         ],
       ),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 18.0, vertical: 28.0),
+        padding: EdgeInsets.symmetric(horizontal: 18.w, vertical: 28.h),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               ' Recurring Expense',
               style: GoogleFonts.poppins(
-                color: Colors.black,
-                fontSize: 17,
+                color: AppColors.textColor[themeMode],
+                fontSize: 17.sp,
                 fontWeight: FontWeight.w500,
               ),
             ),
-            const SizedBox(height: 30),
-            _buildInputField('Expense Title', TextInputType.text, controller: titleController),
-            const SizedBox(height: 12),
-            _buildInputField('Expense Amount', TextInputType.number, controller: amountController),
-            const SizedBox(height: 12),
-            _buildCategoryField(),
-            const SizedBox(height: 12),
+            SizedBox(height: 30.h),
+            _buildInputField(
+              'Expense Title',
+              TextInputType.text,
+              controller: titleController,
+              themeMode: themeMode,
+            ),
+            SizedBox(height: 12.h),
+            _buildInputField(
+              'Expense Amount',
+              TextInputType.number,
+              controller: amountController,
+              themeMode: themeMode,
+            ),
+            SizedBox(height: 12.h),
+            _buildCategoryField(themeMode),
+            SizedBox(height: 12.h),
             _buildInputField(
               'Expense Date',
               TextInputType.none,
               controller: dateController,
               isReadOnly: true,
-              suffixIcon: const Icon(Icons.calendar_month_outlined, size: 15, color: Colors.black),
+              suffixIcon: Icon(
+                Icons.calendar_month_outlined,
+                size: 15.w,
+                color: AppColors.textColor[themeMode],
+              ),
               onTap: () => _selectDate(context),
-              contentPadding: const EdgeInsets.fromLTRB(14, 5, 14, 10),
+              contentPadding: EdgeInsets.fromLTRB(14.w, 5.h, 14.w, 10.h),
+              themeMode: themeMode,
             ),
-            const SizedBox(height: 20),
+            SizedBox(height: 20.h),
             Text(
               '* Expenses are set to recur every 1 month by default. Recurring amount will be added to your expenses on the start of the day. Change the default interval below',
               textAlign: TextAlign.justify,
               style: GoogleFonts.poppins(
-                color: Colors.black38,
-                fontSize: 9,
+                color: AppColors.budgetNoteColor[themeMode],
+                fontSize: 9.sp,
                 fontWeight: FontWeight.w300,
               ),
             ),

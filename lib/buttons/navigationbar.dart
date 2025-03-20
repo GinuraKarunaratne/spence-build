@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:spence/theme/theme.dart';
+import 'package:spence/theme/theme_provider.dart';
 
 class CustomNavigationBar extends StatelessWidget {
   final int currentIndex;
@@ -12,12 +15,15 @@ class CustomNavigationBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final themeMode = themeProvider.themeMode;
+
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.whiteColor[themeMode],
         boxShadow: [
           BoxShadow(
-            color: const Color.fromARGB(255, 255, 255, 255),
+            color: AppColors.navBarShadowColor[themeMode]!,
           ),
         ],
       ),
@@ -25,10 +31,10 @@ class CustomNavigationBar extends StatelessWidget {
         currentIndex: currentIndex,
         onTap: onTap,
         type: BottomNavigationBarType.fixed,
-        backgroundColor: Colors.transparent,
+        backgroundColor: AppColors.navBg[themeMode],
         elevation: 0,
-        selectedItemColor: Colors.black,
-        unselectedItemColor: Colors.grey,
+        selectedItemColor: AppColors.navtextColor[themeMode],
+        unselectedItemColor: AppColors.navBarUnselectedColor[themeMode],
         showUnselectedLabels: true,
         selectedFontSize: 9,
         unselectedFontSize: 9,

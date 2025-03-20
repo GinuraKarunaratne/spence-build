@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
+import 'package:spence/theme/theme.dart';
+import 'package:spence/theme/theme_provider.dart';
 
 class ExpenseForm extends StatefulWidget {
   final String initialTitle;
@@ -64,6 +67,7 @@ class ExpenseFormState extends State<ExpenseForm> {
   }
 
   Future<void> _selectDate(BuildContext context) async {
+    final themeMode = Provider.of<ThemeProvider>(context, listen: false).themeMode;
     final DateTime? pickedDate = await showDatePicker(
       context: context,
       initialDate: _selectedDate,
@@ -72,13 +76,13 @@ class ExpenseFormState extends State<ExpenseForm> {
       builder: (context, child) {
         return Theme(
           data: ThemeData.dark().copyWith(
-            primaryColor: const Color(0xFFCCF20D),
+            primaryColor: AppColors.accentColor[themeMode],
             buttonTheme: const ButtonThemeData(textTheme: ButtonTextTheme.primary),
-            scaffoldBackgroundColor: const Color(0xFFf2f2f2),
-            dialogBackgroundColor: const Color(0xFFf2f2f2),
+            scaffoldBackgroundColor: AppColors.primaryBackground[themeMode],
+            dialogBackgroundColor: AppColors.primaryBackground[themeMode],
             colorScheme: ColorScheme.fromSwatch(primarySwatch: Colors.green).copyWith(
-              primary: const Color(0xFF000000),
-              secondary: const Color(0xFFCCF20D),
+              primary: AppColors.textColor[themeMode],
+              secondary: AppColors.accentColor[themeMode],
             ),
           ),
           child: child!,
@@ -94,7 +98,6 @@ class ExpenseFormState extends State<ExpenseForm> {
     }
   }
 
-  // Make submit method public for external access
   void submit() {
     widget.onSubmit(
       _titleController.text,
@@ -104,7 +107,6 @@ class ExpenseFormState extends State<ExpenseForm> {
     );
   }
 
-  // Add method to reset the form
   void resetForm() {
     _titleController.clear();
     _amountController.clear();
@@ -123,18 +125,19 @@ class ExpenseFormState extends State<ExpenseForm> {
     Widget? suffixIcon,
     VoidCallback? onTap,
     EdgeInsets? contentPadding,
+    required ThemeMode themeMode,
   }) {
     return Row(
       children: [
-        _buildLabel(label),
+        _buildLabel(label, themeMode),
         Expanded(
           child: Container(
             height: 36,
-            decoration: const BoxDecoration(color: Color(0xFFCCF20D)),
+            decoration: BoxDecoration(color: AppColors.accentColor[themeMode]),
             child: TextFormField(
               controller: controller,
               keyboardType: inputType,
-              cursorColor: Colors.black,
+              cursorColor: AppColors.textColor[themeMode],
               maxLines: 1,
               readOnly: isReadOnly,
               decoration: InputDecoration(
@@ -142,7 +145,10 @@ class ExpenseFormState extends State<ExpenseForm> {
                 contentPadding: contentPadding ?? const EdgeInsets.fromLTRB(14, 0, 14, 10),
                 suffixIcon: suffixIcon,
               ),
-              style: GoogleFonts.poppins(fontSize: 10, color: Colors.black),
+              style: GoogleFonts.poppins(
+                fontSize: 10,
+                color: AppColors.textColor[themeMode],
+              ),
               onTap: onTap,
             ),
           ),
@@ -151,23 +157,29 @@ class ExpenseFormState extends State<ExpenseForm> {
     );
   }
 
-  Widget _buildCategoryField() {
+  Widget _buildCategoryField(ThemeMode themeMode) {
     return Row(
       children: [
-        _buildLabel('Expense Category'),
+        _buildLabel('Expense Category', themeMode),
         Expanded(
           child: Container(
             height: 37,
-            decoration: const BoxDecoration(color: Color(0xFFCCF20D)),
+            decoration: BoxDecoration(color: AppColors.accentColor[themeMode]),
             child: DropdownButtonFormField<String>(
               value: _selectedCategory,
-              icon: const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF1C1B1F)),
-              iconSize: 18,
+              icon: Icon(
+                Icons.keyboard_arrow_down_rounded,
+                color: AppColors.iconColor[themeMode],
+                size: 18,
+              ),
               decoration: const InputDecoration(
                 border: InputBorder.none,
                 contentPadding: EdgeInsets.fromLTRB(14, 0, 12, 10),
               ),
-              style: GoogleFonts.poppins(fontSize: 10, color: Colors.black),
+              style: GoogleFonts.poppins(
+                fontSize: 10,
+                color: AppColors.textColor[themeMode],
+              ),
               onChanged: (newValue) {
                 setState(() {
                   _selectedCategory = newValue!;
@@ -176,7 +188,13 @@ class ExpenseFormState extends State<ExpenseForm> {
               items: categories.map((value) {
                 return DropdownMenuItem<String>(
                   value: value,
-                  child: Text(value, style: GoogleFonts.poppins(fontSize: 10, color: Colors.black)),
+                  child: Text(
+                    value,
+                    style: GoogleFonts.poppins(
+                      fontSize: 10,
+                      color: AppColors.textColor[themeMode],
+                    ),
+                  ),
                 );
               }).toList(),
             ),
@@ -186,11 +204,11 @@ class ExpenseFormState extends State<ExpenseForm> {
     );
   }
 
-  Widget _buildLabel(String label) {
+  Widget _buildLabel(String label, ThemeMode themeMode) {
     return Container(
       width: 132,
       height: 37,
-      decoration: const BoxDecoration(color: Color(0xFFF8FDDB)),
+      decoration: BoxDecoration(color: AppColors.budgetLabelBackground[themeMode]),
       child: Align(
         alignment: Alignment.centerLeft,
         child: Padding(
@@ -198,7 +216,7 @@ class ExpenseFormState extends State<ExpenseForm> {
           child: Text(
             label,
             style: GoogleFonts.poppins(
-              color: Colors.black,
+              color: AppColors.alttextColor[themeMode],
               fontSize: 10,
               fontWeight: FontWeight.w400,
             ),
@@ -210,13 +228,19 @@ class ExpenseFormState extends State<ExpenseForm> {
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final themeMode = themeProvider.themeMode;
+
     return Container(
       width: 325,
       decoration: ShapeDecoration(
-        color: Colors.white,
+        color: AppColors.whiteColor[themeMode],
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        shadows: const [
-          BoxShadow(color: Color.fromARGB(255, 209, 209, 209), blurRadius: 1),
+        shadows: [
+          BoxShadow(
+            color: AppColors.budgetShadowColor[themeMode]!,
+            blurRadius: 1,
+          ),
         ],
       ),
       child: Padding(
@@ -227,33 +251,48 @@ class ExpenseFormState extends State<ExpenseForm> {
             Text(
               'Record Expense',
               style: GoogleFonts.poppins(
-                color: Colors.black,
+                color: AppColors.textColor[themeMode],
                 fontSize: 17,
                 fontWeight: FontWeight.w500,
               ),
             ),
             const SizedBox(height: 30),
-            _buildInputField('Expense Title', TextInputType.text, controller: _titleController),
+            _buildInputField(
+              'Expense Title',
+              TextInputType.text,
+              controller: _titleController,
+              themeMode: themeMode,
+            ),
             const SizedBox(height: 12),
-            _buildInputField('Expense Amount', TextInputType.number, controller: _amountController),
+            _buildInputField(
+              'Expense Amount',
+              TextInputType.number,
+              controller: _amountController,
+              themeMode: themeMode,
+            ),
             const SizedBox(height: 12),
-            _buildCategoryField(),
+            _buildCategoryField(themeMode),
             const SizedBox(height: 12),
             _buildInputField(
               'Expense Date',
               TextInputType.none,
               controller: _dateController,
               isReadOnly: true,
-              suffixIcon: const Icon(Icons.calendar_month_outlined, size: 15, color: Colors.black),
+              suffixIcon: Icon(
+                Icons.calendar_month_outlined,
+                size: 15,
+                color: AppColors.textColor[themeMode],
+              ),
               onTap: () => _selectDate(context),
               contentPadding: const EdgeInsets.fromLTRB(14, 5, 14, 10),
+              themeMode: themeMode,
             ),
             const SizedBox(height: 20),
             Text(
               '* You can leave Expense Date empty to record today. Recorded expenses can\'t be undone and will be continued for the rest of the month.',
               textAlign: TextAlign.justify,
               style: GoogleFonts.poppins(
-                color: const Color.fromRGBO(0, 0, 0, 0.38),
+                color: AppColors.budgetNoteColor[themeMode],
                 fontSize: 9,
                 fontWeight: FontWeight.w300,
               ),

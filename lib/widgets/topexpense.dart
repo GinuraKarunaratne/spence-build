@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:provider/provider.dart';
+import 'package:spence/theme/theme.dart';
+import 'package:spence/theme/theme_provider.dart';
 
 class TopExpense extends StatelessWidget {
   const TopExpense({super.key});
@@ -27,7 +31,7 @@ class TopExpense extends StatelessWidget {
         final date = timestamp.toDate();
         return {
           'title': topExpenseData['title'] ?? 'Unknown',
-          'amount': topExpenseData['amount'] ?? 0.0,
+          'amount': topExpenseData['amount']?.toInt() ?? 0,
           'category': topExpenseData['category'] ?? 'Unknown',
           'month': '${date.year}-${date.month.toString().padLeft(2, '0')}',
         };
@@ -55,35 +59,53 @@ class TopExpense extends StatelessWidget {
   Widget build(BuildContext context) {
     return FutureBuilder(
       future: Future.wait([_fetchCurrencySymbol(), _fetchTopExpense()]),
-      builder: (context, snapshot) {
+      builder: (BuildContext futureContext, snapshot) {
+        final themeMode = Provider.of<ThemeProvider>(futureContext).themeMode;
+
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(
+          return Center(
             child: SpinKitThreeBounce(
-              color: Color(0xFFCCF20D),
+              color: AppColors.accentColor[themeMode],
               size: 40.0,
             ),
           );
         }
         if (snapshot.hasError) {
-          return const Center(child: Text('Error loading data'));
+          return Center(
+            child: Text(
+              'Error loading data',
+              style: GoogleFonts.poppins(
+                color: AppColors.errorColor[themeMode],
+              ),
+            ),
+          );
         }
         final currencySymbol = snapshot.data?[0] as String? ?? 'Rs';
         final topExpense = snapshot.data?[1] as Map<String, dynamic>?;
         if (topExpense == null) {
-          return const Center(child: Text('No expenses recorded'));
+          return Center(
+            child: Text(
+              'No expenses recorded',
+              style: GoogleFonts.poppins(
+                color: AppColors.secondaryTextColor[themeMode],
+              ),
+            ),
+          );
         }
-        return _buildExpenseContainer(context, currencySymbol, topExpense);
+        return _buildExpenseContainer(futureContext, currencySymbol, topExpense);
       },
     );
   }
 
   Widget _buildExpenseContainer(BuildContext context, String currencySymbol, Map<String, dynamic> topExpense) {
+    final themeMode = Provider.of<ThemeProvider>(context).themeMode;
+
     return Container(
       width: 330,
       height: 163,
       clipBehavior: Clip.antiAlias,
       decoration: ShapeDecoration(
-        color: Colors.white,
+        color: AppColors.whiteColor[themeMode],
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
         ),
@@ -94,16 +116,22 @@ class TopExpense extends StatelessWidget {
             right: 0,
             top: 82,
             child: SvgPicture.asset(
-              'assets/bubo.svg',
-              width: 80,
-            ),
+                            themeMode == ThemeMode.light
+                                ? 'assets/bubo.svg'
+                                : 'assets/bubo_dark.svg',
+                            width: 80.w,
+                          ),
           ),
           Positioned(
             left: 24,
             top: 25,
             child: Text(
               'Top Expense',
-              style: GoogleFonts.poppins(fontSize: 17, fontWeight: FontWeight.w500),
+              style: GoogleFonts.poppins(
+                fontSize: 17,
+                fontWeight: FontWeight.w500,
+                color: AppColors.textColor[themeMode],
+              ),
             ),
           ),
           Positioned(
@@ -111,7 +139,11 @@ class TopExpense extends StatelessWidget {
             top: 76,
             child: Text(
               topExpense['title'],
-              style: GoogleFonts.poppins(fontSize: 17, fontWeight: FontWeight.w400),
+              style: GoogleFonts.poppins(
+                fontSize: 17,
+                fontWeight: FontWeight.w400,
+                color: AppColors.textColor[themeMode],
+              ),
             ),
           ),
           Positioned(
@@ -120,12 +152,16 @@ class TopExpense extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.only(top: 5, left: 12, right: 10, bottom: 5),
               decoration: ShapeDecoration(
-                color: const Color(0xFFCCF20D),
+                color: AppColors.accentColor[themeMode],
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
               ),
               child: Text(
                 '$currencySymbol ${topExpense['amount']}',
-                style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w400),
+                style: GoogleFonts.poppins(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w400,
+                  color: AppColors.textColor[themeMode],
+                ),
               ),
             ),
           ),
@@ -135,12 +171,16 @@ class TopExpense extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
               decoration: ShapeDecoration(
-                color: const Color(0x26CCF20D),
+                color: AppColors.budgetLabelBackground[themeMode],
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
               ),
               child: Text(
                 topExpense['category'],
-                style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w400),
+                style: GoogleFonts.poppins(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w400,
+                  color: AppColors.alttextColor[themeMode],
+                ),
               ),
             ),
           ),
@@ -149,10 +189,16 @@ class TopExpense extends StatelessWidget {
             top: 28,
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-              decoration: BoxDecoration(color: const Color(0xFFCCF20D)),
+              decoration: BoxDecoration(
+                color: AppColors.accentColor[themeMode],
+              ),
               child: Text(
                 topExpense['month'],
-                style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w400),
+                style: GoogleFonts.poppins(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w400,
+                  color: AppColors.textColor[themeMode],
+                ),
               ),
             ),
           ),

@@ -3,7 +3,10 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart'; // Import ScreenUtil
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:provider/provider.dart';
+import 'package:spence/theme/theme.dart';
+import 'package:spence/theme/theme_provider.dart';
 
 class ExpenseList extends StatelessWidget {
   final List<String> selectedCategories;
@@ -35,76 +38,99 @@ class ExpenseList extends StatelessWidget {
   Widget build(BuildContext context) {
     return FutureBuilder<String?>(
       future: _fetchCurrencySymbol(),
-      builder: (context, snapshot) {
+      builder: (BuildContext futureContext, snapshot) {
+        final themeMode = Provider.of<ThemeProvider>(futureContext).themeMode;
+
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(
+          return Center(
             child: SpinKitThreeBounce(
-              color: Color(0xFFCCF20D),
+              color: AppColors.accentColor[themeMode],
               size: 40.0,
             ),
           );
         }
         if (snapshot.hasError) {
-          return const Center(child: Text('Error loading currency symbol'));
+          return Center(
+            child: Text(
+              'Error loading currency symbol',
+              style: GoogleFonts.poppins(
+                color: AppColors.errorColor[themeMode],
+              ),
+            ),
+          );
         }
         final currencySymbol = snapshot.data ?? 'Rs';
         return StreamBuilder<QuerySnapshot>(
           stream: _fetchExpenses(),
-          builder: (context, snapshot) {
+          builder: (BuildContext streamContext, snapshot) {
+            final themeMode = Provider.of<ThemeProvider>(streamContext).themeMode;
+
             if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(
+              return Center(
                 child: SpinKitThreeBounce(
-                  color: Color(0xFFCCF20D),
+                  color: AppColors.accentColor[themeMode],
                   size: 40.0,
                 ),
               );
             }
             if (snapshot.hasError) {
-              return const Center(child: Text('Error loading expenses'));
+              return Center(
+                child: Text(
+                  'Error loading expenses',
+                  style: GoogleFonts.poppins(
+                    color: AppColors.errorColor[themeMode],
+                  ),
+                ),
+              );
             }
             final expenses = snapshot.data?.docs ?? [];
             if (expenses.isEmpty) {
-              return _buildEmptyExpensesMessage();
+              return _buildEmptyExpensesMessage(streamContext);
             }
             // Filter expenses based on selected time period
             final filteredExpenses = _filterExpensesByTimePeriod(expenses);
             if (filteredExpenses.isEmpty) {
-              return _buildEmptyExpensesMessage();
+              return _buildEmptyExpensesMessage(streamContext);
             }
-            return _buildExpenseListView(filteredExpenses, context, currencySymbol);
+            return _buildExpenseListView(streamContext, filteredExpenses, currencySymbol);
           },
         );
       },
     );
   }
 
-  Widget _buildEmptyExpensesMessage() {
+  Widget _buildEmptyExpensesMessage(BuildContext context) {
+    final themeMode = Provider.of<ThemeProvider>(context).themeMode;
+
     return Container(
-      width: 288.w, // Use ScreenUtil for width
-      height: 350.h, // Use ScreenUtil for height
+      width: 288.w,
+      height: 350.h,
       alignment: Alignment.center,
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.receipt_rounded,
-              size: 50.w, color: const Color.fromARGB(80, 149, 149, 149)),
-          SizedBox(height: 10.h), // Use ScreenUtil for height
+          Icon(
+            Icons.receipt_rounded,
+            size: 50.w,
+            color: AppColors.disabledIconColor[themeMode],
+          ),
+          SizedBox(height: 10.h),
           Text(
             'No recorded expenses',
             style: GoogleFonts.poppins(
-              fontSize: 14.sp, // Use ScreenUtil for font size
+              fontSize: 14.sp,
               fontWeight: FontWeight.w500,
-              color: const Color(0xFF272727),
+              color: AppColors.secondaryTextColor[themeMode],
             ),
           ),
-          SizedBox(height: 8.h), // Use ScreenUtil for height
+          SizedBox(height: 8.h),
           Text(
             'Start recording an expense to see it here',
             textAlign: TextAlign.center,
             style: GoogleFonts.poppins(
-              fontSize: 9.sp, // Use ScreenUtil for font size
+              fontSize: 9.sp,
               fontWeight: FontWeight.w400,
-              color: const Color.fromARGB(80, 0, 0, 0),
+              color: AppColors.disabledTextColor[themeMode],
             ),
           ),
         ],
@@ -113,11 +139,11 @@ class ExpenseList extends StatelessWidget {
   }
 
   Widget _buildExpenseListView(
-      List<QueryDocumentSnapshot> expenses, BuildContext context, String currencySymbol) {
+      BuildContext context, List<QueryDocumentSnapshot> expenses, String currencySymbol) {
     double containerHeight = MediaQuery.of(context).size.height * 0.63;
     return SizedBox(
-      width: 297.w, // Use ScreenUtil for width
-      height: containerHeight.h, // Use ScreenUtil for height
+      width: 297.w,
+      height: containerHeight.h,
       child: ListView.builder(
         padding: EdgeInsets.zero,
         itemCount: expenses.length,
@@ -129,8 +155,8 @@ class ExpenseList extends StatelessWidget {
           if (selectedCategories.isEmpty ||
               selectedCategories.contains(category)) {
             return Padding(
-              padding: EdgeInsets.only(bottom: 10.h), // Use ScreenUtil for bottom padding
-              child: _buildExpenseItem(title, amount),
+              padding: EdgeInsets.only(bottom: 10.h),
+              child: _buildExpenseItem(context, title, amount),
             );
           }
           return Container();
@@ -164,14 +190,16 @@ class ExpenseList extends StatelessWidget {
     return expenses;
   }
 
-  Widget _buildExpenseItem(String title, String amount) {
+  Widget _buildExpenseItem(BuildContext context, String title, String amount) {
+    final themeMode = Provider.of<ThemeProvider>(context).themeMode;
+
     return Container(
       width: double.infinity,
       height: 37.h,
-      padding: EdgeInsets.symmetric(horizontal: 10.w), 
+      padding: EdgeInsets.symmetric(horizontal: 10.w),
       decoration: BoxDecoration(
-        color: const Color(0xFFF2F2F2),
-        borderRadius: BorderRadius.circular(12.w), 
+        color: AppColors.primaryBackground[themeMode],
+        borderRadius: BorderRadius.circular(12.w),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -179,18 +207,24 @@ class ExpenseList extends StatelessWidget {
           Text(
             title,
             style: GoogleFonts.poppins(
-              color: const Color.fromARGB(255, 0, 0, 0),
-              fontSize: 12.sp, 
+              color: AppColors.textColor[themeMode],
+              fontSize: 12.sp,
               fontWeight: FontWeight.w400,
             ),
           ),
           Container(
             padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),
             decoration: BoxDecoration(
-              color: const Color(0xFFCCF20D),
+              color: AppColors.accentColor[themeMode],
               borderRadius: BorderRadius.circular(6.w),
             ),
-            child: Text(amount, style: GoogleFonts.poppins(fontSize: 10.sp)),
+            child: Text(
+              amount,
+              style: GoogleFonts.poppins(
+                fontSize: 10.sp,
+                color: AppColors.textColor[themeMode],
+              ),
+            ),
           ),
         ],
       ),
