@@ -12,6 +12,16 @@ class AppColors {
     ThemeMode.dark: const Color.fromARGB(255, 35, 35, 35),
   };
 
+  static final Map<ThemeMode, Color> errorBackground = {
+    ThemeMode.light: const Color(0xFFEC0004),
+    ThemeMode.dark: const Color(0xFFEC0004)
+  };
+
+  static final Map<ThemeMode, Color> errorIcon = {
+    ThemeMode.light: const Color.fromARGB(255, 255, 255, 255),
+    ThemeMode.dark: const Color.fromARGB(255, 255, 255, 255),
+  };
+
   static final Map<ThemeMode, Color> lightGrayBackground = {
     ThemeMode.light: const Color(0xFFE3E3E3),
     ThemeMode.dark: Colors.grey[700]!,
@@ -30,6 +40,11 @@ class AppColors {
   static final Map<ThemeMode, Color> textColor = {
     ThemeMode.light: Colors.black,
     ThemeMode.dark: const Color.fromARGB(255, 255, 255, 255),
+  };
+
+  static final Map<ThemeMode, Color> exceeded = {
+    ThemeMode.light: const Color(0xFFFF0004),
+    ThemeMode.dark: const Color(0xFFFFD400),
   };
 
   static final Map<ThemeMode, Color> alttextColor = {
@@ -77,6 +92,11 @@ class AppColors {
     ThemeMode.dark: Colors.grey[800]!,
   };
 
+  static final Map<ThemeMode, Color> errorText = {
+    ThemeMode.light: Colors.white,
+    ThemeMode.dark: const Color.fromARGB(255, 255, 255, 255),
+  };
+
   static final Map<ThemeMode, Color> overlayColor = {
     ThemeMode.light: Colors.black.withOpacity(0.5),
     ThemeMode.dark: Colors.black.withOpacity(0.3),
@@ -114,7 +134,7 @@ class AppColors {
 
   static final Map<ThemeMode, Color> errorColor = {
     ThemeMode.light: Colors.red,
-    ThemeMode.dark: Colors.redAccent,
+    ThemeMode.dark: const Color(0xFFEC0004),
   };
 
   static final Map<ThemeMode, Color> categoryButtonBackground = {

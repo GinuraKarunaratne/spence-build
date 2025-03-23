@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:spence/otherPages/editprofile.dart';
 import 'package:workmanager/workmanager.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'theme/theme.dart';
@@ -37,7 +38,7 @@ void callbackDispatcher() {
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
-  await NotificationService.init();
+  await NotificationService.init(); // Ensure permission request happens here
 
   final User? currentUser = FirebaseAuth.instance.currentUser;
 
@@ -65,6 +66,7 @@ void main() async {
     ),
   );
 }
+
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -96,6 +98,7 @@ class MyApp extends StatelessWidget {
                 '/addexpense': (context) => const ExpenseScreen(),
                 '/allexpenses': (context) => const AllExpensesScreen(),
                 '/addrecurring': (context) => const AddRecurringScreen(),
+                '/editprofile': (context) => const EditProfile(),
               },
               builder: (context, child) {
                 // Access the current theme mode from ThemeProvider

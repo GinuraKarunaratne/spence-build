@@ -166,7 +166,7 @@ class TopExpense extends StatelessWidget {
             ),
           ),
           Positioned(
-            left: 120,
+            left: 110,
             top: 107,
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),

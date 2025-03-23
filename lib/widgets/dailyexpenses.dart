@@ -252,7 +252,7 @@ class DailyExpenses extends StatelessWidget {
               final amount = '$currencySymbol ${expense['amount']?.toInt() ?? 0}';
 
               return Padding(
-                padding: EdgeInsets.only(bottom: 10.h), // Scaled padding
+                padding: EdgeInsets.only(bottom: 7.h), // Scaled padding
                 child: _buildExpenseItem(context, title, amount),
               );
             },

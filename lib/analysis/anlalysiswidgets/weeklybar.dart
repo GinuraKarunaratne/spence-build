@@ -204,7 +204,7 @@ class WeeklyBarWidget extends StatelessWidget {
         .where('date', isGreaterThanOrEqualTo: firstDayOfMonth)
         .snapshots()
         .map((querySnapshot) {
-      weeklyExpenses = List.filled(5, 0.0); // Reset to avoid accumulation
+      weeklyExpenses = List.filled(5, 0.0);
       for (var doc in querySnapshot.docs) {
         final expense = doc.data();
         final expenseAmount = expense['amount'] as double?;

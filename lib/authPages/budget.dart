@@ -107,7 +107,7 @@ class BudgetScreenState extends State<BudgetScreen> {
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            ConfirmButton(
+                            ConfirmBudgetButton(
                               onPressed: () {
                                 if (_budgetAmount > 0 && _currency.isNotEmpty) {
                                   _saveBudgetToFirestore(context);

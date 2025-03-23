@@ -101,7 +101,7 @@ class HomeScreenState extends State<HomeScreen> {
     double budgetSpacing;
 
     if (screenHeight > 800.h) {
-      spacingHeight = 55.h;
+      spacingHeight = 45.h;
       budgetSpacing = 36.h;
     } else if (screenHeight < 600.h) {
       spacingHeight = 28.h;

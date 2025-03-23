@@ -13,9 +13,75 @@ import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:provider/provider.dart';
 import 'package:spence/theme/theme.dart';
 import 'package:spence/theme/theme_provider.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:google_ml_kit/google_ml_kit.dart';
 
 class ReportsScreen extends StatelessWidget {
   const ReportsScreen({super.key});
+
+  Future<void> _captureAndProcessImage(BuildContext context) async {
+    final ImagePicker picker = ImagePicker();
+    final XFile? image = await picker.pickImage(source: ImageSource.camera);
+
+    if (image != null) {
+      final extractedData = await _processImage(image.path);
+      if (extractedData != null) {
+        Navigator.pushNamed(
+          context,
+          '/addexpense',
+          arguments: {
+            'initialTitle': extractedData['title'] ?? '',
+            'initialAmount': extractedData['amount'] ?? '',
+          },
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Couldn’t extract data from the bill')),
+        );
+      }
+    }
+  }
+
+  Future<Map<String, String>?> _processImage(String imagePath) async {
+    final inputImage = InputImage.fromFilePath(imagePath);
+    final textRecognizer = TextRecognizer();
+    final RecognizedText recognizedText = await textRecognizer.processImage(inputImage);
+
+    String? title;
+    String? amount;
+
+    if (recognizedText.blocks.isNotEmpty) {
+      title = recognizedText.blocks.first.lines.first.text;
+    }
+
+    const totalKeywords = [
+      'total',
+      'gross total',
+      'full amount',
+      'amount due',
+      'grand total',
+    ];
+
+    for (TextBlock block in recognizedText.blocks) {
+      for (TextLine line in block.lines) {
+        String lineText = line.text.toLowerCase();
+        if (totalKeywords.any((keyword) => lineText.contains(keyword))) {
+          amount = _extractAmount(line.text);
+          if (amount != null) break;
+        }
+      }
+      if (amount != null) break;
+    }
+
+    textRecognizer.close();
+    return (title != null || amount != null) ? {'title': title ?? '', 'amount': amount ?? ''} : null;
+  }
+
+  String? _extractAmount(String text) {
+    final regex = RegExp(r'[\$£€]?\s*\d+(?:\.\d{1,2})?');
+    final match = regex.firstMatch(text);
+    return match?.group(0)?.replaceAll(RegExp(r'[^\d.]'), '');
+  }
 
   Stream<QuerySnapshot> _fetchExpenses() {
     final userId = FirebaseAuth.instance.currentUser?.uid;
@@ -125,7 +191,7 @@ class ReportsScreen extends StatelessWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  ImageRecordButton(onPressed: () {}),
+                  ImageRecordButton(onPressed: () => _captureAndProcessImage(context)),
                   SizedBox(width: 11.w),
                   RecordExpenseButton(
                     onPressed: () {

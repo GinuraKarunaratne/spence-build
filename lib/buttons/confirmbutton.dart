@@ -4,10 +4,10 @@ import 'package:provider/provider.dart';
 import 'package:spence/theme/theme.dart';
 import 'package:spence/theme/theme_provider.dart';
 
-class ConfirmBudgetButton extends StatelessWidget {
+class ConfirmButton extends StatelessWidget {
   final VoidCallback onPressed;
 
-  const ConfirmBudgetButton({super.key, required this.onPressed});
+  const ConfirmButton({super.key, required this.onPressed});
 
   @override
   Widget build(BuildContext context) {
@@ -34,7 +34,7 @@ class ConfirmBudgetButton extends StatelessWidget {
           ),
           const SizedBox(width: 7),
           Text(
-            'Confirm Budget',
+            'Confirm Changes',
             style: GoogleFonts.poppins(
               color: AppColors.textColor[themeMode],
               fontSize: 11,
