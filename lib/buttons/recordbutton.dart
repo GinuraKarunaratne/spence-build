@@ -20,7 +20,7 @@ class RecordExpenseButton extends StatelessWidget {
       style: ElevatedButton.styleFrom(
         elevation: 0,
         backgroundColor: AppColors.accentColor[themeMode],
-        padding: EdgeInsets.symmetric(horizontal: 18.w, vertical: 15.h),
+        padding: EdgeInsets.symmetric(horizontal: 18.w, vertical: 15),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(700),
         ),

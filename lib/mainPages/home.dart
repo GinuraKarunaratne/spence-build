@@ -15,6 +15,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
 import 'package:spence/theme/theme.dart';
 import 'package:spence/theme/theme_provider.dart';
+import 'package:permission_handler/permission_handler.dart'; // Add this import
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -25,6 +26,53 @@ class HomeScreen extends StatefulWidget {
 
 class HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _requestNotificationPermissions(); // Request permissions when the screen loads
+  }
+
+  Future<void> _requestNotificationPermissions() async {
+    PermissionStatus status = await Permission.notification.request();
+    if (status.isGranted) {
+      print('Notification permission granted');
+      // You can proceed with notification-related logic here if needed
+    } else if (status.isDenied) {
+      print('Notification permission denied');
+      // Optionally, show a dialog explaining why the permission is needed
+      _showPermissionDialog();
+    } else if (status.isPermanentlyDenied) {
+      print('Notification permission permanently denied');
+      // Open app settings so the user can enable it manually
+      await openAppSettings();
+    }
+  }
+
+  void _showPermissionDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Permission Required'),
+        content: const Text(
+          'This app needs notification permissions to send you reminders about your expenses. Please allow notifications to continue.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              await _requestNotificationPermissions(); // Retry permission request
+            },
+            child: const Text('Allow'),
+          ),
+        ],
+      ),
+    );
+  }
 
   Future<void> _captureAndProcessImage(BuildContext context) async {
     final ImagePicker picker = ImagePicker();

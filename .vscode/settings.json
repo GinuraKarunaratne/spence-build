@@ -55,6 +55,7 @@
         "otherpages",
         "overscroll",
         "piechart",
+        "prefs",
         "preprocess",
         "recordbutton",
         "recurringform",
@@ -68,6 +69,7 @@
         "Signup",
         "signupform",
         "spinkit",
+        "statsmodels",
         "tessdata",
         "tesseract",
         "thresholding",
@@ -79,7 +81,8 @@
         "weeklymessage",
         "weeklypie",
         "weeklypiemessage",
-        "workmanager"
+        "workmanager",
+        "Zzzleeping"
     ],
     "java.configuration.updateBuildConfiguration": "interactive"
 }
