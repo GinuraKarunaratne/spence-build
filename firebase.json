@@ -24,12 +24,12 @@
   },
   "functions": [
     {
-      "source": "functions",
-      "codebase": "default",
+      "source": "spence-functions",
+      "codebase": "spence-functions",
       "entryPoints": {
-      "aggregateDaily": "aggregate.aggregate_daily_expenses",
-      "predictMonthly": "predict.predict_monthly_expenses"
-    },
+        "aggregateDaily": "aggregate.aggregate_daily_expenses",
+        "predictMonthly": "predict.predict_monthly_expenses"
+      },
       "ignore": [
         "venv",
         ".git",
