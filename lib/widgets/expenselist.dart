@@ -195,7 +195,7 @@ class ExpenseList extends StatelessWidget {
 
     return Container(
       width: double.infinity,
-      height: 37.h,
+      height: 37,
       padding: EdgeInsets.symmetric(horizontal: 10.w),
       decoration: BoxDecoration(
         color: AppColors.primaryBackground[themeMode],
@@ -213,7 +213,7 @@ class ExpenseList extends StatelessWidget {
             ),
           ),
           Container(
-            padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),
+            padding: EdgeInsets.symmetric(horizontal: 8, vertical: 3),
             decoration: BoxDecoration(
               color: AppColors.accentColor[themeMode],
               borderRadius: BorderRadius.circular(6.w),

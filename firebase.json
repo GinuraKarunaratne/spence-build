@@ -22,10 +22,16 @@
       }
     }
   },
+  
   "functions": [
     {
       "source": "functions",
       "codebase": "default",
+      "entryPoints": {
+        "aggregateDaily": "aggregate.aggregate_daily_expenses",
+        "predictMonthly": "predict.predict_monthly_expenses"
+      },
+
       "ignore": [
         "venv",
         ".git",

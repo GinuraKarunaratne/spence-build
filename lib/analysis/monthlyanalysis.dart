@@ -75,24 +75,24 @@ class _MonthlyAnalysisState extends State<MonthlyAnalysis> {
       child: Row(
         children: [
           Padding(
-            padding: EdgeInsets.fromLTRB(25.w, 12.h, 0, 0),
+            padding: EdgeInsets.fromLTRB(25.w, 15.h, 0, 0),
             child: SvgPicture.asset(
               themeMode == ThemeMode.light
                   ? 'assets/spence.svg'
                   : 'assets/spence_dark.svg',
-              height: 14.h,
+              height: 14,
             ),
           ),
           const Spacer(),
           Padding(
-            padding: EdgeInsets.fromLTRB(40.w, 12.h, 20.w, 0),
+            padding: EdgeInsets.fromLTRB(40.w, 15.h, 20.w, 0),
             child: CircleAvatar(
               radius: 19.w,
               backgroundColor: AppColors.whiteColor[themeMode],
               child: IconButton(
                 icon: Icon(
                   Icons.arrow_back_rounded,
-                  size: 20.w,
+                  size: 20,
                   color: AppColors.textColor[themeMode],
                 ),
                 onPressed: () => Navigator.of(context).pop(),

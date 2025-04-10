@@ -181,7 +181,7 @@ class AnalysisScreen extends StatelessWidget {
       onTap: onPressed,
       child: Container(
         width: 100.w,
-        height: 100.h,
+        height: 100,
         decoration: BoxDecoration(
           color: AppColors.secondaryBackground[themeMode],
           borderRadius: BorderRadius.circular(16.r),

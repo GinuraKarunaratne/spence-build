@@ -207,55 +207,73 @@ class RecurringList extends StatelessWidget {
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: AppColors.lightBackground[themeMode],
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        title: Text(
-          'Delete Expense',
-          style: GoogleFonts.poppins(
-            fontSize: 18,
-            fontWeight: FontWeight.w500,
-            color: AppColors.textColor[themeMode],
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          backgroundColor: AppColors
+              .deleteCol[themeMode], // e.g., a neutral background color
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16), // Larger corner radius
           ),
-        ),
-        content: Text(
-          'Are you sure you want to delete this item? This action can\'t be undone.',
-          style: GoogleFonts.poppins(
-            fontWeight: FontWeight.w400,
-            fontSize: 12,
-            color: AppColors.notificationTextColor[themeMode],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text(
-              'Cancel',
-              style: GoogleFonts.poppins(
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-                color: AppColors.logoutDialogCancelColor[themeMode],
-              ),
+          contentPadding: EdgeInsets.fromLTRB(24, 0, 24, 20),
+          titlePadding: EdgeInsets.fromLTRB(24, 24, 24, 12),
+          title: Text(
+            'Confirm Action',
+            style: GoogleFonts.poppins(
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+              color: AppColors.textColor[themeMode],
             ),
           ),
-          TextButton(
-            onPressed: () {
-              _deleteRecurringExpense(docId);
-              Navigator.of(context).pop();
-            },
-            child: Text(
-              'Delete',
-              style: GoogleFonts.poppins(
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-                color: AppColors.errorColor[themeMode],
-              ),
+          content: Text(
+            'All recurs that are deleted won’t be able to be returned again. Please confirm the deletion of the recurs permanently.',
+            style: GoogleFonts.poppins(
+              fontWeight: FontWeight.w400,
+              fontSize: 10,
+              color: AppColors.notificationTextColor[themeMode],
             ),
           ),
-        ],
-      ),
+          actionsPadding: EdgeInsets.only(bottom: 16, right: 24, left: 24),
+          actionsAlignment: MainAxisAlignment.end,
+          actions: [
+            // Cancel button
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: Text(
+                'Cancel',
+                style: GoogleFonts.poppins(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                  color: AppColors.logoutDialogCancelColor[themeMode],
+                ),
+              ),
+            ),
+            // Confirm/Delete button
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                elevation: 0,
+                padding: EdgeInsets.symmetric(horizontal: 17, vertical: 3),
+                backgroundColor:
+                    AppColors.errorColor[themeMode], // Red color for confirm
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(50),
+                ),
+              ),
+              onPressed: () {
+                _deleteRecurringExpense(docId);
+                Navigator.of(dialogContext).pop();
+              },
+              child: Text(
+                'Confirm',
+                style: GoogleFonts.poppins(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 

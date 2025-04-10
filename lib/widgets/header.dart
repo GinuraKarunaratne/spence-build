@@ -15,7 +15,7 @@ class Header extends StatelessWidget {
     final themeMode = Provider.of<ThemeProvider>(context).themeMode;
 
     return Padding(
-      padding: EdgeInsets.only(top: 30.h),
+      padding: EdgeInsets.only(top: 30),
       child: Row(
         children: [
           Padding(
@@ -24,15 +24,15 @@ class Header extends StatelessWidget {
               themeMode == ThemeMode.light
                   ? 'assets/spence.svg'
                   : 'assets/spence_dark.svg',
-              height: 14.h,
+              height: 14,
             ),
           ),
           const Spacer(),
           Padding(
             padding: EdgeInsets.fromLTRB(40.w, 12.h, 0.w, 0.h),
             child: Container(
-              width: 38.w,
-              height: 38.w,
+              width: 38,
+              height: 38,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: AppColors.whiteColor[themeMode],
@@ -40,7 +40,7 @@ class Header extends StatelessWidget {
               child: IconButton(
                 icon: Icon(
                   Icons.notifications_outlined,
-                  size: 20.w,
+                  size: 20,
                   color: AppColors.iconColor[themeMode],
                 ),
                 onPressed: () {
@@ -67,7 +67,7 @@ class Header extends StatelessWidget {
                 themeMode == ThemeMode.light
                     ? 'assets/light.svg'
                     : 'assets/dark.svg',
-                height: 38.h,
+                height: 38,
               ),
             ),
           ),

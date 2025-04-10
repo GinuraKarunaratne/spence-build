@@ -107,6 +107,11 @@ class AppColors {
     ThemeMode.dark: Colors.grey[700]!,
   };
 
+    static final Map<ThemeMode, Color> deleteCol = {
+    ThemeMode.light: const Color(0xFFF5F5F5),
+    ThemeMode.dark: const Color(0xFF2B2B2B),
+  };
+
   static final Map<ThemeMode, Color> notificationTextColor = {
     ThemeMode.light: const Color(0xFF7F7F7F),
     ThemeMode.dark: Colors.grey[400]!,

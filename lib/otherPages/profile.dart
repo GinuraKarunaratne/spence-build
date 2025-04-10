@@ -231,7 +231,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ),
                           // Residing Country row
                           Positioned(
-                            top: 180.h + 14.h + 20.h + 21.h + 135.h + 21.h + 40.h,
+                            top: 180.h +
+                                14.h +
+                                20.h +
+                                21.h +
+                                135.h +
+                                21.h +
+                                40.h,
                             left: 26.w,
                             right: 26.w,
                             child: _buildSummaryRow(
@@ -242,7 +248,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ),
                           // Member Since block
                           Positioned(
-                            top: 180.h + 14.h + 20.h + 21.h + 135.h + 21.h + 40.h + 70.h,
+                            top: 180.h +
+                                14.h +
+                                20.h +
+                                21.h +
+                                135.h +
+                                21.h +
+                                40.h +
+                                70.h,
                             left: 26.w,
                             right: 26.w,
                             child: _buildMemberSince(
@@ -252,7 +265,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ),
                           // Bottom buttons (scroll with content)
                           Positioned(
-                            top: 180.h + 14.h + 20.h + 21.h + 135.h + 21.h + 40.h + 70.h + 195.h,
+                            top: 180.h +
+                                14.h +
+                                20.h +
+                                21.h +
+                                135.h +
+                                21.h +
+                                40.h +
+                                70.h +
+                                195.h,
                             left: 0,
                             right: 0,
                             child: Padding(
@@ -262,7 +283,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 children: [
                                   const LogoutButton(),
                                   SizedBox(width: 11.w),
-                                  EditButton(onPressed: () {Navigator.of(context).pushNamed('/editprofile');}),
+                                  EditButton(onPressed: () {
+                                    Navigator.of(context)
+                                        .pushNamed('/editprofile');
+                                  }),
                                 ],
                               ),
                             ),
@@ -356,7 +380,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             top: 20.h,
             child: GestureDetector(
               onTap: () {
-                print('Customize Budget tapped');
+                Navigator.of(context).pushNamed('/editbudget');
               },
               child: Row(
                 children: [
@@ -466,7 +490,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }) {
     return Container(
       width: double.infinity,
-      height: 165.h,
+      height: 170.h,
       padding: EdgeInsets.all(10.h),
       decoration: BoxDecoration(
         color: AppColors.secondaryBackground[themeMode],
@@ -488,7 +512,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
             ),
           ),
-          SizedBox(height: 40.h),
+          SizedBox(height: 30.h),
           Text(
             memberSince,
             style: GoogleFonts.urbanist(

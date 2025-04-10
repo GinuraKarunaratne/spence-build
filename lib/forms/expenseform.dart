@@ -249,7 +249,7 @@ class ExpenseFormState extends State<ExpenseForm> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Record Expense',
+              ' Record Expense',
               style: GoogleFonts.poppins(
                 color: AppColors.textColor[themeMode],
                 fontSize: 17,

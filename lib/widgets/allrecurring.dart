@@ -67,7 +67,7 @@ class _AllRecurringWidgetState extends State<AllRecurringWidget> {
               fontWeight: FontWeight.w500,
             ),
           ),
-          SizedBox(height: 28.h),
+          SizedBox(height: 22.h),
           // Recurring expenses list
           Expanded(
             child: RecurringList(

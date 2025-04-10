@@ -19,6 +19,7 @@ import 'package:google_ml_kit/google_ml_kit.dart';
 class ReportsScreen extends StatelessWidget {
   const ReportsScreen({super.key});
 
+  // Capture and process an image from the camera
   Future<void> _captureAndProcessImage(BuildContext context) async {
     final ImagePicker picker = ImagePicker();
     final XFile? image = await picker.pickImage(source: ImageSource.camera);
@@ -42,6 +43,7 @@ class ReportsScreen extends StatelessWidget {
     }
   }
 
+  // Process the image to extract text using Google ML Kit
   Future<Map<String, String>?> _processImage(String imagePath) async {
     final inputImage = InputImage.fromFilePath(imagePath);
     final textRecognizer = TextRecognizer();
@@ -77,12 +79,14 @@ class ReportsScreen extends StatelessWidget {
     return (title != null || amount != null) ? {'title': title ?? '', 'amount': amount ?? ''} : null;
   }
 
+  // Extract the amount from text using a regex
   String? _extractAmount(String text) {
     final regex = RegExp(r'[\$£€]?\s*\d+(?:\.\d{1,2})?');
     final match = regex.firstMatch(text);
     return match?.group(0)?.replaceAll(RegExp(r'[^\d.]'), '');
   }
 
+  // Fetch expenses from Firestore for the current user
   Stream<QuerySnapshot> _fetchExpenses() {
     final userId = FirebaseAuth.instance.currentUser?.uid;
     if (userId == null) {
@@ -94,7 +98,8 @@ class ReportsScreen extends StatelessWidget {
         .snapshots();
   }
 
-  Widget _buildExpensesList(String currencySymbol, double height, ThemeMode themeMode) {
+  // Build the content for expenses (charts and stats)
+  Widget _buildExpensesContent(String currencySymbol, ThemeMode themeMode) {
     return StreamBuilder<QuerySnapshot>(
       stream: _fetchExpenses(),
       builder: (context, snapshot) {
@@ -146,16 +151,14 @@ class ReportsScreen extends StatelessWidget {
             ),
           );
         }
-        return SingleChildScrollView(
-          child: Column(
-            children: [
-              const PieChartExpenses(),
-              SizedBox(height: 15.h),
-              const TotalExpense(),
-              SizedBox(height: 15.h),
-              const TopExpense(),
-            ],
-          ),
+        return Column(
+          children: [
+            const PieChartExpenses(),
+            SizedBox(height: 15.h),
+            const TotalExpense(),
+            SizedBox(height: 15.h),
+            const TopExpense(),
+          ],
         );
       },
     );
@@ -170,18 +173,18 @@ class ReportsScreen extends StatelessWidget {
       backgroundColor: AppColors.primaryBackground[themeMode],
       body: Stack(
         children: [
-          Column(
-            children: [
-              const Header(),
-              SizedBox(height: 20.h),
-              Expanded(
-                child: SingleChildScrollView(
-                  child: _buildExpensesList('', 700.h, themeMode),
-                ),
-              ),
-              SizedBox(height: 87.h),
-            ],
+          // Single scroll view for all content
+          SingleChildScrollView(
+            child: Column(
+              children: [
+                const Header(),
+                SizedBox(height: 20.h),
+                _buildExpensesContent('', themeMode),
+                SizedBox(height: 87.h), // Space for bottom buttons
+              ],
+            ),
           ),
+          // Bottom buttons positioned at the bottom
           Positioned(
             bottom: 20.h,
             left: 20.w,

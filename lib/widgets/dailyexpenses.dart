@@ -78,18 +78,18 @@ class DailyExpenses extends StatelessWidget {
 
     // Adjust heights based on screen height, scaled with .h
     if (screenHeight > 800.h) {
-      containerHeight = 370.h;
-      viewAllExpensesTop = 317.h;
+      containerHeight = 370;
+      viewAllExpensesTop = 317;
       expensesListTop = 58.h;
       expensesListHeight = 252.h;
     } else if (screenHeight < 600.h) {
-      containerHeight = 300.h;
-      viewAllExpensesTop = 250.h;
+      containerHeight = 300;
+      viewAllExpensesTop = 250;
       expensesListTop = 50.h;
       expensesListHeight = 200.h;
     } else {
-      containerHeight = 305.h;
-      viewAllExpensesTop = 252.h;
+      containerHeight = 305;
+      viewAllExpensesTop = 252;
       expensesListTop = 45.h;
       expensesListHeight = 225.h;
     }
@@ -105,7 +105,7 @@ class DailyExpenses extends StatelessWidget {
         children: [
           Positioned(
             top: 24.h, // Scaled position
-            left: 24.w, // Scaled position
+            left: 24, // Scaled position
             child: _buildTitle(context),
           ),
           Positioned(
@@ -145,7 +145,7 @@ class DailyExpenses extends StatelessWidget {
       },
       child: Container(
         width: 289.w, // Scaled width
-        height: 37.h, // Scaled height
+        height: 37, // Scaled height
         padding: EdgeInsets.symmetric(horizontal: 12.w), // Scaled padding
         decoration: BoxDecoration(
           color: AppColors.accentColor[themeMode],
@@ -163,7 +163,7 @@ class DailyExpenses extends StatelessWidget {
             ),
             Icon(
               Icons.arrow_forward_ios_rounded,
-              size: 13.w, // Scaled icon size
+              size: 13, // Scaled icon size
               color: AppColors.secondaryTextColor[themeMode],
             ),
           ],
@@ -202,7 +202,7 @@ class DailyExpenses extends StatelessWidget {
         if (expenses.isEmpty) {
           return Container(
             width: 288.w, // Scaled width
-            height: height, // Already scaled
+            height: 240.h, // Already scaled
             alignment: Alignment.center,
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -239,7 +239,7 @@ class DailyExpenses extends StatelessWidget {
         // List of Expenses
         return Container(
           width: 288.w, // Scaled width
-          height: height, // Already scaled
+          height: 240.h, // Already scaled
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(12.r), // Scaled radius
           ),
@@ -267,7 +267,7 @@ class DailyExpenses extends StatelessWidget {
 
     return Container(
       width: double.infinity,
-      height: 37.h, // Scaled height
+      height: 37, // Scaled height
       padding: EdgeInsets.symmetric(horizontal: 10.w), // Scaled padding
       decoration: BoxDecoration(
         color: AppColors.primaryBackground[themeMode],
@@ -285,7 +285,7 @@ class DailyExpenses extends StatelessWidget {
             ),
           ),
           Container(
-            padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h), // Scaled padding
+            padding: EdgeInsets.symmetric(horizontal: 8, vertical: 3), // Scaled padding
             decoration: BoxDecoration(
               color: AppColors.accentColor[themeMode],
               borderRadius: BorderRadius.circular(6.r), // Scaled radius

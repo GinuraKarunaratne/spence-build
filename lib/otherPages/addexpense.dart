@@ -13,6 +13,7 @@ import 'package:spence/services/ocrservice.dart';
 import 'package:provider/provider.dart';
 import 'package:spence/theme/theme.dart';
 import 'package:spence/theme/theme_provider.dart';
+import 'package:spence/otherPages/notifications.dart'; // Import NotificationService
 
 class ExpenseScreen extends StatefulWidget {
   const ExpenseScreen({super.key});
@@ -87,8 +88,7 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
       final double expenseAmountValue = double.parse(amount);
       final batch = FirebaseFirestore.instance.batch();
 
-      final expenseDoc =
-          FirebaseFirestore.instance.collection('expenses').doc();
+      final expenseDoc = FirebaseFirestore.instance.collection('expenses').doc();
       batch.set(expenseDoc, {
         'amount': expenseAmountValue,
         'category': category,
@@ -111,8 +111,7 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
           },
           SetOptions(merge: true));
 
-      final budgetDoc =
-          FirebaseFirestore.instance.collection('budgets').doc(userId);
+      final budgetDoc = FirebaseFirestore.instance.collection('budgets').doc(userId);
       final budgetSnapshot = await budgetDoc.get();
       if (budgetSnapshot.exists) {
         batch.update(budgetDoc, {
@@ -129,6 +128,19 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
 
       await batch.commit();
 
+      // Add and show notification immediately after recording the expense
+      final message = await _expenseMessage({
+        'amount': expenseAmountValue,
+        'category': category,
+        'title': title,
+      });
+      await NotificationService.addAndShowNotification(
+        userId,
+        'Expense Added',
+        message,
+        expenseId: expenseDoc.id,
+      );
+
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Expense recorded successfully!')),
       );
@@ -142,10 +154,21 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
     } catch (e) {
       debugPrint("Submit Expense Error: $e");
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('Failed to record expense. Please try again.')),
+        const SnackBar(content: Text('Failed to record expense. Please try again.')),
       );
     }
+  }
+
+  Future<String> _expenseMessage(Map<String, dynamic> data) async {
+    final currency = await _fetchCurrency();
+    return 'Added $currency ${(data['amount'] as num?)?.toInt() ?? 0} to ${data['category'] ?? 'Unknown'} for ${data['title'] ?? 'No Title'}';
+  }
+
+  Future<String> _fetchCurrency() async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return 'Rs';
+    final doc = await FirebaseFirestore.instance.collection('budgets').doc(uid).get();
+    return doc.exists ? doc['currency'] ?? 'Rs' : 'Rs';
   }
 
   @override
@@ -247,7 +270,7 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
                       indicatorType: Indicator.ballPulse,
                       colors: [
                         AppColors.accentColor[themeMode] ?? Colors.grey
-                      ], // Fallback to grey if null
+                      ],
                       strokeWidth: 2,
                     ),
                   ),
