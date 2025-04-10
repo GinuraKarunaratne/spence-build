@@ -1,0 +1,7 @@
+functions-framework
+google-cloud-firestore
+pandas
+pytz
+statsmodels
+firebase-admin
+python-dotenv
