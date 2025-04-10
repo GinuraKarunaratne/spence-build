@@ -1,7 +1,0 @@
-functions-framework
-google-cloud-firestore
-pandas
-numpy
-statsmodels
-python-dateutil
-pytz
