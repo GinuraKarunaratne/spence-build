@@ -10,50 +10,72 @@ class LogoutButton extends StatelessWidget {
   const LogoutButton({super.key});
 
   Future<void> _confirmLogout(BuildContext context) async {
-    final themeMode = Provider.of<ThemeProvider>(context, listen: false).themeMode;
+    final themeMode =
+        Provider.of<ThemeProvider>(context, listen: false).themeMode;
 
     bool? confirm = await showDialog(
       context: context,
-      builder: (context) {
+      builder: (BuildContext dialogContext) {
         return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r)),
-          backgroundColor: AppColors.whiteColor[themeMode],
+          backgroundColor: AppColors
+              .deleteCol[themeMode], // Using same background as delete popup
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16), // Larger corner radius
+          ),
+          contentPadding: const EdgeInsets.fromLTRB(24, 0, 24, 20),
+          titlePadding: const EdgeInsets.fromLTRB(24, 24, 24, 12),
           title: Text(
-            'Logout',
+            'Confirm Logout',
             style: GoogleFonts.poppins(
-              fontSize: 15.sp,
+              fontSize: 16,
               fontWeight: FontWeight.w500,
               color: AppColors.textColor[themeMode],
             ),
           ),
           content: Text(
-            'Are you sure you want to logout?',
+            'Are you sure you want to logout? This will end your current session.',
             style: GoogleFonts.poppins(
-              fontSize: 13.sp,
               fontWeight: FontWeight.w400,
-              color: AppColors.logoutDialogContentColor[themeMode],
+              fontSize: 10,
+              color: AppColors.notificationTextColor[themeMode],
             ),
           ),
+          actionsPadding:
+              const EdgeInsets.only(bottom: 16, right: 24, left: 24),
+          actionsAlignment: MainAxisAlignment.end,
           actions: [
+            // Cancel button
             TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
+              onPressed: () => Navigator.of(dialogContext).pop(false),
               child: Text(
                 'Cancel',
                 style: GoogleFonts.poppins(
-                  fontSize: 12.sp,
+                  fontSize: 13,
                   fontWeight: FontWeight.w500,
                   color: AppColors.logoutDialogCancelColor[themeMode],
                 ),
               ),
             ),
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(true),
+            // Confirm/Logout button
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                elevation: 0,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 17, vertical: 3),
+                backgroundColor: AppColors.errorColor[themeMode],
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(50),
+                ),
+              ),
+              onPressed: () {
+                Navigator.of(dialogContext).pop(true);
+              },
               child: Text(
                 'Logout',
                 style: GoogleFonts.poppins(
-                  fontSize: 12.sp,
+                  fontSize: 13,
                   fontWeight: FontWeight.w500,
-                  color: AppColors.errorColor[themeMode],
+                  color: Colors.white,
                 ),
               ),
             ),

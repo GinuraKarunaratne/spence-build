@@ -1,6 +1,7 @@
 import functions_framework
 from predict import predict_next_month
 from aggregate import aggregate_daily_expenses
+from aggregate import aggregate_historical_expenses
 from dotenv import load_dotenv
 import os
 

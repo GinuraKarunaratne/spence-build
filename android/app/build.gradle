@@ -2,7 +2,7 @@ plugins {
     id "com.android.application"
     id "kotlin-android"
     id "dev.flutter.flutter-gradle-plugin"
-    id 'com.google.gms.google-services'
+    id "com.google.gms.google-services"
 }
 
 android {
@@ -28,9 +28,21 @@ android {
         versionName flutter.versionName
     }
 
+    signingConfigs {
+        release {
+            storeFile file("C:/Users/elekt/OneDrive/Desktop/Files all/Main/APIIT/FYP/Project Folder/v2.0/spence-build/spence/spencekey.jks")
+            storePassword "spence12345"
+            keyAlias "key"
+            keyPassword "spence12345"
+        }
+    }
+
     buildTypes {
         release {
-            signingConfig = signingConfigs.debug
+            signingConfig signingConfigs.release
+            minifyEnabled false
+            shrinkResources false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
 }
@@ -45,5 +57,3 @@ dependencies {
 flutter {
     source = "../.."
 }
-
-apply plugin: 'com.google.gms.google-services'

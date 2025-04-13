@@ -43,7 +43,8 @@ class WeeklyBarWidget extends StatelessWidget {
             child: StreamBuilder<List<double>>(
               stream: _getWeeklyExpensesByWeek(),
               builder: (BuildContext streamContext, snapshot) {
-                final themeMode = Provider.of<ThemeProvider>(streamContext).themeMode;
+                final themeMode =
+                    Provider.of<ThemeProvider>(streamContext).themeMode;
 
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return Center(
@@ -104,7 +105,8 @@ class WeeklyBarWidget extends StatelessWidget {
             double expense = entry.value;
             double barHeight = (expense / maxExpense) * 145.h;
 
-            return _buildBar(expense, barHeight, index, activeWeekIndex, themeMode);
+            return _buildBar(
+                expense, barHeight, index, activeWeekIndex, themeMode);
           }).toList(),
         ),
         SizedBox(height: 12.h),
@@ -171,6 +173,7 @@ class WeeklyBarWidget extends StatelessWidget {
           );
   }
 
+  // Updated function to group expenses into calendar weeks: Week 1 = 1–7, Week 2 = 8–14, etc.
   Stream<List<double>> _getWeeklyExpensesByWeek() {
     final userId = FirebaseAuth.instance.currentUser?.uid;
     if (userId == null) return Stream.value(List.filled(5, 0.0));
@@ -178,22 +181,16 @@ class WeeklyBarWidget extends StatelessWidget {
     final now = DateTime.now();
     final int currentYear = now.year;
     final int currentMonth = now.month;
+    final firstDayOfMonth = DateTime(currentYear, currentMonth, 1);
+    final lastDayOfMonth = DateTime(currentYear, currentMonth + 1, 0);
 
-    DateTime firstDayOfMonth = DateTime(currentYear, currentMonth, 1);
-    DateTime firstMondayOfMonth = firstDayOfMonth.add(Duration(
-        days: (firstDayOfMonth.weekday == 1)
-            ? 0
-            : (8 - firstDayOfMonth.weekday)));
-
-    List<DateTime> weekStartDates = [];
-    DateTime weekStart = firstMondayOfMonth;
-    while (weekStart.month == currentMonth) {
-      weekStartDates.add(weekStart);
-      weekStart = weekStart.add(const Duration(days: 7));
-    }
-
-    while (weekStartDates.length < 5) {
-      weekStartDates.add(weekStartDates.last);
+    // Create 5 week intervals: Week 1: 1–7, Week 2: 8–14, etc.
+    List<Map<String, DateTime>> weeks = [];
+    for (int i = 0; i < 5; i++) {
+      DateTime start = DateTime(currentYear, currentMonth, 1 + i * 7);
+      DateTime end = start.add(Duration(days: 6));
+      if (end.isAfter(lastDayOfMonth)) end = lastDayOfMonth;
+      weeks.add({'start': start, 'end': end});
     }
 
     List<double> weeklyExpenses = List.filled(5, 0.0);
@@ -209,17 +206,11 @@ class WeeklyBarWidget extends StatelessWidget {
         final expense = doc.data();
         final expenseAmount = expense['amount'] as double?;
         final expenseDate = (expense['date'] as Timestamp?)?.toDate();
-
         if (expenseAmount != null && expenseDate != null) {
-          for (int i = 0; i < 5; i++) {
-            DateTime weekStart = weekStartDates[i];
-            DateTime weekEnd = (i == weekStartDates.length - 1)
-                ? DateTime(currentYear, currentMonth + 1, 0)
-                : weekStart.add(const Duration(days: 6));
-
-            if (expenseDate
-                    .isAfter(weekStart.subtract(const Duration(seconds: 1))) &&
-                expenseDate.isBefore(weekEnd.add(const Duration(seconds: 1)))) {
+          for (int i = 0; i < weeks.length; i++) {
+            DateTime start = weeks[i]['start']!;
+            DateTime end = weeks[i]['end']!;
+            if (!expenseDate.isBefore(start) && !expenseDate.isAfter(end)) {
               weeklyExpenses[i] += expenseAmount;
               break;
             }
@@ -230,17 +221,9 @@ class WeeklyBarWidget extends StatelessWidget {
     });
   }
 
+  // Updated to calculate current week index based strictly on day of month:
   int _getCurrentWeekIndex() {
     final now = DateTime.now();
-    final firstDayOfMonth = DateTime(now.year, now.month, 1);
-    final firstMonday = firstDayOfMonth.add(
-      Duration(
-          days: (firstDayOfMonth.weekday == DateTime.monday)
-              ? 0
-              : (8 - firstDayOfMonth.weekday)),
-    );
-
-    int weekIndex = ((now.difference(firstMonday).inDays) ~/ 7).clamp(0, 4);
-    return weekIndex;
+    return ((now.day - 1) ~/ 7).clamp(0, 4);
   }
 }
