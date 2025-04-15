@@ -34,7 +34,7 @@ class AnalysisScreen extends StatelessWidget {
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Couldn’t extract data from the bill')),
+          const SnackBar(content: Text('Couldn\'t extract data from the bill')),
         );
       }
     }
@@ -87,68 +87,66 @@ class AnalysisScreen extends StatelessWidget {
     final themeMode = themeProvider.themeMode;
 
     return Scaffold(
+      backgroundColor: AppColors.primaryBackground[themeMode],
       body: Stack(
         children: [
-          SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Header(),
-                SizedBox(height: 30.h),
-                Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 30.w),
-                  child: Text(
-                    'Basic Analysis',
-                    style: GoogleFonts.poppins(
-                      fontSize: 17.sp,
-                      fontWeight: FontWeight.w500,
-                      color: AppColors.textColor[themeMode],
-                    ),
+          Column(
+            children: [
+              const Header(),
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SizedBox(height: 30.h),
+                      Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 30.w),
+                        child: Text(
+                          'Basic Analysis',
+                          style: GoogleFonts.poppins(
+                            fontSize: 17.sp,
+                            fontWeight: FontWeight.w500,
+                            color: AppColors.textColor[themeMode],
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: 20.h),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          _buildSquareIcon(
+                            themeMode: themeMode,
+                            icon: Icons.event_outlined,
+                            onPressed: () => Navigator.of(context).push(
+                              MaterialPageRoute(builder: (context) => const DailyAnalysis()),
+                            ),
+                          ),
+                          SizedBox(width: 12.w),
+                          _buildSquareIcon(
+                            themeMode: themeMode,
+                            icon: Icons.date_range_outlined,
+                            onPressed: () => Navigator.of(context).push(
+                              MaterialPageRoute(builder: (context) => const WeeklyAnalysis()),
+                            ),
+                          ),
+                          SizedBox(width: 12.w),
+                          _buildSquareIcon(
+                            themeMode: themeMode,
+                            icon: Icons.calendar_month_outlined,
+                            onPressed: () => Navigator.of(context).push(
+                              MaterialPageRoute(builder: (context) => const MonthlyAnalysis()),
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 20.h),
+                      const Predictive(),
+                      SizedBox(height: 87.h),
+                    ],
                   ),
                 ),
-                SizedBox(height: 20.h),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    _buildSquareIcon(
-                      themeMode: themeMode,
-                      icon: Icons.event_outlined,
-                      onPressed: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                              builder: (context) => const DailyAnalysis()),
-                        );
-                      },
-                    ),
-                    SizedBox(width: 12.w),
-                    _buildSquareIcon(
-                      themeMode: themeMode,
-                      icon: Icons.date_range_outlined,
-                      onPressed: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                              builder: (context) => const WeeklyAnalysis()),
-                        );
-                      },
-                    ),
-                    SizedBox(width: 12.w),
-                    _buildSquareIcon(
-                      themeMode: themeMode,
-                      icon: Icons.calendar_month_outlined,
-                      onPressed: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                              builder: (context) => const MonthlyAnalysis()),
-                        );
-                      },
-                    ),
-                  ],
-                ),
-                SizedBox(height: 20.h),
-                const Predictive(),
-                SizedBox(height: 90.h),
-              ],
-            ),
+              ),
+            ],
           ),
           Positioned(
             bottom: 20.h,
@@ -160,9 +158,7 @@ class AnalysisScreen extends StatelessWidget {
                 ImageRecordButton(onPressed: () => _captureAndProcessImage(context)),
                 SizedBox(width: 11.w),
                 RecordExpenseButton(
-                  onPressed: () {
-                    Navigator.of(context).pushNamed('/addexpense');
-                  },
+                  onPressed: () => Navigator.of(context).pushNamed('/addexpense'),
                 ),
               ],
             ),
@@ -181,7 +177,7 @@ class AnalysisScreen extends StatelessWidget {
       onTap: onPressed,
       child: Container(
         width: 100.w,
-        height: 100,
+        height: 100.h,
         decoration: BoxDecoration(
           color: AppColors.secondaryBackground[themeMode],
           borderRadius: BorderRadius.circular(16.r),

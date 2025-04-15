@@ -1,4 +1,5 @@
 functions-framework
+firebase-functions
 google-cloud-firestore
 pandas
 pytz

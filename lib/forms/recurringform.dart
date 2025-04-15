@@ -1,10 +1,10 @@
+// lib/forms/recurringform.dart
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:spence/theme/theme.dart';
 import 'package:spence/theme/theme_provider.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class RecurringForm extends StatefulWidget {
   final void Function({
@@ -51,14 +51,12 @@ class RecurringFormState extends State<RecurringForm> {
   @override
   void initState() {
     super.initState();
-
     titleController = TextEditingController(text: widget.initialTitle);
     amountController = TextEditingController(text: widget.initialAmount);
     dateController = TextEditingController(
       text: DateFormat('yyyy-MM-dd').format(selectedDate),
     );
     repeatInterval = widget.initialInterval;
-
     _triggerParentUpdate();
   }
 
@@ -128,7 +126,7 @@ class RecurringFormState extends State<RecurringForm> {
         _buildLabel(label, themeMode),
         Expanded(
           child: Container(
-            height: 36.h,
+            height: 36,
             decoration: BoxDecoration(color: AppColors.accentColor[themeMode]),
             child: TextFormField(
               controller: controller,
@@ -138,11 +136,11 @@ class RecurringFormState extends State<RecurringForm> {
               readOnly: isReadOnly,
               decoration: InputDecoration(
                 border: InputBorder.none,
-                contentPadding: contentPadding ?? EdgeInsets.fromLTRB(14.w, 0, 14.w, 10.h),
+                contentPadding: contentPadding ?? const EdgeInsets.fromLTRB(14, 0, 14, 10),
                 suffixIcon: suffixIcon,
               ),
               style: GoogleFonts.poppins(
-                fontSize: 10.sp,
+                fontSize: 10,
                 color: AppColors.textColor[themeMode],
               ),
               onChanged: (_) => _triggerParentUpdate(),
@@ -160,21 +158,21 @@ class RecurringFormState extends State<RecurringForm> {
         _buildLabel('Expense Category', themeMode),
         Expanded(
           child: Container(
-            height: 37.h,
+            height: 37,
             decoration: BoxDecoration(color: AppColors.accentColor[themeMode]),
             child: DropdownButtonFormField<String>(
               value: _selectedCategory,
               icon: Icon(
                 Icons.keyboard_arrow_down_rounded,
                 color: AppColors.iconColor[themeMode],
-                size: 18.w,
+                size: 18,
               ),
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                 border: InputBorder.none,
-                contentPadding: EdgeInsets.fromLTRB(14.w, 0, 12.w, 10.h),
+                contentPadding: EdgeInsets.fromLTRB(14, 0, 12, 10),
               ),
               style: GoogleFonts.poppins(
-                fontSize: 10.sp,
+                fontSize: 10,
                 color: AppColors.textColor[themeMode],
               ),
               onChanged: (newValue) {
@@ -189,7 +187,7 @@ class RecurringFormState extends State<RecurringForm> {
                   child: Text(
                     value,
                     style: GoogleFonts.poppins(
-                      fontSize: 10.sp,
+                      fontSize: 10,
                       color: AppColors.textColor[themeMode],
                     ),
                   ),
@@ -204,18 +202,18 @@ class RecurringFormState extends State<RecurringForm> {
 
   Widget _buildLabel(String label, ThemeMode themeMode) {
     return Container(
-      width: 132.w,
-      height: 37.h,
+      width: 132,
+      height: 37,
       decoration: BoxDecoration(color: AppColors.budgetLabelBackground[themeMode]),
       child: Align(
         alignment: Alignment.centerLeft,
         child: Padding(
-          padding: EdgeInsets.only(left: 14.w),
+          padding: const EdgeInsets.only(left: 14.0),
           child: Text(
             label,
             style: GoogleFonts.poppins(
               color: AppColors.alttextColor[themeMode],
-              fontSize: 10.sp,
+              fontSize: 10,
               fontWeight: FontWeight.w400,
             ),
           ),
@@ -230,19 +228,19 @@ class RecurringFormState extends State<RecurringForm> {
     final themeMode = themeProvider.themeMode;
 
     return Container(
-      width: 325.w,
+      width: 325,
       decoration: ShapeDecoration(
         color: AppColors.whiteColor[themeMode],
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         shadows: [
           BoxShadow(
             color: AppColors.budgetShadowColor[themeMode]!,
-            blurRadius: 1.r,
+            blurRadius: 1,
           ),
         ],
       ),
       child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 18.w, vertical: 28.h),
+        padding: const EdgeInsets.symmetric(horizontal: 18.0, vertical: 28.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -250,27 +248,27 @@ class RecurringFormState extends State<RecurringForm> {
               ' Recurring Expense',
               style: GoogleFonts.poppins(
                 color: AppColors.textColor[themeMode],
-                fontSize: 17.sp,
+                fontSize: 17,
                 fontWeight: FontWeight.w500,
               ),
             ),
-            SizedBox(height: 30.h),
+            const SizedBox(height: 30),
             _buildInputField(
               'Expense Title',
               TextInputType.text,
               controller: titleController,
               themeMode: themeMode,
             ),
-            SizedBox(height: 12.h),
+            const SizedBox(height: 12),
             _buildInputField(
               'Expense Amount',
               TextInputType.number,
               controller: amountController,
               themeMode: themeMode,
             ),
-            SizedBox(height: 12.h),
+            const SizedBox(height: 12),
             _buildCategoryField(themeMode),
-            SizedBox(height: 12.h),
+            const SizedBox(height: 12),
             _buildInputField(
               'Expense Date',
               TextInputType.none,
@@ -278,20 +276,20 @@ class RecurringFormState extends State<RecurringForm> {
               isReadOnly: true,
               suffixIcon: Icon(
                 Icons.calendar_month_outlined,
-                size: 15.w,
+                size: 15,
                 color: AppColors.textColor[themeMode],
               ),
               onTap: () => _selectDate(context),
-              contentPadding: EdgeInsets.fromLTRB(14.w, 5.h, 14.w, 10.h),
+              contentPadding: const EdgeInsets.fromLTRB(14, 5, 14, 10),
               themeMode: themeMode,
             ),
-            SizedBox(height: 20.h),
+            const SizedBox(height: 20),
             Text(
               '* Expenses are set to recur every 1 month by default. Recurring amount will be added to your expenses on the start of the day. Change the default interval below',
               textAlign: TextAlign.justify,
               style: GoogleFonts.poppins(
                 color: AppColors.budgetNoteColor[themeMode],
-                fontSize: 9.sp,
+                fontSize: 9,
                 fontWeight: FontWeight.w300,
               ),
             ),

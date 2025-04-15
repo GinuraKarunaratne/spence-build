@@ -26,6 +26,7 @@
   "functions": [
     {
       "source": "functions",
+      "runtime": "python311",
       "codebase": "default",
       "entryPoints": {
         "aggregateDaily": "aggregate.aggregate_daily_expenses",

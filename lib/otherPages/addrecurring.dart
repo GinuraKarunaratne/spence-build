@@ -114,12 +114,9 @@ class _AddRecurringScreenState extends State<AddRecurringScreen> {
             .doc('summary');
         final totExpensesSnapshot = await totExpensesDoc.get();
         if (totExpensesSnapshot.exists) {
-          final currentCount = totExpensesSnapshot['count'] ?? 0;
-          final currentTotalExpense =
-              totExpensesSnapshot['total_expense'] ?? 0.0;
           await totExpensesDoc.update({
-            'count': currentCount + 1,
-            'total_expense': currentTotalExpense + recurringAmountValue,
+            'count': FieldValue.increment(1),
+            'total_expense': FieldValue.increment(recurringAmountValue),
           });
         } else {
           await totExpensesDoc.set({
@@ -131,11 +128,9 @@ class _AddRecurringScreenState extends State<AddRecurringScreen> {
             FirebaseFirestore.instance.collection('budgets').doc(userId);
         final budgetSnapshot = await budgetDoc.get();
         if (budgetSnapshot.exists) {
-          final usedBudget = budgetSnapshot['used_budget'] ?? 0.0;
-          final remainingBudget = budgetSnapshot['remaining_budget'] ?? 0.0;
           await budgetDoc.update({
-            'used_budget': usedBudget + recurringAmountValue,
-            'remaining_budget': remainingBudget - recurringAmountValue,
+            'used_budget': FieldValue.increment(recurringAmountValue),
+            'remaining_budget': FieldValue.increment(-recurringAmountValue),
           });
         } else {
           await budgetDoc.set({
@@ -161,17 +156,14 @@ class _AddRecurringScreenState extends State<AddRecurringScreen> {
         const SnackBar(
             content: Text('Recurring expense scheduled successfully!')),
       );
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          setState(() {
-            recurringTitle = '';
-            recurringAmount = '';
-            recurringCategory = 'Food & Grocery';
-            recurringDate = DateTime.now();
-            repeatIntervalMonths = 1;
-          });
-        }
+      setState(() {
+        recurringTitle = '';
+        recurringAmount = '';
+        recurringCategory = 'Food & Grocery';
+        recurringDate = DateTime.now();
+        repeatIntervalMonths = 1;
       });
+      Navigator.of(context).pop();
     } catch (_) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -254,7 +246,7 @@ class _AddRecurringScreenState extends State<AddRecurringScreen> {
                           if (isSelected)
                             Icon(
                               Icons.check,
-                              size: 18,
+                              size: 18.sp,
                               color: AppColors.textColor[themeMode],
                             ),
                         ],
@@ -274,77 +266,85 @@ class _AddRecurringScreenState extends State<AddRecurringScreen> {
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
     final themeMode = themeProvider.themeMode;
-    final h = MediaQuery.of(context).size.height;
-    final layout = _adjustLayout(h);
+
     return Scaffold(
       backgroundColor: AppColors.primaryBackground[themeMode],
       body: SafeArea(
         child: Stack(
           children: [
-            SingleChildScrollView(
-              child: Column(
-                children: [
-                  Padding(
-                    padding: EdgeInsets.only(top: 2.h),
-                    child: Row(
+            Column(
+              children: [
+                // Header
+                Padding(
+                  padding: EdgeInsets.only(top: 2.h),
+                  child: Row(
+                    children: [
+                      Padding(
+                        padding: EdgeInsets.fromLTRB(25.w, 12.h, 0, 0),
+                        child: SvgPicture.asset(
+                          themeMode == ThemeMode.light
+                              ? 'assets/spence.svg'
+                              : 'assets/spence_dark.svg',
+                          height: 14.h,
+                        ),
+                      ),
+                      const Spacer(),
+                      Padding(
+                        padding: EdgeInsets.fromLTRB(40.w, 12.h, 20.w, 0),
+                        child: Container(
+                          width: 38.w,
+                          height: 38.w,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: AppColors.whiteColor[themeMode],
+                          ),
+                          child: IconButton(
+                            icon: Icon(
+                              Icons.arrow_back_rounded,
+                              size: 20.w,
+                              color: AppColors.textColor[themeMode],
+                            ),
+                            onPressed: () => Navigator.of(context).pop(),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                // Main Content
+                Expanded(
+                  child: SingleChildScrollView(
+                    child: Column(
                       children: [
-                        Padding(
-                          padding: EdgeInsets.fromLTRB(25.w, 12.h, 0.w, 0.h),
-                          child: SvgPicture.asset(
-                            themeMode == ThemeMode.light
-                                ? 'assets/spence.svg'
-                                : 'assets/spence_dark.svg',
-                            height: 14.h,
-                          ),
-                        ),
-                        const Spacer(),
-                        Padding(
-                          padding: EdgeInsets.fromLTRB(40.w, 12.h, 20.w, 0.h),
-                          child: Container(
-                            width: 38.w,
-                            height: 38.w,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: AppColors.whiteColor[themeMode],
-                            ),
-                            child: IconButton(
-                              icon: Icon(
-                                Icons.arrow_back_rounded,
-                                size: 20.w,
-                                color: AppColors.textColor[themeMode],
-                              ),
-                              onPressed: () {
-                                Navigator.of(context).pop();
-                              },
-                            ),
-                          ),
-                        ),
+                        SizedBox(height: 90.h),
+                        const BudgetDisplay(),
+                        SizedBox(height: 55.h),
+                        RecurringForm(onFormDataChange: _updateFormData),
+                        SizedBox(height: 100.h), // Space for bottom buttons
                       ],
                     ),
                   ),
-                  SizedBox(height: layout[0]),
-                  const BudgetDisplay(),
-                  SizedBox(height: layout[1]),
-                  RecurringForm(onFormDataChange: _updateFormData),
-                  SizedBox(height: layout[2]),
+                ),
+              ],
+            ),
+
+            // Bottom Buttons
+            Positioned(
+              bottom: 25.h,
+              left: 20.w,
+              right: 20.w,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  IntervalButton(onPressed: () => _showIntervalDialog(context)),
+                  SizedBox(width: 11.w),
+                  ScheduleButton(onPressed: _submitRecurringExpense),
                 ],
               ),
             ),
-            Align(
-              alignment: Alignment.bottomCenter,
-              child: Padding(
-                padding: EdgeInsets.only(bottom: layout[3]),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    IntervalButton(
-                        onPressed: () => _showIntervalDialog(context)),
-                    SizedBox(width: 11.w),
-                    ScheduleButton(onPressed: _submitRecurringExpense),
-                  ],
-                ),
-              ),
-            ),
+
+            // Loading Overlay
             if (_isLoading)
               Positioned.fill(
                 child: Container(
@@ -353,7 +353,7 @@ class _AddRecurringScreenState extends State<AddRecurringScreen> {
                     child: LoadingIndicator(
                       indicatorType: Indicator.ballPulse,
                       colors: [AppColors.accentColor[themeMode] ?? Colors.grey],
-                      strokeWidth: 2,
+                      strokeWidth: 2.r,
                     ),
                   ),
                 ),
@@ -362,11 +362,5 @@ class _AddRecurringScreenState extends State<AddRecurringScreen> {
         ),
       ),
     );
-  }
-
-  List<double> _adjustLayout(double s) {
-    if (s > 800) return [70.h, 80.h, 0.h, 30.h, 14.h, 38.h];
-    if (s < 600) return [40.h, 50.h, 20.h, 20.h, 10.h, 30.h];
-    return [20.h, 20.h, 10.h, 20.h, 12.h, 34.h];
   }
 }

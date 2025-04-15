@@ -135,32 +135,40 @@ def aggregate_expenses_for_date(target_date, client=None):
     batch.commit()
     return len(user_data)
 
-@functions_framework.http
-def aggregate_daily_expenses(request):
-    client = get_firestore_client()
-    start_utc, end_utc = get_date_boundaries()
+def perform_daily_aggregation(client=None):
+    """Core aggregation logic for both HTTP and scheduled functions"""
+    if client is None:
+        client = get_firestore_client()
+    
+    yesterday = (datetime.now(get_local_timezone()) - timedelta(days=1)).date()
     
     # First, aggregate actual expenses
-    result = aggregate_expenses_for_date((datetime.now(get_local_timezone()) - timedelta(days=1)).date(), client)
+    result = aggregate_expenses_for_date(yesterday, client)
     
     # Then fill any missing dates in the last 7 days
-    for user_id in client.collection("users").stream():
-        user_id = user_id.id
+    for user_doc in client.collection("users").stream():
+        user_id = user_doc.id
         agg_ref = client.collection("users").document(user_id).collection("aggregated_expenses")
         
         # Get existing dates in the last 7 days
-        seven_days_ago = (datetime.now(get_local_timezone()) - timedelta(days=7)).date()
+        seven_days_ago = (yesterday - timedelta(days=7))
         existing_docs = agg_ref.where("date", ">=", seven_days_ago.isoformat()).stream()
         existing_dates = {doc.to_dict()["date"] for doc in existing_docs}
         
         # Fill missing dates
         fill_missing_dates(seven_days_ago, 
-                        (datetime.now(get_local_timezone()) - timedelta(days=1)).date(),
+                        yesterday,
                         existing_dates,
                         user_id,
                         client)
     
-    return "Aggregation complete", 200
+    return result
+
+@functions_framework.http
+def aggregate_daily_expenses(request):
+    """HTTP endpoint for daily aggregation"""
+    result = perform_daily_aggregation()
+    return {"success": True, "users_processed": result}, 200
 
 @functions_framework.http
 def aggregate_historical_expenses(request):

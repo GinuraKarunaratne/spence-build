@@ -15,7 +15,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
 import 'package:spence/theme/theme.dart';
 import 'package:spence/theme/theme_provider.dart';
-import 'package:permission_handler/permission_handler.dart'; // Add this import
+import 'package:permission_handler/permission_handler.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -30,21 +30,18 @@ class HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    _requestNotificationPermissions(); // Request permissions when the screen loads
+    _requestNotificationPermissions();
   }
 
   Future<void> _requestNotificationPermissions() async {
     PermissionStatus status = await Permission.notification.request();
     if (status.isGranted) {
       print('Notification permission granted');
-      // You can proceed with notification-related logic here if needed
     } else if (status.isDenied) {
       print('Notification permission denied');
-      // Optionally, show a dialog explaining why the permission is needed
       _showPermissionDialog();
     } else if (status.isPermanentlyDenied) {
       print('Notification permission permanently denied');
-      // Open app settings so the user can enable it manually
       await openAppSettings();
     }
   }
@@ -65,7 +62,7 @@ class HomeScreenState extends State<HomeScreen> {
           TextButton(
             onPressed: () async {
               Navigator.pop(context);
-              await _requestNotificationPermissions(); // Retry permission request
+              await _requestNotificationPermissions();
             },
             child: const Text('Allow'),
           ),
@@ -91,7 +88,7 @@ class HomeScreenState extends State<HomeScreen> {
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Couldn’t extract data from the bill')),
+          const SnackBar(content: Text('Couldn\'t extract data from the bill')),
         );
       }
     }
@@ -142,57 +139,51 @@ class HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
     final themeMode = themeProvider.themeMode;
-    final screenHeight = ScreenUtil().screenHeight;
-    final screenWidth = ScreenUtil().screenWidth;
 
-    double spacingHeight;
-    double budgetSpacing;
-
-    if (screenHeight > 800.h) {
-      spacingHeight = 45.h;
-      budgetSpacing = 36.h;
-    } else if (screenHeight < 600.h) {
-      spacingHeight = 28.h;
-      budgetSpacing = 26.h;
-    } else {
-      spacingHeight = 70.h;
-      budgetSpacing = 66.h;
-    }
-
-    final Widget homeContent = Stack(
-      children: [
-        // Scrollable content
-        SingleChildScrollView(
-          child: Column(
+    final Widget homeContent = Scaffold(
+      backgroundColor: AppColors.primaryBackground[themeMode],
+      body: Stack(
+        children: [
+          Column(
             children: [
               const Header(),
-              SizedBox(height: spacingHeight),
-              const BudgetDisplay(),
-              SizedBox(height: budgetSpacing),
-              const DailyExpenses(),
-              SizedBox(height: 90.h), // Space so content doesn’t hide under buttons when scrolled to bottom
-            ],
-          ),
-        ),
-        // Fixed buttons at the bottom
-        Positioned(
-          bottom: 20.h,
-          left: 0,
-          right: 0,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              ImageRecordButton(onPressed: () => _captureAndProcessImage(context)),
-              SizedBox(width: screenWidth * 0.03.w),
-              RecordExpenseButton(
-                onPressed: () {
-                  Navigator.of(context).pushNamed('/addexpense');
-                },
+              SizedBox(height: 35.h),
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Column(
+                    children: [
+                      SizedBox(height: 15.h),
+                      const BudgetDisplay(),
+                      SizedBox(height: 35.h),
+                      const DailyExpenses(),
+                      SizedBox(height: 87.h),
+                    ],
+                  ),
+                ),
               ),
             ],
           ),
-        ),
-      ],
+          Positioned(
+            bottom: 20.h,
+            left: 20.w,
+            right: 20.w,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                ImageRecordButton(
+                  onPressed: () => _captureAndProcessImage(context),
+                ),
+                SizedBox(width: 11.w),
+                RecordExpenseButton(
+                  onPressed: () {
+                    Navigator.of(context).pushNamed('/addexpense');
+                  },
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
 
     final List<Widget> screens = [

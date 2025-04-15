@@ -383,11 +383,6 @@ def predict_next_month(request):
     """
     HTTP callable function to predict next month's total expenses
     for a specific user.
-    
-    Expects a JSON payload with 'userId'. It reads the aggregated daily expense totals
-    from the "aggregated_expenses" subcollection of the user (for the past 60 days),
-    fits an ARIMA(7, 1, 1) model, forecasts 30 days ahead, and sums the forecasted values.
-    The prediction is written back into the user's subcollection "predictions/next_month".
     """
     try:
         # Validate request
@@ -455,7 +450,7 @@ def predict_next_month(request):
                     'confidence': round(float(min(data['count'] / len(df) * 100, 100)), 2),
                     'common_items': sorted(
                         [(item, {'count': int(idata['count']), 'total': float(idata['total'])})
-                         for item, idata in data['items'].items()],
+                        for item, idata in data['items'].items()],
                         key=lambda x: x[1]['count'],
                         reverse=True
                     )[:3] if data['items'] else []
@@ -488,7 +483,6 @@ def predict_next_month(request):
             }
         }
         
-        # Sanitize and store prediction
         try:
             pred_ref = client.collection("users").document(user_id) \
                         .collection("predictions").document("next_month")

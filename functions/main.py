@@ -1,16 +1,28 @@
-import functions_framework
+# main.py
+from firebase_functions import https_fn, scheduler_fn
+from firebase_admin import initialize_app
 from predict import predict_next_month
-from aggregate import aggregate_daily_expenses
-from aggregate import aggregate_historical_expenses
-from dotenv import load_dotenv
-import os
+from aggregate import aggregate_daily_expenses, aggregate_historical_expenses
+from scheduled_functions import scheduled_daily_aggregation
 
-# Load environment variables from .env file located at the project root
-if load_dotenv():
-    print(".env file loaded successfully.")
-else:
-    print("Warning: .env file not found. Make sure it exists in the project root.")
+# Initialize Firebase app
+initialize_app()
 
-if __name__ == '__main__':
-    # For local testing, you can run: functions-framework --target=predict_next_month
-    pass
+# Scheduled function for daily aggregation
+@scheduler_fn.on_schedule(schedule="0 0 * * *")
+def daily_aggregation(event: scheduler_fn.ScheduledEvent) -> None:
+    """Scheduled function that runs daily at midnight"""
+    return scheduled_daily_aggregation(event)
+
+# HTTP functions
+@https_fn.on_request()
+def predict(req: https_fn.Request) -> https_fn.Response:
+    return predict_next_month(req)
+
+@https_fn.on_request()
+def aggregate_daily(req: https_fn.Request) -> https_fn.Response:
+    return aggregate_daily_expenses(req)
+
+@https_fn.on_request()
+def aggregate_historical(req: https_fn.Request) -> https_fn.Response:
+    return aggregate_historical_expenses(req)

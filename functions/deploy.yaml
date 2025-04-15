@@ -1,0 +1,5 @@
+functions:
+  scheduled_daily_aggregation:
+    schedule: "0 0 * * *" 
+    memory: "256MB"
+    timeout: "540s"

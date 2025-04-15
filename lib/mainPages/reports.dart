@@ -37,7 +37,7 @@ class ReportsScreen extends StatelessWidget {
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Couldn’t extract data from the bill')),
+          const SnackBar(content: Text('Couldn\'t extract data from the bill')),
         );
       }
     }
@@ -107,12 +107,17 @@ class ReportsScreen extends StatelessWidget {
           return Center(
             child: SpinKitThreeBounce(
               color: AppColors.spinnerColor[themeMode],
-              size: 40.0,
+              size: 40.h,
             ),
           );
         }
         if (snapshot.hasError) {
-          return const Center(child: Text('Error loading expenses'));
+          return Center(
+            child: Text(
+              'Error loading expenses',
+              style: TextStyle(fontSize: 14.sp),
+            ),
+          );
         }
         final expenses = snapshot.data?.docs ?? [];
         if (expenses.isEmpty) {
@@ -128,7 +133,7 @@ class ReportsScreen extends StatelessWidget {
                   size: 50.w,
                   color: AppColors.disabledIconColor[themeMode],
                 ),
-                const SizedBox(height: 10),
+                SizedBox(height: 10.h),
                 Text(
                   'No expense record available',
                   style: GoogleFonts.poppins(
@@ -137,7 +142,7 @@ class ReportsScreen extends StatelessWidget {
                     color: AppColors.secondaryTextColor[themeMode],
                   ),
                 ),
-                const SizedBox(height: 8),
+                SizedBox(height: 8.h),
                 Text(
                   'Record at least one expense to access the reports',
                   textAlign: TextAlign.center,
@@ -173,36 +178,35 @@ class ReportsScreen extends StatelessWidget {
       backgroundColor: AppColors.primaryBackground[themeMode],
       body: Stack(
         children: [
-          // Single scroll view for all content
-          SingleChildScrollView(
-            child: Column(
-              children: [
-                const Header(),
-                SizedBox(height: 20.h),
-                _buildExpensesContent('', themeMode),
-                SizedBox(height: 87.h), // Space for bottom buttons
-              ],
-            ),
+          Column(
+            children: [
+              const Header(),
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Column(
+                    children: [
+                      SizedBox(height: 20.h),
+                      _buildExpensesContent('', themeMode),
+                      SizedBox(height: 87.h),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
-          // Bottom buttons positioned at the bottom
           Positioned(
             bottom: 20.h,
             left: 20.w,
             right: 20.w,
-            child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: 0.w),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  ImageRecordButton(onPressed: () => _captureAndProcessImage(context)),
-                  SizedBox(width: 11.w),
-                  RecordExpenseButton(
-                    onPressed: () {
-                      Navigator.of(context).pushNamed('/addexpense');
-                    },
-                  ),
-                ],
-              ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                ImageRecordButton(onPressed: () => _captureAndProcessImage(context)),
+                SizedBox(width: 11.w),
+                RecordExpenseButton(
+                  onPressed: () => Navigator.of(context).pushNamed('/addexpense'),
+                ),
+              ],
             ),
           ),
         ],

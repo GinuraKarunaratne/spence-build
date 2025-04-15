@@ -54,7 +54,7 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
         });
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Couldn’t extract data from the bill')),
+          const SnackBar(content: Text('Couldn\'t extract data from the bill')),
         );
       }
     } catch (e) {
@@ -128,7 +128,6 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
 
       await batch.commit();
 
-      // Add and show notification immediately after recording the expense
       final message = await _expenseMessage({
         'amount': expenseAmountValue,
         'category': category,
@@ -144,9 +143,16 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Expense recorded successfully!')),
       );
+      
+      // Clear form and OCR data after successful submission
       setState(() {
         _ocrData = null;
       });
+      _formKey.currentState?.resetForm();
+      
+      // Navigate back after successful submission
+      Navigator.of(context).pop();
+      
     } on FormatException {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Invalid amount format')),
@@ -188,79 +194,93 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
       body: SafeArea(
         child: Stack(
           children: [
-            SingleChildScrollView(
-              child: Column(
-                children: [
-                  Padding(
-                    padding: EdgeInsets.only(top: 2.h),
-                    child: Row(
+            Column(
+              children: [
+                // Header
+                Padding(
+                  padding: EdgeInsets.only(top: 2.h),
+                  child: Row(
+                    children: [
+                      Padding(
+                        padding: EdgeInsets.fromLTRB(25.w, 12.h, 0, 0),
+                        child: SvgPicture.asset(
+                          themeMode == ThemeMode.light
+                              ? 'assets/spence.svg'
+                              : 'assets/spence_dark.svg',
+                          height: 14.h,
+                        ),
+                      ),
+                      const Spacer(),
+                      Padding(
+                        padding: EdgeInsets.fromLTRB(40.w, 12.h, 20.w, 0),
+                        child: Container(
+                          width: 38.w,
+                          height: 38.w,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: AppColors.whiteColor[themeMode],
+                          ),
+                          child: IconButton(
+                            icon: Icon(Icons.arrow_back_rounded,
+                                size: 20.w,
+                                color: AppColors.textColor[themeMode]),
+                            onPressed: () => Navigator.of(context).pop(),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                
+                // Main Content
+                Expanded(
+                  child: SingleChildScrollView(
+                    child: Column(
                       children: [
-                        Padding(
-                          padding: EdgeInsets.fromLTRB(25.w, 12.h, 0, 0),
-                          child: SvgPicture.asset(
-                            themeMode == ThemeMode.light
-                                ? 'assets/spence.svg'
-                                : 'assets/spence_dark.svg',
-                            height: 14.h,
-                          ),
+                        SizedBox(height: 90.h),
+                        const BudgetDisplay(),
+                        SizedBox(height: 55.h),
+                        ExpenseForm(
+                          key: _formKey,
+                          initialTitle: formInitialTitle,
+                          initialAmount: formInitialAmount,
+                          onSubmit: (title, amount, category, date) async {
+                            setState(() => _isLoading = true);
+                            try {
+                              await _submitExpense(title, amount, category, date);
+                            } finally {
+                              setState(() => _isLoading = false);
+                            }
+                          },
                         ),
-                        const Spacer(),
-                        Padding(
-                          padding: EdgeInsets.fromLTRB(40.w, 12.h, 20.w, 0),
-                          child: Container(
-                            width: 38.w,
-                            height: 38.w,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: AppColors.whiteColor[themeMode],
-                            ),
-                            child: IconButton(
-                              icon: Icon(Icons.arrow_back_rounded,
-                                  size: 20.w,
-                                  color: AppColors.textColor[themeMode]),
-                              onPressed: () => Navigator.of(context).pop(),
-                            ),
-                          ),
-                        ),
+                        SizedBox(height: 100.h), // Space for bottom buttons
                       ],
                     ),
                   ),
-                  SizedBox(height: 70.h),
-                  const BudgetDisplay(),
-                  SizedBox(height: 80.h),
-                  ExpenseForm(
-                    key: _formKey,
-                    initialTitle: formInitialTitle,
-                    initialAmount: formInitialAmount,
-                    onSubmit: (title, amount, category, date) async {
-                      setState(() => _isLoading = true);
-                      try {
-                        await _submitExpense(title, amount, category, date);
-                        _formKey.currentState?.resetForm();
-                      } finally {
-                        setState(() => _isLoading = false);
-                      }
+                ),
+              ],
+            ),
+
+            // Bottom Buttons
+            Positioned(
+              bottom: 25.h,
+              left: 20.w,
+              right: 20.w,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  ImageRecordButton(onPressed: _captureAndProcessImage),
+                  SizedBox(width: 11.w),
+                  RecordExpenseButton(
+                    onPressed: () {
+                      _formKey.currentState?.submit();
                     },
                   ),
                 ],
               ),
             ),
-            Align(
-              alignment: Alignment.bottomCenter,
-              child: Padding(
-                padding: EdgeInsets.only(bottom: 30.h),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    ImageRecordButton(onPressed: _captureAndProcessImage),
-                    SizedBox(width: 11.w),
-                    RecordExpenseButton(onPressed: () {
-                      _formKey.currentState?.submit();
-                    }),
-                  ],
-                ),
-              ),
-            ),
+
+            // Loading Overlay
             if (_isLoading)
               Positioned.fill(
                 child: Container(
@@ -271,7 +291,7 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
                       colors: [
                         AppColors.accentColor[themeMode] ?? Colors.grey
                       ],
-                      strokeWidth: 2,
+                      strokeWidth: 2.r,
                     ),
                   ),
                 ),
