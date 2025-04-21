@@ -139,28 +139,42 @@ class WeeklyBar2Widget extends StatelessWidget {
     if (userId == null) return Stream.value(List.filled(7, 0.0));
 
     final now = DateTime.now();
-    final weekStart = now.subtract(Duration(days: now.weekday - 1)); // Monday start
-
-    List<double> dailyExpenses = List.filled(7, 0.0);
+    // Calculate Monday of current week with precise time boundaries
+    final weekStart = DateTime.utc(
+        now.year,
+        now.month,
+        now.day - (now.weekday - 1),
+        0, 0, 0
+    );
+    final weekEnd = DateTime.utc(
+        weekStart.year,
+        weekStart.month,
+        weekStart.day + 6,
+        23, 59, 59, 999
+    );
 
     return FirebaseFirestore.instance
         .collection('expenses')
         .where('userId', isEqualTo: userId)
-        .where('date', isGreaterThanOrEqualTo: weekStart)
+        .where('date', isGreaterThanOrEqualTo: Timestamp.fromDate(weekStart))
+        .where('date', isLessThanOrEqualTo: Timestamp.fromDate(weekEnd))
         .snapshots()
         .map((querySnapshot) {
-      dailyExpenses = List.filled(7, 0.0); // Reset to avoid accumulation
-      for (var doc in querySnapshot.docs) {
-        final expense = doc.data();
-        final expenseAmount = expense['amount'] as double?;
-        final expenseDate = (expense['date'] as Timestamp?)?.toDate();
+            List<double> dailyExpenses = List.filled(7, 0.0);
+            
+            for (var doc in querySnapshot.docs) {
+                final expense = doc.data();
+                final expenseAmount = expense['amount'] as double?;
+                final expenseDate = (expense['date'] as Timestamp?)?.toDate();
 
-        if (expenseAmount != null && expenseDate != null) {
-          int dayIndex = expenseDate.weekday - 1; // Monday is index 0
-          dailyExpenses[dayIndex] += expenseAmount;
-        }
-      }
-      return dailyExpenses;
-    });
+                if (expenseAmount != null && expenseDate != null) {
+                    int dayIndex = expenseDate.weekday - 1; // Monday = 0, Sunday = 6
+                    if (dayIndex >= 0 && dayIndex < 7) {
+                        dailyExpenses[dayIndex] += expenseAmount;
+                    }
+                }
+            }
+            return dailyExpenses;
+        });
   }
 }

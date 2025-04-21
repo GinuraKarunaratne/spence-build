@@ -310,113 +310,126 @@ class _WeeklyAnalysisState extends State<WeeklyAnalysis> {
     final userId = FirebaseAuth.instance.currentUser?.uid;
     if (userId == null) return {};
 
-    final today = DateTime.now();
-    // Current week: Monday to Sunday
-    final startOfWeek = today.subtract(Duration(days: today.weekday - 1));
-    final endOfWeek = startOfWeek.add(const Duration(days: 6, hours: 23, minutes: 59));
+    final now = DateTime.now();
+    // Correctly calculate Monday of current week with precise time boundaries
+    final startOfWeek = DateTime.utc(
+        now.year,
+        now.month,
+        now.day - (now.weekday - 1),
+        0, 0, 0
+    );
+    final endOfWeek = DateTime.utc(
+        startOfWeek.year,
+        startOfWeek.month,
+        startOfWeek.day + 6,
+        23, 59, 59, 999
+    );
 
-    // Query current week's expenses
+    // Query current week's expenses with precise UTC timestamps
     final currentWeekSnapshot = await FirebaseFirestore.instance
         .collection('expenses')
         .where('userId', isEqualTo: userId)
-        .where('date', isGreaterThanOrEqualTo: startOfWeek)
-        .where('date', isLessThanOrEqualTo: endOfWeek)
+        .where('date', isGreaterThanOrEqualTo: Timestamp.fromDate(startOfWeek))
+        .where('date', isLessThanOrEqualTo: Timestamp.fromDate(endOfWeek))
         .get();
 
-    // Aggregate weekly expenses and category details
-    final List<double> weeklyExpenses = List.filled(7, 0.0); // One for each day
+    // Initialize weekly expenses array (Monday to Sunday)
+    final List<double> weeklyExpenses = List.filled(7, 0.0);
     final Map<String, Map<String, dynamic>> categoryDetails = {};
     Map<String, dynamic> firstExpenseInfo = {};
     Map<String, dynamic> latestExpense = {};
     Map<String, dynamic> topExpense = {};
     int expenseCount = 0;
 
+    // Process expenses
     for (var doc in currentWeekSnapshot.docs) {
-      final expense = doc.data();
-      final amount = (expense['amount'] as num?)?.toDouble() ?? 0.0;
-      final timestamp = expense['date'] as Timestamp?;
-      final category = expense['category']?.toString() ?? "Other";
-      final title = expense['title']?.toString() ?? "Expense";
+        final expense = doc.data();
+        final amount = (expense['amount'] as num?)?.toDouble() ?? 0.0;
+        final timestamp = expense['date'] as Timestamp?;
+        final category = expense['category']?.toString() ?? "Other";
+        final title = expense['title']?.toString() ?? "Expense";
 
-      expenseCount++;
-      if (expenseCount == 1) {
-        int dayIndex = 0;
         if (timestamp != null) {
-          dayIndex = timestamp.toDate().difference(startOfWeek).inDays;
+            final expenseDate = timestamp.toDate();
+            // Calculate day index (0 = Monday, 6 = Sunday)
+            final dayIndex = expenseDate.weekday - 1;
+            
+            // Add to weekly expenses
+            if (dayIndex >= 0 && dayIndex < 7) {
+                weeklyExpenses[dayIndex] += amount;
+            }
+
+            // Update expense tracking
+            expenseCount++;
+            if (expenseCount == 1) {
+                firstExpenseInfo = {
+                    'day': dayIndex,
+                    'category': category,
+                    'title': title,
+                    'amount': amount,
+                };
+            }
+
+            latestExpense = {'title': title, 'amount': amount};
+            
+            if (amount > (topExpense['amount'] as double? ?? 0.0)) {
+                topExpense = {'title': title, 'amount': amount};
+            }
         }
-        firstExpenseInfo = {
-          'day': dayIndex,
-          'category': category,
-          'title': title,
-          'amount': amount,
-        };
-      }
-      if (timestamp != null) {
-        latestExpense = {'title': title, 'amount': amount};
-        final dayIndex = timestamp.toDate().difference(startOfWeek).inDays;
-        if (dayIndex >= 0 && dayIndex < 7) {
-          weeklyExpenses[dayIndex] += amount;
-        }
-      }
-      if (amount > (topExpense['amount'] as double? ?? 0.0)) {
-        topExpense = {'title': title, 'amount': amount};
-      }
-      categoryDetails.update(
-        category,
-        (existing) => {
-          'total': (existing['total'] as double) + amount,
-          'count': (existing['count'] as int) + 1,
-        },
-        ifAbsent: () => {'total': amount, 'count': 1},
-      );
+
+        // Update category details
+        categoryDetails.update(
+            category,
+            (existing) => {
+                'total': (existing['total'] as double) + amount,
+                'count': (existing['count'] as int) + 1,
+            },
+            ifAbsent: () => {'total': amount, 'count': 1},
+        );
     }
 
-    final double totalWeeklyExpenditure =
-        weeklyExpenses.fold(0.0, (sum, amount) => sum + amount);
-
-    // Query last week's expenses
+    // Calculate last week's data
     final lastWeekStart = startOfWeek.subtract(const Duration(days: 7));
     final lastWeekEnd = startOfWeek.subtract(const Duration(seconds: 1));
+    
     final lastWeekSnapshot = await FirebaseFirestore.instance
         .collection('expenses')
         .where('userId', isEqualTo: userId)
-        .where('date', isGreaterThanOrEqualTo: lastWeekStart)
-        .where('date', isLessThanOrEqualTo: lastWeekEnd)
+        .where('date', isGreaterThanOrEqualTo: Timestamp.fromDate(lastWeekStart))
+        .where('date', isLessThanOrEqualTo: Timestamp.fromDate(lastWeekEnd))
         .get();
-    final List<double> lastWeekExpenses = lastWeekSnapshot.docs
-        .map((doc) => (doc['amount'] as num).toDouble())
-        .toList();
-    final double lastWeekTotal =
-        lastWeekExpenses.fold(0.0, (sum, amount) => sum + amount);
 
-    // Compute week numbers within the month
-    final currentWeekNumber = ((today.day - 1) ~/ 7) + 1;
-    final lastWeekNumber = currentWeekNumber > 1 ? currentWeekNumber - 1 : 1;
-    final mostSpentWeek = totalWeeklyExpenditure >= lastWeekTotal
-        ? "Week $currentWeekNumber"
-        : "Week $lastWeekNumber";
+    final double lastWeekTotal = lastWeekSnapshot.docs
+        .fold(0.0, (sum, doc) => sum + (doc['amount'] as num).toDouble());
 
-    // Retrieve budget info
+    // Get budget info
     final budgetDoc = await FirebaseFirestore.instance
         .collection('budgets')
         .doc(userId)
         .get();
     final budgetData = budgetDoc.data() ?? {};
-    final remainingBudget = (budgetData['remaining_budget'] as double?) ?? 0.0;
+    final remainingBudget = (budgetData['remaining_budget'] as num?)?.toDouble() ?? 0.0;
     final String currency = budgetData['currency'] ?? '';
     final weeklyAllowable = remainingBudget / 7;
 
+    // Calculate week numbers
+    final weekNumber = ((now.day - 1) ~/ 7) + 1;
+    final totalWeeklyExpenditure = weeklyExpenses.reduce((a, b) => a + b);
+    final mostSpentWeek = totalWeeklyExpenditure >= lastWeekTotal
+        ? "Week $weekNumber"
+        : "Week ${weekNumber - 1}";
+
     return {
-      'weeklyExpenses': weeklyExpenses,
-      'weeklyAllowableExpenditure': weeklyAllowable,
-      'categoryDetails': categoryDetails,
-      'expenseCount': expenseCount,
-      'firstExpenseInfo': firstExpenseInfo,
-      'latestExpense': latestExpense,
-      'topExpense': topExpense,
-      'currency': currency,
-      'lastWeekTotal': lastWeekTotal,
-      'mostSpentWeek': mostSpentWeek,
+        'weeklyExpenses': weeklyExpenses,
+        'weeklyAllowableExpenditure': weeklyAllowable,
+        'categoryDetails': categoryDetails,
+        'expenseCount': expenseCount,
+        'firstExpenseInfo': firstExpenseInfo,
+        'latestExpense': latestExpense,
+        'topExpense': topExpense,
+        'currency': currency,
+        'lastWeekTotal': lastWeekTotal,
+        'mostSpentWeek': mostSpentWeek,
     };
   }
 }

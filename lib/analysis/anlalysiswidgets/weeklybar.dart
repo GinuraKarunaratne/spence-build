@@ -173,57 +173,111 @@ class WeeklyBarWidget extends StatelessWidget {
           );
   }
 
-  // Updated function to group expenses into calendar weeks: Week 1 = 1–7, Week 2 = 8–14, etc.
   Stream<List<double>> _getWeeklyExpensesByWeek() {
     final userId = FirebaseAuth.instance.currentUser?.uid;
     if (userId == null) return Stream.value(List.filled(5, 0.0));
 
     final now = DateTime.now();
-    final int currentYear = now.year;
-    final int currentMonth = now.month;
-    final firstDayOfMonth = DateTime(currentYear, currentMonth, 1);
-    final lastDayOfMonth = DateTime(currentYear, currentMonth + 1, 0);
+    final currentYear = now.year;
+    final currentMonth = now.month;
+    
+    // Calculate first and last day of month with inclusive boundaries
+    final firstDayOfMonth = DateTime.utc(currentYear, currentMonth, 1, 0, 0, 0);
+    final lastDayOfMonth = DateTime.utc(currentYear, currentMonth + 1, 0, 23, 59, 59, 999);
 
-    // Create 5 week intervals: Week 1: 1–7, Week 2: 8–14, etc.
+    // Create week boundaries based on calendar weeks
     List<Map<String, DateTime>> weeks = [];
-    for (int i = 0; i < 5; i++) {
-      DateTime start = DateTime(currentYear, currentMonth, 1 + i * 7);
-      DateTime end = start.add(Duration(days: 6));
-      if (end.isAfter(lastDayOfMonth)) end = lastDayOfMonth;
-      weeks.add({'start': start, 'end': end});
+    DateTime weekStart = firstDayOfMonth;
+    
+    // Find the first Monday if the month doesn't start on Monday
+    if (weekStart.weekday != DateTime.monday) {
+      // If month starts mid-week, count that partial week as Week 1
+      DateTime weekEnd = DateTime(weekStart.year, weekStart.month, 
+                       weekStart.day + (7 - weekStart.weekday), 23, 59, 59, 999);
+      weeks.add({
+        'start': weekStart,
+        'end': weekEnd,
+      });
+      // Move weekStart to next Monday
+      weekStart = DateTime(weekStart.year, weekStart.month, 
+                         weekStart.day + (8 - weekStart.weekday), 0, 0, 0);
+    }
+    
+    // Add remaining weeks
+    while (weekStart.month == currentMonth) {
+      DateTime weekEnd = weekStart.add(const Duration(days: 6));
+      // Adjust if week extends into next month
+      if (weekEnd.month != currentMonth) {
+        weekEnd = lastDayOfMonth;
+      } else {
+        weekEnd = DateTime(weekEnd.year, weekEnd.month, weekEnd.day, 23, 59, 59, 999);
+      }
+      weeks.add({
+        'start': weekStart,
+        'end': weekEnd,
+      });
+      weekStart = weekEnd.add(const Duration(days: 1));
+      weekStart = DateTime(weekStart.year, weekStart.month, weekStart.day, 0, 0, 0);
     }
 
-    List<double> weeklyExpenses = List.filled(5, 0.0);
+    // Ensure we have 5 weeks (pad with empty weeks if needed)
+    while (weeks.length < 5) {
+      weeks.add({
+        'start': lastDayOfMonth,
+        'end': lastDayOfMonth,
+      });
+    }
 
     return FirebaseFirestore.instance
         .collection('expenses')
         .where('userId', isEqualTo: userId)
-        .where('date', isGreaterThanOrEqualTo: firstDayOfMonth)
+        .where('date', isGreaterThanOrEqualTo: Timestamp.fromDate(firstDayOfMonth))
+        .where('date', isLessThanOrEqualTo: Timestamp.fromDate(lastDayOfMonth))
         .snapshots()
         .map((querySnapshot) {
-      weeklyExpenses = List.filled(5, 0.0);
-      for (var doc in querySnapshot.docs) {
-        final expense = doc.data();
-        final expenseAmount = expense['amount'] as double?;
-        final expenseDate = (expense['date'] as Timestamp?)?.toDate();
-        if (expenseAmount != null && expenseDate != null) {
-          for (int i = 0; i < weeks.length; i++) {
-            DateTime start = weeks[i]['start']!;
-            DateTime end = weeks[i]['end']!;
-            if (!expenseDate.isBefore(start) && !expenseDate.isAfter(end)) {
-              weeklyExpenses[i] += expenseAmount;
-              break;
+            List<double> weeklyExpenses = List.filled(5, 0.0);
+            
+            for (var doc in querySnapshot.docs) {
+                final expense = doc.data();
+                final expenseAmount = expense['amount'] as double?;
+                final expenseDate = (expense['date'] as Timestamp?)?.toDate();
+                
+                if (expenseAmount != null && expenseDate != null) {
+                    for (int i = 0; i < weeks.length; i++) {
+                        if (expenseDate.isAtSameMomentAs(weeks[i]['start']!) || 
+                            (expenseDate.isAfter(weeks[i]['start']!) && 
+                             expenseDate.isBefore(weeks[i]['end']!)) ||
+                            expenseDate.isAtSameMomentAs(weeks[i]['end']!)) {
+                            weeklyExpenses[i] += expenseAmount;
+                            break;
+                        }
+                    }
+                }
             }
-          }
-        }
-      }
-      return weeklyExpenses;
-    });
+            return weeklyExpenses;
+        });
   }
 
-  // Updated to calculate current week index based strictly on day of month:
   int _getCurrentWeekIndex() {
     final now = DateTime.now();
+    final firstDayOfMonth = DateTime(now.year, now.month, 1);
+    
+    // If month starts mid-week, that partial week is Week 1
+    if (firstDayOfMonth.weekday != DateTime.monday) {
+      // Calculate days since start of month, accounting for partial first week
+      int daysSinceStart = now.day - 1;
+      int daysInFirstWeek = 8 - firstDayOfMonth.weekday;
+      
+      if (daysSinceStart < daysInFirstWeek) {
+        return 0; // Still in first (partial) week
+      }
+      
+      // Adjust calculation for remaining weeks
+      daysSinceStart -= daysInFirstWeek;
+      return (daysSinceStart ~/ 7 + 1).clamp(0, 4);
+    }
+    
+    // If month starts on Monday, simple calculation
     return ((now.day - 1) ~/ 7).clamp(0, 4);
   }
 }
