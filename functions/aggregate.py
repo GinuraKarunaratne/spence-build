@@ -62,7 +62,6 @@ def aggregate_expenses_for_date(target_date, client=None):
     
     user_data = {}
     
-    # Process expenses
     for doc in expenses_query.stream():
         data = doc.to_dict()
         user_id = data.get("userId")
@@ -73,63 +72,138 @@ def aggregate_expenses_for_date(target_date, client=None):
             user_data[user_id] = {
                 "total": 0,
                 "transactions": [],
-                "categories": {}
+                "categories": {},
+                "daily_stats": {
+                    "morning": 0,    # 6AM-12PM
+                    "afternoon": 0,   # 12PM-6PM
+                    "evening": 0,     # 6PM-12AM
+                    "night": 0        # 12AM-6AM
+                },
+                "transaction_sizes": {
+                    "small": 0,       # Bottom 25%
+                    "medium": 0,      # 25-75%
+                    "large": 0        # Top 25%
+                }
             }
-            
+        
         try:
             amount = float(data.get("amount", 0))
             category = data.get("category", "Uncategorized")
             title = data.get("title", "")
+            date = data.get("date").astimezone(get_local_timezone())
+            hour = date.hour
+            
+            # Track time of day
+            if 6 <= hour < 12:
+                user_data[user_id]["daily_stats"]["morning"] += amount
+            elif 12 <= hour < 18:
+                user_data[user_id]["daily_stats"]["afternoon"] += amount
+            elif 18 <= hour < 24:
+                user_data[user_id]["daily_stats"]["evening"] += amount
+            else:
+                user_data[user_id]["daily_stats"]["night"] += amount
             
             user_data[user_id]["total"] += amount
-            user_data[user_id]["transactions"].append({
+            transaction_data = {
                 "amount": amount,
                 "category": category,
-                "title": title
-            })
+                "title": title,
+                "hour": hour,
+                "day_of_week": date.weekday()
+            }
+            user_data[user_id]["transactions"].append(transaction_data)
             
-            # Aggregate by category
+            # Enhanced category tracking
             if category not in user_data[user_id]["categories"]:
                 user_data[user_id]["categories"][category] = {
                     "total": 0,
                     "count": 0,
-                    "items": {}
+                    "items": {},
+                    "hourly_distribution": [0] * 24,
+                    "daily_distribution": [0] * 7,
+                    "average_transaction": 0,
+                    "largest_transaction": 0,
+                    "smallest_transaction": float('inf'),
+                    "recent_transactions": []
                 }
-            user_data[user_id]["categories"][category]["total"] += amount
-            user_data[user_id]["categories"][category]["count"] += 1
             
-            # Track items within categories
+            cat_data = user_data[user_id]["categories"][category]
+            cat_data["total"] += amount
+            cat_data["count"] += 1
+            cat_data["hourly_distribution"][hour] += amount
+            cat_data["daily_distribution"][date.weekday()] += amount
+            cat_data["average_transaction"] = cat_data["total"] / cat_data["count"]
+            cat_data["largest_transaction"] = max(cat_data["largest_transaction"], amount)
+            cat_data["smallest_transaction"] = min(cat_data["smallest_transaction"], amount)
+            
+            # Track items with enhanced details
             if title:
-                if title not in user_data[user_id]["categories"][category]["items"]:
-                    user_data[user_id]["categories"][category]["items"][title] = {
+                if title not in cat_data["items"]:
+                    cat_data["items"][title] = {
                         "count": 0,
-                        "total": 0
+                        "total": 0,
+                        "average": 0,
+                        "frequency": 0,
+                        "last_purchase": None
                     }
-                user_data[user_id]["categories"][category]["items"][title]["count"] += 1
-                user_data[user_id]["categories"][category]["items"][title]["total"] += amount
-            
-        except (TypeError, ValueError):
+                item_data = cat_data["items"][title]
+                item_data["count"] += 1
+                item_data["total"] += amount
+                item_data["average"] = item_data["total"] / item_data["count"]
+                item_data["last_purchase"] = date.isoformat()
+                
+        except (TypeError, ValueError) as e:
+            print(f"Error processing expense: {str(e)}")
             continue
 
-    # Write data
+    # Write enhanced data
     batch = client.batch()
     for user_id, data in user_data.items():
         doc_id = target_date.isoformat()
         agg_ref = client.collection("users").document(user_id) \
                     .collection("aggregated_expenses").document(doc_id)
         
+        # Calculate transaction size distributions
+        amounts = sorted([t["amount"] for t in data["transactions"]])
+        if amounts:
+            q25 = amounts[len(amounts)//4]
+            q75 = amounts[3*len(amounts)//4]
+            data["transaction_sizes"] = {
+                "small": len([a for a in amounts if a <= q25]),
+                "medium": len([a for a in amounts if q25 < a < q75]),
+                "large": len([a for a in amounts if a >= q75])
+            }
+        
+        # Enhanced metadata
+        metadata = {
+            "transaction_count": len(data["transactions"]),
+            "day_of_week": target_date.weekday(),
+            "is_weekend": target_date.weekday() >= 5,
+            "average_transaction": data["total"] / len(data["transactions"]) if data["transactions"] else 0,
+            "categories": data["categories"],
+            "is_zero_spending_day": False,
+            "week_of_month": (target_date.day - 1) // 7 + 1,
+            "daily_stats": data["daily_stats"],
+            "transaction_sizes": data["transaction_sizes"],
+            "spending_patterns": {
+                "time_distribution": {
+                    "morning_ratio": data["daily_stats"]["morning"] / data["total"] if data["total"] > 0 else 0,
+                    "afternoon_ratio": data["daily_stats"]["afternoon"] / data["total"] if data["total"] > 0 else 0,
+                    "evening_ratio": data["daily_stats"]["evening"] / data["total"] if data["total"] > 0 else 0,
+                    "night_ratio": data["daily_stats"]["night"] / data["total"] if data["total"] > 0 else 0
+                },
+                "transaction_distribution": {
+                    "small_ratio": data["transaction_sizes"]["small"] / len(data["transactions"]) if data["transactions"] else 0,
+                    "medium_ratio": data["transaction_sizes"]["medium"] / len(data["transactions"]) if data["transactions"] else 0,
+                    "large_ratio": data["transaction_sizes"]["large"] / len(data["transactions"]) if data["transactions"] else 0
+                }
+            }
+        }
+        
         batch.set(agg_ref, {
             "date": doc_id,
             "total": data["total"],
-            "metadata": {
-                "transaction_count": len(data["transactions"]),
-                "day_of_week": target_date.weekday(),
-                "is_weekend": target_date.weekday() >= 5,
-                "average_transaction": data["total"] / len(data["transactions"]) if data["transactions"] else 0,
-                "categories": data["categories"],
-                "is_zero_spending_day": False,
-                "week_of_month": (target_date.day - 1) // 7 + 1
-            }
+            "metadata": metadata
         }, merge=True)
     
     batch.commit()

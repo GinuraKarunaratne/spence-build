@@ -9,7 +9,7 @@ from scheduled_functions import scheduled_daily_aggregation
 initialize_app()
 
 # Scheduled function for daily aggregation
-@scheduler_fn.on_schedule(schedule="0 0 * * *")
+@scheduler_fn.on_schedule(schedule="0 0 * * *", timezone="Asia/Colombo")
 def daily_aggregation(event: scheduler_fn.ScheduledEvent) -> None:
     """Scheduled function that runs daily at midnight"""
     return scheduled_daily_aggregation(event)

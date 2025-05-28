@@ -6,3 +6,7 @@ pytz
 statsmodels
 firebase-admin
 python-dotenv
+numpy
+matplotlib
+seaborn
+scikit-learn
