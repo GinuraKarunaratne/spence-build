@@ -882,73 +882,110 @@ def calculate_data_quality_score(patterns):
 def predict_next_month(request):
     """
     HTTP callable function to predict next month's total expenses
-    for a specific user.
+    for a specific user. Now with budget cap, outlier filtering, robust data handling, and realistic prediction floor.
     """
     try:
         # Validate request
         request_json = request.get_json(silent=True)
         if not request_json or 'userId' not in request_json:
             return {"error": "Missing 'userId' in request"}, 400
-        
         user_id = request_json['userId']
         client = get_firestore_client()
-        
+
+        # Fetch user's monthly budget
+        budget_doc = client.collection('budgets').document(user_id).get()
+        monthly_budget = None
+        if budget_doc.exists:
+            budget_data = budget_doc.to_dict()
+            monthly_budget = budget_data.get('monthly_budget') if budget_data.get('monthly_budget') is not None else budget_data.get('remaining_budget')
+
         # Determine target prediction month
         target_month = determine_prediction_month()
-        
-        # Get historical data
+
+        # Get historical data (use last available if no recent)
         agg_ref = client.collection("users").document(user_id).collection("aggregated_expenses")
         sixty_days_ago = (datetime.now(get_local_timezone()) - timedelta(days=60)).date().isoformat()
-        
-        # Create query using FieldFilter
-        query = (agg_ref
-                .where(filter=FieldFilter("date", ">=", sixty_days_ago))
-                .order_by("date"))
-        
-        try:
-            docs = list(query.stream())
-        except Exception as e:
-            return {"error": f"Failed to fetch data: {str(e)}"}, 500
-        
+        query = (agg_ref.where(filter=FieldFilter("date", ">=", sixty_days_ago)).order_by("date"))
+        docs = list(query.stream())
         if len(docs) < 7:
-            return {"error": "Not enough data for prediction (minimum 7 days required)"}, 400
+            # Try to use all available data (even if old)
+            docs = list(agg_ref.order_by("date").stream())
+            if len(docs) < 7:
+                return {"error": "Not enough data for prediction (minimum 7 days required)"}, 400
+            data_is_old = True
+        else:
+            data_is_old = False
 
         df = preprocess_daily_totals(docs)
         if df.empty:
             return {"error": "No valid data available for prediction"}, 400
-        
+
+        # --- Outlier Detection: Remove outliers (beyond 2.5 std) ---
+        if len(df) > 10:
+            mean = df['total'].mean()
+            std = df['total'].std()
+            df = df[(df['total'] >= mean - 2.5*std) & (df['total'] <= mean + 2.5*std)]
+
+        # --- Fill missing days with rolling mean or last known value ---
+        if df['total'].isnull().any():
+            df['total'] = df['total'].fillna(method='ffill').fillna(method='bfill')
+        # If still any NaN, fill with rolling mean
+        if df['total'].isnull().any():
+            df['total'] = df['total'].fillna(df['total'].rolling(window=7, min_periods=1).mean())
+
+        # --- Use only real spending days for ARIMA, but keep zeros for zero-day pattern analysis ---
+        arima_series = df['total'].copy()
+        if (arima_series != 0).sum() >= 7:
+            # If enough non-zero days, use only those for ARIMA
+            arima_series = arima_series[arima_series > 0]
+        else:
+            # Otherwise, use all (filled) data
+            arima_series = df['total']
+
         # Analyze patterns
         patterns = analyze_spending_patterns(df)
-        
         # Optimize ARIMA parameters
-        p, d, q = optimize_arima_parameters(df['total'])
-        
+        p, d, q = optimize_arima_parameters(arima_series)
         # Fit model with optimized parameters
         try:
-            model = ARIMA(df['total'], order=(p, d, q))
+            model = ARIMA(arima_series, order=(p, d, q))
             fitted_model = model.fit()
         except Exception as e:
             print(f"Complex model failed: {str(e)}, using simple model")
-            model = ARIMA(df['total'], order=(1, 1, 1))
+            model = ARIMA(arima_series, order=(1, 1, 1))
             fitted_model = model.fit()
             p, d, q = 1, 1, 1
-        
         # Generate predictions
         daily_predictions = generate_daily_predictions(fitted_model, patterns, target_month)
-        
+        # --- Budget Cap: Scale down if over budget ---
+        if monthly_budget:
+            pred_sum = sum(day['predicted_amount'] for day in daily_predictions)
+            if pred_sum > monthly_budget:
+                scale = monthly_budget / pred_sum
+                for day in daily_predictions:
+                    day['predicted_amount'] = round(day['predicted_amount'] * scale, 2)
         # Calculate monthly total (excluding nan values)
         valid_predictions = [day['predicted_amount'] for day in daily_predictions 
                             if isinstance(day['predicted_amount'], (int, float)) 
                             and not np.isnan(day['predicted_amount'])]
         monthly_total = sum(valid_predictions)
-
-        # Ensure we have a valid monthly total
-        if np.isnan(monthly_total) or monthly_total == 0:
-            # Use historical average as fallback
-            historical_avg = patterns['monthly_stats']['average_daily_spend']
-            days_in_month = len(daily_predictions)
-            monthly_total = historical_avg * days_in_month
-        
+        # --- Realistic Prediction Floor ---
+        # Use historical average of last 2-3 months if model output is too low
+        min_floor = 0
+        if monthly_budget:
+            min_floor = max(min_floor, 0.4 * monthly_budget)
+        # Calculate historical average (last 2-3 months)
+        if len(df) >= 60:
+            hist_avg = df['total'][-60:].mean() * 30
+        else:
+            hist_avg = df['total'].mean() * 30
+        min_floor = max(min_floor, 0.6 * hist_avg)
+        if monthly_total < min_floor:
+            print(f"Prediction {monthly_total} is below floor {min_floor}, using floor.")
+            scale = min_floor / (monthly_total if monthly_total > 0 else 1)
+            for day in daily_predictions:
+                day['predicted_amount'] = round(day['predicted_amount'] * scale, 2)
+            monthly_total = min_floor
         # Predict categories
         predicted_categories = {}
         if patterns['category_patterns']:
@@ -963,9 +1000,8 @@ def predict_next_month(request):
                         for item, idata in data['items'].items()],
                         key=lambda x: x[1]['count'],
                         reverse=True
-                    )[:3] if data['items'] else []
+                    )[:3] if 'items' in data and data['items'] else []
                 }
-        
         # Prepare result
         result = {
             'monthly_prediction': {
@@ -976,7 +1012,8 @@ def predict_next_month(request):
                 'expected_zero_spending_days': len([d for d in daily_predictions if d['is_likely_zero_spending']]),
                 'category_breakdown': predicted_categories,
                 'time_distribution': calculate_monthly_time_distribution(daily_predictions),
-                'confidence_metrics': calculate_confidence_metrics(daily_predictions, patterns)
+                'confidence_metrics': calculate_confidence_metrics(daily_predictions, patterns),
+                'data_is_old': data_is_old
             },
             'daily_predictions': daily_predictions,
             'category_predictions': predicted_categories,
@@ -991,7 +1028,6 @@ def predict_next_month(request):
                 }
             }
         }
-        
         try:
             pred_ref = client.collection("users").document(user_id) \
                         .collection("predictions").document("next_month")
@@ -999,42 +1035,6 @@ def predict_next_month(request):
             pred_ref.set(sanitized_result)
         except Exception as e:
             print(f"Warning: Failed to store prediction: {str(e)}")
-        
         return sanitized_result, 200
-        
     except Exception as e:
         return {"error": f"Prediction error: {str(e)}"}, 500
-
-"""
-Enhanced predict.py explanation:
-
-1. Pattern Analysis:
-   - Analyzes spending by day of week
-   - Identifies high-spending days
-   - Calculates spending trends and volatility
-   - Provides monthly statistics
-
-2. ARIMA Optimization:
-   - Uses ACF and PACF to find optimal parameters
-   - Adapts to user's spending patterns
-   - Ensures model stability with minimum values
-
-3. Daily Predictions:
-   - Generates predictions for each day
-   - Includes confidence intervals
-   - Maps to actual calendar dates
-   - Considers day of week patterns
-
-4. Output Structure:
-   - Monthly total prediction
-   - Day-by-day predictions
-   - Historical patterns analysis
-   - Model performance metrics
-
-5. Key Features:
-   - More accurate predictions through pattern analysis
-   - Detailed daily breakdown
-   - Identifies spending trends
-   - Optimized for visualization
-   - Enhanced error handling
-"""

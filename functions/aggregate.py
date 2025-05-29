@@ -13,24 +13,41 @@ def fill_missing_dates(start_date, end_date, existing_dates, user_id, client):
     filled_count = 0
     
     while current_date <= end_date:
-        if current_date.isoformat() not in existing_dates:
-            doc_id = current_date.isoformat()
+        date_str = current_date.isoformat()
+        if date_str not in existing_dates:
+            doc_id = date_str
             agg_ref = client.collection("users").document(user_id) \
                         .collection("aggregated_expenses").document(doc_id)
             
             # Create zero-spending record
+            metadata = {
+                "transaction_count": 0,
+                "day_of_week": current_date.weekday(),
+                "is_weekend": current_date.weekday() >= 5,
+                "average_transaction": 0,
+                "categories": {},
+                "is_zero_spending_day": True,
+                "week_of_month": (current_date.day - 1) // 7 + 1,
+                "daily_stats": {"morning": 0, "afternoon": 0, "evening": 0, "night": 0},
+                "transaction_sizes": {"small": 0, "medium": 0, "large": 0},
+                "spending_patterns": {
+                    "time_distribution": {
+                        "morning_ratio": 0,
+                        "afternoon_ratio": 0,
+                        "evening_ratio": 0,
+                        "night_ratio": 0
+                    },
+                    "transaction_distribution": {
+                        "small_ratio": 0,
+                        "medium_ratio": 0,
+                        "large_ratio": 0
+                    }
+                }
+            }
             batch.set(agg_ref, {
                 "date": doc_id,
                 "total": 0,
-                "metadata": {
-                    "transaction_count": 0,
-                    "day_of_week": current_date.weekday(),
-                    "is_weekend": current_date.weekday() >= 5,
-                    "average_transaction": 0,
-                    "is_zero_spending_day": True,
-                    "categories": {},
-                    "week_of_month": (current_date.day - 1) // 7 + 1
-                }
+                "metadata": metadata
             }, merge=True)
             filled_count += 1
             

@@ -1,6 +1,6 @@
 # scheduled_functions.py
 import firebase_admin
-from firebase_admin import credentials, firestore
+from firebase_admin import firestore
 from datetime import datetime
 from aggregate import perform_daily_aggregation
 from utils import get_local_timezone
@@ -10,8 +10,7 @@ def initialize_firebase():
     try:
         firebase_admin.get_app()
     except ValueError:
-        cred = credentials.Certificate('service-account.json')
-        firebase_admin.initialize_app(cred)
+        firebase_admin.initialize_app()  # Use default credentials in cloud
 
 def scheduled_daily_aggregation(event):
     """Cloud Function to be triggered daily at midnight"""

@@ -24,6 +24,7 @@ import 'otherPages/allexpenses.dart';
 import 'services/monthlyupdate.dart';
 import 'services/recurringprocess.dart';
 import 'otherpages/editbudget.dart';
+import 'widgets/predictionresults.dart';
 
 void callbackDispatcher() {
   Workmanager().executeTask((task, inputData) async {
@@ -164,6 +165,7 @@ class MyApp extends StatelessWidget {
                 '/addrecurring': (context) => const AddRecurringScreen(),
                 '/editprofile': (context) => const EditProfile(),
                 '/editbudget': (context) => EditBudget(),
+                '/predictionResults': (context) => PredictionResultsPage(predictionData: {}),
               },
               builder: (context, child) {
                 final themeMode = Provider.of<ThemeProvider>(context).themeMode;
