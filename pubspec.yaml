@@ -59,6 +59,7 @@ flutter:
     - assets/happy.json
     - assets/spence_dark.svg
     - assets/predict_dark.svg
+    - assets/star.svg
 
 flutter_icons:
   android: true
