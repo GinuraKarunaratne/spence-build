@@ -67,7 +67,7 @@ class PredictionResultsPage extends StatelessWidget {
 
     // 5. Percent change vs. last month
     final isIncrease = lastMonthTotal > 0 && predictedTotal >= lastMonthTotal;
-    final comparedToLastMonthPercent = lastMonthTotal > 0
+    final comparedPercent = lastMonthTotal > 0
         ? ((predictedTotal - lastMonthTotal) / lastMonthTotal) * 100
         : 0.0;
 
@@ -104,7 +104,7 @@ class PredictionResultsPage extends StatelessWidget {
                   predictedAmounts,
                   predictedTotal,
                   predictedStartDate,
-                  comparedToLastMonthPercent,
+                  comparedPercent,
                   isIncrease,
                   averageSpendPerDay,
                   mostSpentDay,
@@ -123,8 +123,8 @@ class PredictionResultsPage extends StatelessWidget {
       children: [
         SvgPicture.asset(
           themeMode == ThemeMode.light
-              ? 'assets/spence.svg'
-              : 'assets/spence_dark.svg',
+            ? 'assets/spence.svg'
+            : 'assets/spence_dark.svg',
           height: 14.h,
         ),
         const Spacer(),
@@ -229,10 +229,9 @@ class PredictionResultsPage extends StatelessWidget {
               SvgPicture.asset('assets/star.svg', width: 24.w, height: 24.h),
             ],
           ),
-
           SizedBox(height: 20.h),
 
-          // Bar Chart
+          // Chart
           if (predictedAmounts.isNotEmpty)
             PredictionBarWidget(predictedAmounts: predictedAmounts),
 
@@ -250,10 +249,10 @@ class PredictionResultsPage extends StatelessWidget {
           SizedBox(
             width: 330.w,
             child: Text(
-              '* Please note that projected expenses for next month are estimates and may vary based on actual spending habits. We’ll continue to protect your personal information and use it solely for account management.',
+              '* Please note that the projected expenses for next month are estimates and may vary based on actual spending habits. We’ll continue to protect your personal information and use it solely for account management.',
               textAlign: TextAlign.justify,
               style: GoogleFonts.poppins(
-                color: Colors.black.withAlpha(128),
+                color: AppColors.budgetNoteColor[themeMode],
                 fontSize: 9,
                 fontWeight: FontWeight.w300,
               ),
@@ -361,8 +360,11 @@ class SummarySection extends StatelessWidget {
     final themeMode = Provider.of<ThemeProvider>(context).themeMode;
     const currency = 'Rs';
 
-    Widget summaryRow(String label, String value, {bool showArrow = false}) {
+    Widget summaryRow(String label, String value,
+        {bool showArrow = false, bool isIncrease = false}) {
       return Container(
+        margin: EdgeInsets.only(left: 0),
+        height: 48.h,
         padding: EdgeInsets.all(10.h),
         decoration: BoxDecoration(
           color: AppColors.secondaryBackground[themeMode],
@@ -370,9 +372,10 @@ class SummarySection extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
+            // Label box
             Container(
-              color: AppColors.accentColor[themeMode],
               padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 6.h),
+              color: AppColors.accentColor[themeMode],
               child: Text(
                 label,
                 style: GoogleFonts.poppins(
@@ -382,28 +385,39 @@ class SummarySection extends StatelessWidget {
                 ),
               ),
             ),
-            Row(
-              children: [
-                Text(
-                  value,
-                  style: GoogleFonts.poppins(
-                    fontSize: 10.sp,
-                    fontWeight: FontWeight.w400,
-                    color: AppColors.alttextColor[themeMode],
+            // Value box
+            Container(
+              height: 48.h,
+              padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 7.h),
+              color: AppColors.budgetLabelBackground[themeMode],
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  Text(
+                    value,
+                    style: GoogleFonts.poppins(
+                      fontSize: 10.sp,
+                      fontWeight: FontWeight.w400,
+                      color: AppColors.alttextColor[themeMode],
+                    ),
                   ),
-                ),
-                if (showArrow)
-                  Padding(
-                    padding: EdgeInsets.only(left: 5.w),
-                    child: Icon(
-                      isIncrease ? Icons.arrow_upward : Icons.arrow_downward,
-                      size: 12.w,
+                  if (showArrow) ...[
+                    SizedBox(width: 5.w),
+                    Container(
+                      width: 9.w,
+                      height: 9.w,
                       color: isIncrease
                           ? AppColors.logoutButtonBackground[themeMode]
                           : AppColors.accentColor[themeMode],
+                      child: Icon(
+                        isIncrease ? Icons.arrow_upward : Icons.arrow_downward,
+                        size: 7.w,
+                        color: AppColors.logoutButtonTextColor[themeMode],
+                      ),
                     ),
-                  ),
-              ],
+                  ],
+                ],
+              ),
             ),
           ],
         ),
@@ -417,12 +431,16 @@ class SummarySection extends StatelessWidget {
           'Compared to Last Month',
           '${comparedToLastMonth.toStringAsFixed(0)}%',
           showArrow: true,
+          isIncrease: isIncrease,
         ),
         summaryRow(
           'Average Per Day',
           '$currency ${averageSpendPerDay.toStringAsFixed(2)}',
         ),
-        summaryRow('Most Spent Day', mostSpentDay),
+        summaryRow(
+          'Most Spent Day',
+          mostSpentDay,
+        ),
       ],
     );
   }
