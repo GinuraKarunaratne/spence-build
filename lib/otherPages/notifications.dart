@@ -160,8 +160,6 @@ class NotificationService {
           scheduledDate,
           details,
           androidScheduleMode: AndroidScheduleMode.exact,
-          uiLocalNotificationDateInterpretation:
-              UILocalNotificationDateInterpretation.absoluteTime,
           matchDateTimeComponents: DateTimeComponents.time, // Repeats daily
         );
       } else {

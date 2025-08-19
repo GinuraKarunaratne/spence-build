@@ -22,26 +22,44 @@ class _EditBudgetState extends State<EditBudget> {
   bool _isLoading = false;
   double _newBudget = 0.0;
 
-  // Save the new budget to Firestore.
+  // Save the new budget to Firestore with validation
   Future<void> _saveNewBudget() async {
+    // Validate budget amount before proceeding
+    if (_newBudget <= 0) {
+      _showDefaultSnackbar("Please enter a valid budget amount");
+      return;
+    }
+    
     setState(() => _isLoading = true);
     final userId = FirebaseAuth.instance.currentUser?.uid;
+    
     if (userId != null) {
       try {
+        // Calculate the first day of next month
+        final now = DateTime.now();
+        final nextMonth = DateTime(now.year, now.month + 1, 1);
+        
+        // Update budget with new amount and effective date
         await FirebaseFirestore.instance
             .collection('budgets')
             .doc(userId)
-            .update({'new_budget': _newBudget});
-        _showDefaultSnackbar("Budget updated successfully!");
+            .update({
+              'new_budget': _newBudget,
+              'budget_update_date': Timestamp.fromDate(nextMonth),
+            });
+            
+        // Show success message with effective date
+        _showDefaultSnackbar("Budget will be updated from ${nextMonth.day}/${nextMonth.month}/${nextMonth.year}");
       } catch (e) {
         debugPrint("Error updating budget: $e");
         _showDefaultSnackbar("Failed to update budget. Please try again.");
       }
     }
+    
     setState(() => _isLoading = false);
   }
 
-  // Default SnackBar using standard styling.
+  // Default SnackBar using standard styling
   void _showDefaultSnackbar(String message) {
     final themeMode = Provider.of<ThemeProvider>(context, listen: false).themeMode;
     ScaffoldMessenger.of(context).showSnackBar(
@@ -73,9 +91,11 @@ class _EditBudgetState extends State<EditBudget> {
 
             return Stack(
               children: [
-                // Main content
+                // Main scrollable content
                 SingleChildScrollView(
-                  physics: isOverflowing ? const BouncingScrollPhysics() : const NeverScrollableScrollPhysics(),
+                  physics: isOverflowing 
+                      ? const BouncingScrollPhysics() 
+                      : const NeverScrollableScrollPhysics(),
                   child: ConstrainedBox(
                     constraints: BoxConstraints(
                       minHeight: constraints.maxHeight,
@@ -83,11 +103,12 @@ class _EditBudgetState extends State<EditBudget> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        // Header row with logo and back button
+                        // Header section with logo and back button
                         Padding(
                           padding: EdgeInsets.only(top: 2.h),
                           child: Row(
                             children: [
+                              // App logo
                               Padding(
                                 padding: EdgeInsets.fromLTRB(25.w, 12.h, 0, 0),
                                 child: SvgPicture.asset(
@@ -98,6 +119,7 @@ class _EditBudgetState extends State<EditBudget> {
                                 ),
                               ),
                               const Spacer(),
+                              // Back button
                               Padding(
                                 padding: EdgeInsets.fromLTRB(40.w, 12.h, 20.w, 0),
                                 child: Container(
@@ -120,8 +142,11 @@ class _EditBudgetState extends State<EditBudget> {
                             ],
                           ),
                         ),
+                        
+                        // Adaptive spacing based on screen height
                         SizedBox(height: isOverflowing ? 50.h : 250.h),
-                        // Centered ValueDisplay widget
+                        
+                        // Budget input widget - centered
                         Center(
                           child: ValueDisplay(
                             onBudgetChanged: (newBudget) {
@@ -131,12 +156,18 @@ class _EditBudgetState extends State<EditBudget> {
                             },
                           ),
                         ),
+                        
+                        // Adaptive spacing before note
                         SizedBox(height: isOverflowing ? 20.h : 230.h),
-                        // Note text
+                        
+                        // Informational note text
                         Padding(
-                          padding: EdgeInsets.symmetric(vertical: 20.h, horizontal: 27.w),
+                          padding: EdgeInsets.symmetric(
+                            vertical: 20.h, 
+                            horizontal: 27.w
+                          ),
                           child: Text(
-                            '* Your budget changes will take effect at the beginning of next month. We’ll ensure that all your personal details are securely stored and used only for managing your account.',
+                            '* Your budget changes will take effect at the beginning of next month. We\'ll ensure that all your personal details are securely stored and used only for managing your account.',
                             textAlign: TextAlign.justify,
                             style: GoogleFonts.poppins(
                               color: AppColors.budgetNoteColor[themeMode],
@@ -145,12 +176,15 @@ class _EditBudgetState extends State<EditBudget> {
                             ),
                           ),
                         ),
+                        
+                        // Bottom spacing
                         SizedBox(height: isOverflowing ? 20.h : 50.h),
                       ],
                     ),
                   ),
                 ),
-                // Confirm button at the bottom
+                
+                // Fixed confirm button at bottom
                 Positioned(
                   bottom: 20.h,
                   left: 20.h,
@@ -159,7 +193,8 @@ class _EditBudgetState extends State<EditBudget> {
                     onPressed: _saveNewBudget,
                   ),
                 ),
-                // Loading overlay
+                
+                // Loading overlay when processing
                 if (_isLoading)
                   Positioned.fill(
                     child: Container(
