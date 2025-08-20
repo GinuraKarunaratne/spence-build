@@ -89,14 +89,34 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
       final batch = FirebaseFirestore.instance.batch();
 
       final expenseDoc = FirebaseFirestore.instance.collection('expenses').doc();
-      batch.set(expenseDoc, {
+      
+      // Prepare expense data with OCR metadata if available
+      Map<String, dynamic> expenseData = {
         'amount': expenseAmountValue,
         'category': category,
         'date': date,
         'title': title,
         'userId': userId,
         'createdAt': FieldValue.serverTimestamp(),
-      });
+      };
+      
+      // Add OCR metadata if this expense was created from OCR
+      if (_ocrData != null) {
+        expenseData.addAll({
+          'ocr_extracted': true,
+          'ocr_confidence_title': double.tryParse(_ocrData!['confidence_title'] ?? '0') ?? 0,
+          'ocr_confidence_amount': double.tryParse(_ocrData!['confidence_amount'] ?? '0') ?? 0,
+          'ocr_overall_confidence': double.tryParse(_ocrData!['overall_confidence'] ?? '0') ?? 0,
+          'ocr_processing_time_ms': int.tryParse(_ocrData!['processing_time_ms'] ?? '0') ?? 0,
+          'ocr_metadata': _ocrData!['extraction_metadata'] ?? '',
+          'original_ocr_title': _ocrData!['title'] ?? '',
+          'original_ocr_amount': _ocrData!['amount'] ?? '',
+        });
+      } else {
+        expenseData['ocr_extracted'] = false;
+      }
+      
+      batch.set(expenseDoc, expenseData);
 
       final totExpensesDoc = FirebaseFirestore.instance
           .collection('users')

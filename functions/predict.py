@@ -323,40 +323,92 @@ def analyze_time_patterns(df):
     return time_patterns
 
 def optimize_arima_parameters(data):
-    """Find optimal ARIMA parameters using ACF and PACF"""
+    """Find optimal ARIMA parameters using enhanced grid search with AIC/BIC scoring"""
+    from itertools import product
+    
     # Handle zero-spending days by using a small positive value
     data_adjusted = data.copy()
     data_adjusted[data_adjusted == 0] = 0.01
     
-    # Calculate maximum allowed lags (30% of data points)
-    max_lags = min(int(len(data) * 0.3), 7)
+    # Apply log transformation to reduce variance in high spending days
+    data_log = np.log1p(data_adjusted)  # log1p handles zeros better
     
-    # Difference the series to achieve stationarity
-    diff_data = data_adjusted.diff().dropna()
+    # Define parameter ranges based on data size
+    if len(data) < 14:
+        p_range = range(0, 2)
+        d_range = range(0, 2) 
+        q_range = range(0, 2)
+    elif len(data) < 30:
+        p_range = range(0, 3)
+        d_range = range(0, 2)
+        q_range = range(0, 3)
+    else:
+        p_range = range(0, 4)
+        d_range = range(0, 3)
+        q_range = range(0, 4)
     
-    try:
-        # Calculate ACF and PACF with dynamic lags
-        acf_values = acf(diff_data, nlags=max_lags)
-        pacf_values = pacf(diff_data, nlags=max_lags)
-        
-        # Find optimal p and q values
-        p = min(len([x for x in pacf_values[1:] if abs(x) > 0.2]), max_lags)
-        q = min(len([x for x in acf_values[1:] if abs(x) > 0.2]), max_lags)
-        
-        # Ensure minimum values and cap maximum
-        p = max(min(p, 2), 1)
-        q = max(min(q, 2), 1)
-        
-    except Exception as e:
-        p, q = 1, 1
+    best_aic = float('inf')
+    best_params = (1, 1, 1)
     
-    return p, 1, q
+    # Grid search for optimal parameters
+    for p, d, q in product(p_range, d_range, q_range):
+        if p == 0 and d == 0 and q == 0:
+            continue  # Skip null model
+            
+        try:
+            # Test stationarity after differencing
+            test_data = data_log.copy()
+            for _ in range(d):
+                test_data = test_data.diff().dropna()
+            
+            if len(test_data) < 10:  # Need enough data points
+                continue
+                
+            # Fit model and calculate AIC
+            model = ARIMA(data_log, order=(p, d, q))
+            fitted_model = model.fit()
+            
+            # Penalize models with too many parameters for small datasets
+            penalty = 0
+            if len(data) < 30:
+                penalty = (p + q) * 2  # Extra penalty for small datasets
+            
+            adjusted_aic = fitted_model.aic + penalty
+            
+            if adjusted_aic < best_aic:
+                best_aic = adjusted_aic
+                best_params = (p, d, q)
+                
+        except Exception as e:
+            continue
+    
+    # Fallback to simple model if grid search fails
+    if best_params == (1, 1, 1) and best_aic == float('inf'):
+        try:
+            # Try automatic model selection using auto_arima approach
+            from statsmodels.tsa.stattools import adfuller
+            
+            # Check stationarity
+            adf_result = adfuller(data_log.dropna())
+            if adf_result[1] > 0.05:  # Non-stationary
+                best_params = (1, 1, 1)
+            else:  # Stationary
+                best_params = (1, 0, 1)
+        except:
+            best_params = (1, 1, 1)
+    
+    return best_params
 
-def generate_daily_predictions(model, patterns, target_month, steps=30):
+def generate_daily_predictions(model, patterns, target_month, steps=30, use_log_transform=False):
     """Generate detailed daily predictions with enhanced metadata"""
     forecast = model.get_forecast(steps=steps)
     mean_forecast = forecast.predicted_mean
     confidence_int = forecast.conf_int()
+    
+    # Transform predictions back from log space if needed
+    if use_log_transform:
+        mean_forecast = np.expm1(mean_forecast)  # Inverse of log1p
+        confidence_int = np.expm1(confidence_int)  # Transform confidence intervals too
     
     # Get spending thresholds from overall stats
     overall_stats = patterns['overall_stats']
@@ -933,30 +985,38 @@ def predict_next_month(request):
         if df['total'].isnull().any():
             df['total'] = df['total'].fillna(df['total'].rolling(window=7, min_periods=1).mean())
 
-        # --- Use only real spending days for ARIMA, but keep zeros for zero-day pattern analysis ---
+        # --- Enhanced data preparation for ARIMA ---
         arima_series = df['total'].copy()
-        if (arima_series != 0).sum() >= 7:
-            # If enough non-zero days, use only those for ARIMA
-            arima_series = arima_series[arima_series > 0]
-        else:
-            # Otherwise, use all (filled) data
-            arima_series = df['total']
-
-        # Analyze patterns
+        
+        # Apply log transformation to handle skewed data and variance issues
+        arima_series_log = np.log1p(arima_series)  # log1p handles zeros better
+        
+        # Analyze patterns before model fitting
         patterns = analyze_spending_patterns(df)
-        # Optimize ARIMA parameters
+        
+        # Optimize ARIMA parameters with enhanced grid search
         p, d, q = optimize_arima_parameters(arima_series)
-        # Fit model with optimized parameters
+        
+        # Fit model with optimized parameters using log-transformed data
         try:
-            model = ARIMA(arima_series, order=(p, d, q))
+            model = ARIMA(arima_series_log, order=(p, d, q))
             fitted_model = model.fit()
+            use_log_transform = True
         except Exception as e:
-            print(f"Complex model failed: {str(e)}, using simple model")
-            model = ARIMA(arima_series, order=(1, 1, 1))
-            fitted_model = model.fit()
-            p, d, q = 1, 1, 1
-        # Generate predictions
-        daily_predictions = generate_daily_predictions(fitted_model, patterns, target_month)
+            print(f"Log-transformed model failed: {str(e)}, trying original data")
+            try:
+                # Fallback to original data if log transform fails
+                model = ARIMA(arima_series, order=(p, d, q))
+                fitted_model = model.fit()
+                use_log_transform = False
+            except Exception as e2:
+                print(f"Complex model failed: {str(e2)}, using simple model")
+                model = ARIMA(arima_series, order=(1, 1, 1))
+                fitted_model = model.fit()
+                p, d, q = 1, 1, 1
+                use_log_transform = False
+        # Generate predictions with log transformation handling
+        daily_predictions = generate_daily_predictions(fitted_model, patterns, target_month, use_log_transform=use_log_transform)
         # --- Budget Cap: Scale down if over budget ---
         if monthly_budget:
             pred_sum = sum(day['predicted_amount'] for day in daily_predictions)
