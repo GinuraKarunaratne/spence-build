@@ -7,9 +7,17 @@ import 'package:provider/provider.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart'; // Ensure this import is added
 import 'package:spence/theme/theme.dart';
 import 'package:spence/theme/theme_provider.dart';
+import 'package:intl/intl.dart';
 
-class DailyExpenses extends StatelessWidget {
+class DailyExpenses extends StatefulWidget {
   const DailyExpenses({super.key});
+
+  @override
+  _DailyExpensesState createState() => _DailyExpensesState();
+}
+
+class _DailyExpensesState extends State<DailyExpenses> {
+  Map<int, bool> _showDateMap = {}; // Track which items show date vs amount
 
   Future<String?> _fetchCurrencySymbol() async {
     final userId = FirebaseAuth.instance.currentUser?.uid;
@@ -250,10 +258,11 @@ class DailyExpenses extends StatelessWidget {
               final expense = expenses[index];
               final title = expense['title'] ?? 'Unknown';
               final amount = '$currencySymbol ${expense['amount']?.toInt() ?? 0}';
+              final date = (expense['date'] as Timestamp).toDate();
 
               return Padding(
                 padding: EdgeInsets.only(bottom: 7.h), // Scaled padding
-                child: _buildExpenseItem(context, title, amount),
+                child: _buildExpenseItem(context, title, amount, date, index),
               );
             },
           ),
@@ -262,43 +271,57 @@ class DailyExpenses extends StatelessWidget {
     );
   }
 
-  Widget _buildExpenseItem(BuildContext context, String title, String amount) {
+  Widget _buildExpenseItem(BuildContext context, String title, String amount, DateTime date, int index) {
     final themeMode = Provider.of<ThemeProvider>(context).themeMode;
+    final bool showDate = _showDateMap[index] ?? false;
 
-    return Container(
-      width: double.infinity,
-      height: 37, // Scaled height
-      padding: EdgeInsets.symmetric(horizontal: 10.w), // Scaled padding
-      decoration: BoxDecoration(
-        color: AppColors.primaryBackground[themeMode],
-        borderRadius: BorderRadius.circular(12.r), // Scaled radius
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            title,
-            style: GoogleFonts.poppins(
-              color: AppColors.textColor[themeMode],
-              fontSize: 12.sp, // Scaled font size
-              fontWeight: FontWeight.w400,
-            ),
-          ),
-          Container(
-            padding: EdgeInsets.symmetric(horizontal: 8, vertical: 3), // Scaled padding
-            decoration: BoxDecoration(
-              color: AppColors.accentColor[themeMode],
-              borderRadius: BorderRadius.circular(6.r), // Scaled radius
-            ),
-            child: Text(
-              amount,
-              style: GoogleFonts.poppins(
-                fontSize: 10.sp, // Scaled font size
-                color: AppColors.textColor[themeMode],
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _showDateMap[index] = !showDate;
+        });
+      },
+      child: Container(
+        width: double.infinity,
+        height: 37, // Scaled height
+        padding: EdgeInsets.symmetric(horizontal: 10.w), // Scaled padding
+        decoration: BoxDecoration(
+          color: AppColors.primaryBackground[themeMode],
+          borderRadius: BorderRadius.circular(12.r), // Scaled radius
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Expanded(
+              child: Text(
+                title,
+                style: GoogleFonts.poppins(
+                  color: AppColors.textColor[themeMode],
+                  fontSize: 12.sp, // Scaled font size
+                  fontWeight: FontWeight.w400,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
             ),
-          ),
-        ],
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 3), // Scaled padding
+              decoration: BoxDecoration(
+                color: AppColors.accentColor[themeMode],
+                borderRadius: BorderRadius.circular(6.r), // Scaled radius
+              ),
+              child: Text(
+                showDate 
+                    ? DateFormat('MMM dd').format(date)
+                    : amount,
+                style: GoogleFonts.poppins(
+                  fontSize: 10.sp, // Scaled font size
+                  color: AppColors.textColor[themeMode],
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

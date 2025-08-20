@@ -9,6 +9,7 @@ import 'package:spence/widgets/header.dart';
 import 'package:spence/widgets/piechart.dart';
 import 'package:spence/widgets/totalexpense.dart';
 import 'package:spence/widgets/topexpense.dart';
+import 'package:spence/widgets/anomaly_detection_widget.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:provider/provider.dart';
 import 'package:spence/theme/theme.dart';
@@ -163,6 +164,8 @@ class ReportsScreen extends StatelessWidget {
             const TotalExpense(),
             SizedBox(height: 15.h),
             const TopExpense(),
+            SizedBox(height: 25.h),
+            const AnomalyDetectionWidget(),
           ],
         );
       },

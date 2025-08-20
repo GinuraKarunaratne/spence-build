@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:spence/theme/theme.dart';
 import 'package:spence/theme/theme_provider.dart';
+import 'package:spence/services/ml_services.dart';
 
 class ExpenseForm extends StatefulWidget {
   final String initialTitle;
@@ -45,6 +46,32 @@ class ExpenseFormState extends State<ExpenseForm> {
     _dateController = TextEditingController(
       text: DateFormat('yyyy-MM-dd').format(_selectedDate),
     );
+    
+    // Add listener for smart categorization
+    _titleController.addListener(_onTitleChanged);
+    
+    // Predict category if initial title is provided
+    if (widget.initialTitle.isNotEmpty) {
+      _predictAndSetCategory(widget.initialTitle);
+    }
+  }
+
+  void _onTitleChanged() {
+    // Debounce the categorization to avoid too many predictions
+    Future.delayed(const Duration(milliseconds: 500), () {
+      if (_titleController.text.isNotEmpty) {
+        _predictAndSetCategory(_titleController.text);
+      }
+    });
+  }
+
+  void _predictAndSetCategory(String description) {
+    final predictedCategory = MLServices.predictCategory(description);
+    if (predictedCategory != _selectedCategory && categories.contains(predictedCategory)) {
+      setState(() {
+        _selectedCategory = predictedCategory;
+      });
+    }
   }
 
   @override

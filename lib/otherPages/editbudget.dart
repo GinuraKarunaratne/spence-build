@@ -10,6 +10,7 @@ import 'package:provider/provider.dart';
 import 'package:spence/theme/theme.dart';
 import 'package:spence/theme/theme_provider.dart';
 import 'package:spence/widgets/valuedisplay.dart';
+import 'package:spence/widgets/suggested_budget_widget.dart';
 
 class EditBudget extends StatefulWidget {
   const EditBudget({super.key});
@@ -157,31 +158,18 @@ class _EditBudgetState extends State<EditBudget> {
                           ),
                         ),
                         
-                        // Adaptive spacing before note
-                        SizedBox(height: isOverflowing ? 20.h : 230.h),
-                        
-                        // Informational note text
-                        Padding(
-                          padding: EdgeInsets.symmetric(
-                            vertical: 20.h, 
-                            horizontal: 27.w
-                          ),
-                          child: Text(
-                            '* Your budget changes will take effect at the beginning of next month. We\'ll ensure that all your personal details are securely stored and used only for managing your account.',
-                            textAlign: TextAlign.justify,
-                            style: GoogleFonts.poppins(
-                              color: AppColors.budgetNoteColor[themeMode],
-                              fontSize: 9.sp,
-                              fontWeight: FontWeight.w300,
-                            ),
-                          ),
-                        ),
-                        
-                        // Bottom spacing
+                        // Spacing for AI suggested budget at bottom
                         SizedBox(height: isOverflowing ? 20.h : 50.h),
                       ],
                     ),
                   ),
+                ),
+                
+                // AI Suggested Budget widget - 20px above confirm button
+                Positioned(
+                  bottom: 88.h, // 68.h (button height) + 20.h (spacing)
+                  left: (MediaQuery.of(context).size.width - 330.w) / 2,
+                  child: const SuggestedBudgetWidget(),
                 ),
                 
                 // Fixed confirm button at bottom

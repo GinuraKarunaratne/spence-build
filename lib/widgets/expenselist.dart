@@ -7,8 +7,9 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
 import 'package:spence/theme/theme.dart';
 import 'package:spence/theme/theme_provider.dart';
+import 'package:intl/intl.dart';
 
-class ExpenseList extends StatelessWidget {
+class ExpenseList extends StatefulWidget {
   final List<String> selectedCategories;
   final String selectedTimePeriod;
   const ExpenseList({
@@ -16,6 +17,13 @@ class ExpenseList extends StatelessWidget {
     required this.selectedCategories,
     required this.selectedTimePeriod,
   });
+
+  @override
+  _ExpenseListState createState() => _ExpenseListState();
+}
+
+class _ExpenseListState extends State<ExpenseList> {
+  Map<int, bool> _showDateMap = {}; // Track which items show date vs amount
 
   Future<String?> _fetchCurrencySymbol() async {
     final userId = FirebaseAuth.instance.currentUser?.uid;
@@ -152,11 +160,12 @@ class ExpenseList extends StatelessWidget {
           final title = expense['title'] ?? 'Unknown';
           final amount = '$currencySymbol ${expense['amount']?.toInt() ?? 0}';
           final category = expense['category'] ?? 'Unknown';
-          if (selectedCategories.isEmpty ||
-              selectedCategories.contains(category)) {
+          final date = (expense['date'] as Timestamp).toDate();
+          if (widget.selectedCategories.isEmpty ||
+              widget.selectedCategories.contains(category)) {
             return Padding(
               padding: EdgeInsets.only(bottom: 10.h),
-              child: _buildExpenseItem(context, title, amount),
+              child: _buildExpenseItem(context, title, amount, date, index),
             );
           }
           return Container();
@@ -168,20 +177,20 @@ class ExpenseList extends StatelessWidget {
   List<QueryDocumentSnapshot> _filterExpensesByTimePeriod(
       List<QueryDocumentSnapshot> expenses) {
     DateTime now = DateTime.now();
-    if (selectedTimePeriod == 'Daily') {
+    if (widget.selectedTimePeriod == 'Daily') {
       return expenses.where((expense) {
         DateTime expenseDate = (expense['date'] as Timestamp).toDate();
         return expenseDate.day == now.day &&
             expenseDate.month == now.month &&
             expenseDate.year == now.year;
       }).toList();
-    } else if (selectedTimePeriod == 'Weekly') {
+    } else if (widget.selectedTimePeriod == 'Weekly') {
       DateTime startOfWeek = now.subtract(Duration(days: now.weekday - 1));
       return expenses.where((expense) {
         DateTime expenseDate = (expense['date'] as Timestamp).toDate();
         return expenseDate.isAfter(startOfWeek) && expenseDate.isBefore(now);
       }).toList();
-    } else if (selectedTimePeriod == 'Monthly') {
+    } else if (widget.selectedTimePeriod == 'Monthly') {
       return expenses.where((expense) {
         DateTime expenseDate = (expense['date'] as Timestamp).toDate();
         return expenseDate.month == now.month && expenseDate.year == now.year;
@@ -190,43 +199,57 @@ class ExpenseList extends StatelessWidget {
     return expenses;
   }
 
-  Widget _buildExpenseItem(BuildContext context, String title, String amount) {
+  Widget _buildExpenseItem(BuildContext context, String title, String amount, DateTime date, int index) {
     final themeMode = Provider.of<ThemeProvider>(context).themeMode;
+    final bool showDate = _showDateMap[index] ?? false;
 
-    return Container(
-      width: double.infinity,
-      height: 37,
-      padding: EdgeInsets.symmetric(horizontal: 10.w),
-      decoration: BoxDecoration(
-        color: AppColors.primaryBackground[themeMode],
-        borderRadius: BorderRadius.circular(12.w),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            title,
-            style: GoogleFonts.poppins(
-              color: AppColors.textColor[themeMode],
-              fontSize: 12.sp,
-              fontWeight: FontWeight.w400,
-            ),
-          ),
-          Container(
-            padding: EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-            decoration: BoxDecoration(
-              color: AppColors.accentColor[themeMode],
-              borderRadius: BorderRadius.circular(6.w),
-            ),
-            child: Text(
-              amount,
-              style: GoogleFonts.poppins(
-                fontSize: 10.sp,
-                color: AppColors.textColor[themeMode],
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _showDateMap[index] = !showDate;
+        });
+      },
+      child: Container(
+        width: double.infinity,
+        height: 37,
+        padding: EdgeInsets.symmetric(horizontal: 10.w),
+        decoration: BoxDecoration(
+          color: AppColors.primaryBackground[themeMode],
+          borderRadius: BorderRadius.circular(12.w),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Expanded(
+              child: Text(
+                title,
+                style: GoogleFonts.poppins(
+                  color: AppColors.textColor[themeMode],
+                  fontSize: 12.sp,
+                  fontWeight: FontWeight.w400,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
             ),
-          ),
-        ],
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(
+                color: AppColors.accentColor[themeMode],
+                borderRadius: BorderRadius.circular(6.w),
+              ),
+              child: Text(
+                showDate 
+                    ? DateFormat('MMM dd').format(date)
+                    : amount,
+                style: GoogleFonts.poppins(
+                  fontSize: 10.sp,
+                  color: AppColors.textColor[themeMode],
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

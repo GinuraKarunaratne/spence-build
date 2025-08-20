@@ -12,6 +12,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:intl/intl.dart';
+import 'package:spence/widgets/financial_health_widget.dart';
 
 /// Model to hold user profile data
 class UserProfile {
@@ -130,7 +131,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
               // Calculate the total height of the content
               // The bottommost element is the "Member Since" block
-              // Its top position is: 180.h + 14.h + 20.h + 21.h + 135.h + 21.h + 40.h + 70.h
+              // Add space for Financial Health Score widget (135.h + 21.h spacing)
+              // Its top position is: 180.h + 14.h + 20.h + 21.h + 135.h + 21.h + 40.h + 70.h + 135.h + 21.h
               // Its height is: 165.h
               // Add padding for the bottom buttons: 30.h (padding) + 48.h (approx button height)
               final totalContentHeight = (180.h +
@@ -141,6 +143,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       21.h +
                       40.h +
                       70.h +
+                      135.h + // Financial Health Widget height
+                      21.h + // Spacing after Financial Health Widget
                       165.h +
                       30.h +
                       48.h)
@@ -218,9 +222,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             child: _buildExpenseContainer(
                                 context, themeMode, budget.monthlyBudget),
                           ),
-                          // Active Currency row
+                          // Financial Health Score Widget (below budget with same padding)
                           Positioned(
                             top: 180.h + 14.h + 20.h + 21.h + 135.h + 21.h,
+                            left: (ScreenUtil().screenWidth - 330.w) / 2,
+                            child: const FinancialHealthWidget(),
+                          ),
+                          // Active Currency row
+                          Positioned(
+                            top: 180.h + 14.h + 20.h + 21.h + 135.h + 21.h + 135.h + 21.h,
                             left: 26.w,
                             right: 26.w,
                             child: _buildSummaryRow(
@@ -234,6 +244,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             top: 180.h +
                                 14.h +
                                 20.h +
+                                21.h +
+                                135.h +
                                 21.h +
                                 135.h +
                                 21.h +
@@ -254,6 +266,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 21.h +
                                 135.h +
                                 21.h +
+                                135.h +
+                                21.h +
                                 40.h +
                                 70.h,
                             left: 26.w,
@@ -268,6 +282,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             top: 180.h +
                                 14.h +
                                 20.h +
+                                21.h +
+                                135.h +
                                 21.h +
                                 135.h +
                                 21.h +
