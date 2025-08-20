@@ -215,27 +215,27 @@ class AppColors {
   // Financial Health Score Colors
   static final Map<ThemeMode, Color> healthScoreExcellent = {
     ThemeMode.light: const Color(0xFFCCF20D), // Your accent green
-    ThemeMode.dark: const Color(0xFFCCF402),
+    ThemeMode.dark: const Color.fromARGB(255, 126, 151, 0),
   };
 
   static final Map<ThemeMode, Color> healthScoreGood = {
-    ThemeMode.light: const Color(0xFF2196F3), // Blue
-    ThemeMode.dark: const Color(0xFF64B5F6),
+    ThemeMode.light: const Color.fromARGB(255, 233, 245, 67), // Blue
+    ThemeMode.dark: const Color.fromARGB(255, 133, 142, 10),
   };
 
   static final Map<ThemeMode, Color> healthScoreFair = {
     ThemeMode.light: const Color(0xFFFF9800), // Orange
-    ThemeMode.dark: const Color(0xFFFFB74D),
+    ThemeMode.dark: const Color.fromARGB(255, 174, 110, 14),
   };
 
   static final Map<ThemeMode, Color> healthScorePoor = {
     ThemeMode.light: const Color(0xFFFF5722), // Red-orange
-    ThemeMode.dark: const Color(0xFFFF8A65),
+    ThemeMode.dark: const Color.fromARGB(255, 146, 53, 25),
   };
 
   static final Map<ThemeMode, Color> healthScoreCritical = {
     ThemeMode.light: const Color(0xFFEC0004), // Your error red
-    ThemeMode.dark: const Color(0xFFA10000),
+    ThemeMode.dark: const Color.fromARGB(255, 126, 1, 1),
   };
 }
 

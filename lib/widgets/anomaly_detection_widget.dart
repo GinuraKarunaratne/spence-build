@@ -160,7 +160,7 @@ class _AnomalyDetectionWidgetState extends State<AnomalyDetectionWidget> {
                 Icon(
                   Icons.warning_amber_rounded,
                   size: 13.sp,
-                  color: AppColors.healthScoreCritical[themeMode],
+                  color: AppColors.textColor[themeMode], // Your warning amber color
                 ),
                 SizedBox(width: 4.w),
                 Text(
