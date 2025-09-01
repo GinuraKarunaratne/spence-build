@@ -16,6 +16,32 @@ class OcrService {
   void dispose() {
     _textRecognizer?.close();
     _textRecognizer = null;
+    
+    // Clean up any remaining temporary files
+    _cleanupTempFiles();
+  }
+  
+  /// Cleans up temporary OCR files in the system temp directory
+  void _cleanupTempFiles() {
+    try {
+      final tempDir = Directory.systemTemp;
+      final tempFiles = tempDir.listSync()
+          .where((entity) => entity is File)
+          .cast<File>()
+          .where((file) => path.basename(file.path).startsWith('ocr_processed_'))
+          .toList();
+      
+      for (final file in tempFiles) {
+        try {
+          file.deleteSync();
+          print("Cleaned up temp file: ${file.path}");
+        } catch (e) {
+          print("Could not delete temp file ${file.path}: $e");
+        }
+      }
+    } catch (e) {
+      print("Error during temp file cleanup: $e");
+    }
   }
 
   /// Enhanced image preprocessing for better OCR performance.
@@ -26,16 +52,24 @@ class OcrService {
   /// - Optionally resizes for optimal OCR processing.
   /// Returns the file path of the processed image.
   Future<String> _preprocessImage(String imagePath) async {
+    img.Image? originalImage;
+    img.Image? resizedImage;
+    img.Image? grayscaleImage;
+    img.Image? blurredImage;
+    img.Image? contrastImage;
+    img.Image? thresholdedImage;
+    img.Image? sharpenedImage;
+    
     try {
       // Read the image file.
       final imageBytes = await File(imagePath).readAsBytes();
-      final originalImage = img.decodeImage(imageBytes);
+      originalImage = img.decodeImage(imageBytes);
       if (originalImage == null) {
         throw Exception("Could not decode image.");
       }
 
       // Resize image if it's too large or too small (optimal range: 600-1200px width)
-      img.Image resizedImage = originalImage;
+      resizedImage = originalImage;
       if (originalImage.width < 600 || originalImage.width > 1200) {
         final targetWidth = originalImage.width < 600 ? 800 : 1000;
         final targetHeight = (originalImage.height * targetWidth / originalImage.width).round();
@@ -43,10 +77,10 @@ class OcrService {
       }
 
       // Convert image to grayscale.
-      img.Image grayscaleImage = img.grayscale(resizedImage);
+      grayscaleImage = img.grayscale(resizedImage);
 
       // Apply noise reduction using a simple blur
-      img.Image blurredImage = img.convolution(grayscaleImage, 
+      blurredImage = img.convolution(grayscaleImage, 
         filter: [
           1, 1, 1,
           1, 2, 1,
@@ -55,23 +89,23 @@ class OcrService {
         div: 10);
 
       // Enhance contrast using histogram stretching
-      img.Image contrastImage = _enhanceContrast(blurredImage);
+      contrastImage = _enhanceContrast(blurredImage);
 
       // Apply adaptive thresholding instead of fixed threshold
-      img.Image thresholdedImage = _adaptiveThreshold(contrastImage);
+      thresholdedImage = _adaptiveThreshold(contrastImage);
 
       // Apply sharpening filter to enhance text edges
-      img.Image sharpenedImage = img.convolution(thresholdedImage, 
+      sharpenedImage = img.convolution(thresholdedImage, 
         filter: [
           0, -1, 0,
           -1, 5, -1,
           0, -1, 0
         ]);
 
-      // Create a temporary file to save the processed image.
+      // Create a temporary file to save the processed image with timestamp for uniqueness
       final tempDir = Directory.systemTemp;
-      final newFileName =
-          "processed_${Random().nextInt(100000)}${path.extension(imagePath)}";
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final newFileName = "ocr_processed_${timestamp}_${Random().nextInt(1000)}.png";
       final processedImagePath = path.join(tempDir.path, newFileName);
 
       // Encode the image (using PNG for lossless quality).
@@ -79,10 +113,20 @@ class OcrService {
       final processedFile = File(processedImagePath);
       await processedFile.writeAsBytes(processedImageBytes);
 
+      print("Created temporary processed image: $processedImagePath");
       return processedImagePath;
     } catch (e) {
       print("Preprocessing Error: $e");
       rethrow;
+    } finally {
+      // Clear image references to help with memory management
+      originalImage = null;
+      resizedImage = null;
+      grayscaleImage = null;
+      blurredImage = null;
+      contrastImage = null;
+      thresholdedImage = null;
+      sharpenedImage = null;
     }
   }
 
@@ -165,6 +209,7 @@ class OcrService {
   /// The method first preprocesses the image to improve OCR accuracy.
   Future<Map<String, String>?> processImage(String imagePath) async {
     TextRecognizer? textRecognizer;
+    String? processedPath;
     final startTime = DateTime.now();
     
     try {
@@ -172,7 +217,7 @@ class OcrService {
       textRecognizer = _getTextRecognizer();
       
       // Preprocess the image before OCR.
-      final processedPath = await _preprocessImage(imagePath);
+      processedPath = await _preprocessImage(imagePath);
       final inputImage = InputImage.fromFilePath(processedPath);
 
       final RecognizedText recognizedText =
@@ -209,8 +254,22 @@ class OcrService {
       print("OCR Processing Error: $e");
       return null;
     } finally {
-      // Always close the text recognizer after use to prevent resource leaks
-      textRecognizer?.close();
+      // Critical cleanup to prevent resource leaks and freezing
+      try {
+        // Always close the text recognizer after use
+        textRecognizer?.close();
+        
+        // Clean up the temporary processed image file
+        if (processedPath != null) {
+          final processedFile = File(processedPath);
+          if (await processedFile.exists()) {
+            await processedFile.delete();
+            print("Cleaned up temporary file: $processedPath");
+          }
+        }
+      } catch (cleanupError) {
+        print("Cleanup error (non-critical): $cleanupError");
+      }
     }
   }
 
@@ -356,79 +415,231 @@ class OcrService {
     return count;
   }
 
-  /// Extracts a title from the first block of text using a basic heuristic.
-  /// The first non-empty, alphabetic line is chosen as the title.
+  /// Enhanced title extraction with better handling of store names and special characters
   String? _extractTitle(List<TextBlock> blocks) {
     if (blocks.isEmpty) return null;
-    final firstBlock = blocks.first;
-
-    // Look for a line that is mainly alphabetic characters.
-    for (final line in firstBlock.lines) {
-      final text = line.text.trim();
-      if (text.isNotEmpty &&
-          text.length > 3 &&
-          RegExp(r'^[a-zA-Z\s]+$').hasMatch(text)) {
-        return text;
+    
+    print("\n=== OCR DEBUG: Starting title extraction ===");
+    print("Total blocks available: ${blocks.length}");
+    
+    // Look through first few blocks for the best title candidate
+    final blocksToCheck = blocks.take(3).toList();
+    List<String> candidates = [];
+    
+    for (int blockIndex = 0; blockIndex < blocksToCheck.length; blockIndex++) {
+      final block = blocksToCheck[blockIndex];
+      print("Block $blockIndex lines:");
+      
+      for (int lineIndex = 0; lineIndex < block.lines.length; lineIndex++) {
+        final line = block.lines[lineIndex];
+        final text = line.text.trim();
+        print("  Line $lineIndex: '$text'");
+        
+        if (text.isNotEmpty && text.length >= 2) {
+          // Enhanced patterns for business names - now includes special characters
+          final patterns = [
+            RegExp(r'^[a-zA-Z][a-zA-Z\s&.-]{2,}$'), // Traditional business names
+            RegExp(r'^[a-zA-Z][a-zA-Z\s&.\x27\-]{2,}$'), // With apostrophes
+            RegExp(r'^[A-Z][a-zA-Z\s&.\x27\-]*$'), // Starts with capital
+            RegExp(r'^[a-zA-Z]{3,}[\s]?[a-zA-Z\s&.\x27\-]*$'), // At least 3 chars
+          ];
+          
+          for (int patternIndex = 0; patternIndex < patterns.length; patternIndex++) {
+            if (patterns[patternIndex].hasMatch(text)) {
+              final score = _scoreTitleCandidate(text, blockIndex, lineIndex);
+              print("    Title candidate: '$text' (pattern ${patternIndex+1}, score: $score)");
+              candidates.add(text);
+              break;
+            }
+          }
+        }
       }
     }
-    // Fallback to the first non-empty line.
-    return firstBlock.lines
-        .firstWhere(
-          (line) => line.text.trim().isNotEmpty,
-          orElse: () => firstBlock.lines.first,
-        )
-        .text
-        .trim();
+    
+    String? bestTitle;
+    if (candidates.isNotEmpty) {
+      // Score and select the best candidate
+      candidates.sort((a, b) {
+        final scoreA = _scoreTitleCandidate(a, 0, 0);
+        final scoreB = _scoreTitleCandidate(b, 0, 0);
+        return scoreB.compareTo(scoreA); // Descending order
+      });
+      bestTitle = candidates.first;
+      print("Selected title: '$bestTitle'");
+    } else {
+      // Fallback: use first non-empty line, cleaned up
+      for (final block in blocksToCheck) {
+        for (final line in block.lines) {
+          final text = _cleanupTitle(line.text.trim());
+          if (text.isNotEmpty && text.length >= 2) {
+            bestTitle = text;
+            print("Fallback title: '$bestTitle'");
+            break;
+          }
+        }
+        if (bestTitle != null) break;
+      }
+    }
+    
+    print("=== OCR DEBUG: Title extraction complete ===\n");
+    return bestTitle;
+  }
+  
+  /// Scores a title candidate based on various factors
+  double _scoreTitleCandidate(String text, int blockIndex, int lineIndex) {
+    double score = 0.0;
+    
+    // Position bonus (earlier is better)
+    score += (3 - blockIndex) * 2.0; // Block position
+    score += max(0, 5 - lineIndex) * 1.0; // Line position
+    
+    // Length bonus (reasonable business name length)
+    if (text.length >= 5 && text.length <= 30) {
+      score += 3.0;
+    } else if (text.length >= 3 && text.length <= 50) {
+      score += 1.0;
+    }
+    
+    // Word count bonus (2-6 words typical for business names)
+    final wordCount = text.split(RegExp(r'\s+')).where((w) => w.isNotEmpty).length;
+    if (wordCount >= 2 && wordCount <= 6) {
+      score += 2.0;
+    } else if (wordCount == 1 && text.length >= 5) {
+      score += 1.0; // Single word but substantial
+    }
+    
+    // Capitalization bonus
+    if (text[0].toUpperCase() == text[0]) {
+      score += 1.0;
+    }
+    
+    // Mixed case bonus (indicates proper business name)
+    if (RegExp(r'[a-z]').hasMatch(text) && RegExp(r'[A-Z]').hasMatch(text)) {
+      score += 1.0;
+    }
+    
+    // Common business word bonus
+    final businessWords = ['store', 'shop', 'mart', 'market', 'restaurant', 'cafe', 'coffee', 'hotel', 'inn'];
+    final lowerText = text.toLowerCase();
+    if (businessWords.any((word) => lowerText.contains(word))) {
+      score += 2.0;
+    }
+    
+    // Penalty for all caps (often headers/receipts details)
+    if (text == text.toUpperCase() && text.length > 10) {
+      score -= 2.0;
+    }
+    
+    return score;
+  }
+  
+  /// Cleans up title text by removing unwanted characters
+  String _cleanupTitle(String text) {
+    // Remove common receipt artifacts
+    String cleaned = text;
+    cleaned = cleaned.replaceAll(RegExp(r'^[\*\-=]+'), ''); // Remove leading symbols
+    cleaned = cleaned.replaceAll(RegExp(r'[\*\-=]+$'), ''); // Remove trailing symbols
+    cleaned = cleaned.replaceAll(RegExp(r'\s+'), ' '); // Normalize whitespace
+    cleaned = cleaned.trim();
+    
+    return cleaned;
   }
 
   /// Enhanced total amount extraction with improved keyword matching and context analysis
   String? _extractTotalAmount(List<TextLine> lines) {
-    // Enhanced keyword list with priority scores
+    print("\n=== OCR DEBUG: Starting amount extraction ===");
+    print("Total lines to analyze: ${lines.length}");
+    
+    // Log all extracted text for debugging
+    for (int i = 0; i < lines.length; i++) {
+      print("Line $i: '${lines[i].text}'");
+    }
+    
+    // Enhanced keyword list with priority scores (increased TOTAL priority as suggested)
     const Map<String, int> totalKeywords = {
-      'total': 10,
-      'grand total': 15,
-      'gross total': 15,
-      'final total': 15,
-      'total amount': 15,
-      'total payable': 15,
-      'amount due': 12,
-      'balance due': 12,
-      'net total': 10,
-      'subtotal': 8,
-      'gross amount': 8,
-      'amount': 6,
-      'balance': 5,
-      'due': 5,
-      'payable': 5,
-      'gst total': 7,
-      'tax total': 7,
-      'grand': 4,
-      'net': 4,
-      'final': 4,
-      'sum': 3,
-      'bill': 3,
-      'amt': 5,
-      'tot': 5,
+      'total': 20,  // Increased priority for simple "TOTAL" keyword
+      'grand total': 18,
+      'gross total': 18,
+      'final total': 18,
+      'total amount': 18,
+      'total payable': 18,
+      'amount due': 15,
+      'balance due': 15,
+      'net total': 15,
+      'subtotal': 12,
+      'gross amount': 12,
+      'amount': 8,
+      'balance': 7,
+      'due': 7,
+      'payable': 7,
+      'gst total': 10,
+      'tax total': 10,
+      'grand': 6,
+      'net': 6,
+      'final': 6,
+      'sum': 5,
+      'bill': 5,
+      'amt': 8,
+      'tot': 10,
+      'invoice total': 15,
+      'receipt total': 15,
+      'checkout total': 15,
+      'order total': 15,
     };
 
     List<Map<String, dynamic>> potentialTotals = [];
+    
+    // First pass: Enhanced fulltext pattern matching (TOTAL 160.92 format)
+    final fullText = lines.map((line) => line.text).join(' ').toLowerCase();
+    print("Full OCR text: '$fullText'");
+    
+    // Try to find "TOTAL [amount]" patterns in full text
+    final totalPatterns = [
+      RegExp(r'total\s+([\d,]+\.\d{2})', caseSensitive: false),
+      RegExp(r'total\s+\$?\s*([\d,]+\.\d{2})', caseSensitive: false),
+      RegExp(r'total\s+([\d,]+)', caseSensitive: false),
+      RegExp(r'total[:\-]?\s*\$?\s*([\d,]+\.?\d*)', caseSensitive: false),
+    ];
+    
+    for (final pattern in totalPatterns) {
+      final match = pattern.firstMatch(fullText);
+      if (match != null && match.group(1) != null) {
+        final amount = match.group(1)!.replaceAll(',', '');
+        final amountValue = double.tryParse(amount);
+        if (amountValue != null && amountValue > 0 && amountValue <= 50000) {
+          print("Found fulltext pattern match: '$amount' with value $amountValue");
+          potentialTotals.add({
+            'amount': amount,
+            'index': -1,
+            'keyword': 'total_fulltext',
+            'priority': 25, // High priority for fulltext matches
+            'context_score': 5.0,
+            'source': 'fulltext_pattern'
+          });
+          break; // Use first match
+        }
+      }
+    }
 
-    // First pass: Look for keyword-amount pairs in the same line
+    // Second pass: Look for keyword-amount pairs in the same line
     for (int i = 0; i < lines.length; i++) {
       final lineText = lines[i].text.toLowerCase().trim();
+      print("Analyzing line $i: '$lineText'");
       
       for (final entry in totalKeywords.entries) {
         final keyword = entry.key;
         final priority = entry.value;
         
         if (lineText.contains(keyword)) {
-          // Extract amount from current line
-          String? amount = _extractAmount(lineText);
+          print("Found keyword '$keyword' in line $i");
+          
+          // Extract amount from current line using multiple methods
+          String? amount = _extractAmountImproved(lineText);
           
           if (amount != null) {
-            // Check if this amount makes sense contextually
             final amountValue = double.tryParse(amount);
             if (amountValue != null && amountValue > 0 && amountValue <= 50000) {
+              print("Extracted amount '$amount' (value: $amountValue) from same line");
               potentialTotals.add({
                 'amount': amount,
                 'index': i,
@@ -443,16 +654,17 @@ class OcrService {
           // Also check the next line for amounts
           if (i + 1 < lines.length) {
             final nextLineText = lines[i + 1].text.trim();
-            String? nextAmount = _extractAmount(nextLineText);
+            String? nextAmount = _extractAmountImproved(nextLineText);
             
             if (nextAmount != null) {
               final amountValue = double.tryParse(nextAmount);
               if (amountValue != null && amountValue > 0 && amountValue <= 50000) {
+                print("Extracted amount '$nextAmount' (value: $amountValue) from next line");
                 potentialTotals.add({
                   'amount': nextAmount,
                   'index': i,
                   'keyword': keyword,
-                  'priority': priority - 2, // Slight penalty for next line
+                  'priority': priority - 1, // Slight penalty for next line
                   'context_score': _calculateContextScore(nextLineText, keyword, amountValue),
                   'source': 'next_line'
                 });
@@ -463,35 +675,74 @@ class OcrService {
       }
     }
 
-    // Second pass: Look for standalone amounts that might be totals
+    // Third pass: Look for standalone amounts in bottom half if no keyword matches
     if (potentialTotals.isEmpty) {
-      for (int i = 0; i < lines.length; i++) {
+      print("No keyword matches found, looking for standalone amounts in bottom half");
+      final bottomHalfStart = (lines.length * 0.5).round();
+      
+      for (int i = bottomHalfStart; i < lines.length; i++) {
         final lineText = lines[i].text.trim();
-        String? amount = _extractAmount(lineText);
+        String? amount = _extractAmountImproved(lineText);
         
         if (amount != null) {
           final amountValue = double.tryParse(amount);
           if (amountValue != null && amountValue > 0) {
-            // Check if this could be a total based on position and context
             final positionScore = _calculatePositionScore(i, lines.length);
             final standaloneScore = _calculateStandaloneAmountScore(lineText, amountValue);
             
             if (positionScore + standaloneScore > 5) {
+              print("Found standalone amount '$amount' (value: $amountValue) in bottom half");
               potentialTotals.add({
                 'amount': amount,
                 'index': i,
-                'keyword': 'standalone',
-                'priority': 2,
-                'context_score': standaloneScore,
-                'source': 'standalone'
+                'keyword': 'standalone_bottom',
+                'priority': 3,
+                'context_score': standaloneScore + positionScore,
+                'source': 'standalone_bottom'
               });
             }
           }
         }
       }
     }
+    
+    // Fourth pass: Find largest amount in bottom third as last resort
+    if (potentialTotals.isEmpty) {
+      print("No matches found, using largest amount in bottom third as fallback");
+      final bottomThirdStart = (lines.length * 0.67).round();
+      double largestAmount = 0.0;
+      String? largestAmountStr;
+      
+      for (int i = bottomThirdStart; i < lines.length; i++) {
+        final lineText = lines[i].text.trim();
+        String? amount = _extractAmountImproved(lineText);
+        
+        if (amount != null) {
+          final amountValue = double.tryParse(amount);
+          if (amountValue != null && amountValue > largestAmount && amountValue <= 10000) {
+            largestAmount = amountValue;
+            largestAmountStr = amount;
+          }
+        }
+      }
+      
+      if (largestAmountStr != null) {
+        print("Using largest amount in bottom third: '$largestAmountStr'");
+        potentialTotals.add({
+          'amount': largestAmountStr,
+          'index': -1,
+          'keyword': 'largest_bottom',
+          'priority': 1,
+          'context_score': 1.0,
+          'source': 'largest_fallback'
+        });
+      }
+    }
 
-    if (potentialTotals.isEmpty) return null;
+    if (potentialTotals.isEmpty) {
+      print("No potential totals found at all");
+      return null;
+    }
 
     // Sort by combined score (priority + context score)
     potentialTotals.sort((a, b) {
@@ -499,8 +750,19 @@ class OcrService {
       final bScore = (b['priority'] as int) + (b['context_score'] as double);
       return bScore.compareTo(aScore); // Descending order
     });
+    
+    print("\nFinal candidates (sorted by score):");
+    for (int i = 0; i < potentialTotals.length && i < 5; i++) {
+      final candidate = potentialTotals[i];
+      final score = (candidate['priority'] as int) + (candidate['context_score'] as double);
+      print("  ${i+1}. Amount: '${candidate['amount']}', Keyword: '${candidate['keyword']}', Score: $score, Source: ${candidate['source']}");
+    }
+    
+    final selectedAmount = potentialTotals.first['amount'] as String;
+    print("Selected amount: '$selectedAmount'");
+    print("=== OCR DEBUG: Amount extraction complete ===\n");
 
-    return potentialTotals.first['amount'];
+    return selectedAmount;
   }
 
   /// Calculates context score based on keyword relevance and amount characteristics
@@ -508,7 +770,7 @@ class OcrService {
     double score = 0.0;
     
     // Bonus for currency symbols
-    if (lineText.contains(RegExp(r'[\$£€¥₹₽]'))) {
+    if (lineText.contains(RegExp(r'[\$\u00a3\u20ac\u00a5\u20b9\u20bd]'))) {
       score += 2.0;
     }
     
@@ -564,7 +826,7 @@ class OcrService {
     }
     
     // Bonus for currency formatting
-    if (RegExp(r'^[\$£€¥₹₽]?\s*\d+[.,]?\d*$').hasMatch(lineText.trim())) {
+    if (RegExp(r'^[\$\u00a3\u20ac\u00a5\u20b9\u20bd]?\s*\d+[.,]?\d*$').hasMatch(lineText.trim())) {
       score += 2.0;
     }
     
@@ -576,32 +838,79 @@ class OcrService {
     return score;
   }
 
-  /// Uses a regular expression to extract a numerical value from [text].
-  /// It handles potential currency symbols and different decimal/thousand separators.
-  String? _extractAmount(String text) {
-    final regex = RegExp(
-      r'''((?:[\$£€¥₹₽]?\s*)?\d{1,3}(?:[.,\s]\d{3})*(?:[.,]\d{1,2})?)''',
-      caseSensitive: false,
-    );
-    final matches = regex.allMatches(text);
-    if (matches.isEmpty) return null;
-    final lastMatch = matches.last.group(1)!;
-    String number = lastMatch.replaceAll(RegExp(r'[^\d.,]'), '');
-
-    final lastDot = number.lastIndexOf('.');
-    final lastComma = number.lastIndexOf(',');
-
-    // Determine the grouping or decimal separator.
-    if (lastDot > lastComma && lastDot != -1) {
-      number = number.replaceAll(',', '');
-    } else if (lastComma > lastDot && lastComma != -1) {
-      number = number.replaceAll('.', '');
-      number = number.replaceAll(',', '.');
-    } else {
-      number = number.replaceAll(RegExp(r'[.,]'), '');
+  /// Enhanced amount extraction with multiple patterns and better handling
+  String? _extractAmountImproved(String text) {
+    print("    Extracting amount from: '$text'");
+    
+    // Multiple regex patterns to handle various formats
+    final patterns = [
+      // Standard decimal numbers with currency symbols: $12.34, £45.67
+      RegExp(r'[\$\u00a3\u20ac\u00a5\u20b9\u20bd]\s*(\d{1,4}(?:,\d{3})*(?:\.\d{2})?)', caseSensitive: false),
+      // Numbers with spaces: 12 34, 12.34, 1 234.56
+      RegExp(r'(\d{1,4}(?:[\s,]\d{3})*(?:[.,]\d{2})?)', caseSensitive: false),
+      // Plain price formats: 12.34, 1,234.56
+      RegExp(r'(\d{1,4}(?:,\d{3})*\.\d{2})', caseSensitive: false),
+      // Whole numbers: 123, 1,234
+      RegExp(r'(\d{1,4}(?:,\d{3})*)', caseSensitive: false),
+      // Decimal with various separators: 12,34 or 12.34
+      RegExp(r'(\d{1,4}[.,]\d{2})', caseSensitive: false),
+      // Any sequence of digits with optional decimal
+      RegExp(r'(\d+(?:[.,]\d{1,2})?)', caseSensitive: false),
+    ];
+    
+    for (int i = 0; i < patterns.length; i++) {
+      final matches = patterns[i].allMatches(text);
+      if (matches.isNotEmpty) {
+        for (final match in matches.toList().reversed) { // Try last match first (usually the total)
+          final matchedText = match.group(1);
+          if (matchedText != null) {
+            String number = _normalizeNumber(matchedText);
+            final value = double.tryParse(number);
+            if (value != null && value > 0 && value <= 50000) {
+              print("    Pattern ${i+1} matched: '$matchedText' -> normalized: '$number' -> value: $value");
+              return number;
+            }
+          }
+        }
+      }
     }
-    return number;
+    
+    print("    No amount found in text");
+    return null;
   }
+  
+  /// Normalizes a number string by handling different decimal/thousand separators
+  String _normalizeNumber(String numberStr) {
+    String normalized = numberStr.trim();
+    
+    // Remove any currency symbols or extra spaces
+    normalized = normalized.replaceAll(RegExp(r'[^\d.,\s]'), '');
+    normalized = normalized.replaceAll(RegExp(r'\s+'), '');
+    
+    // Handle different separator formats
+    final lastDot = normalized.lastIndexOf('.');
+    final lastComma = normalized.lastIndexOf(',');
+    
+    if (lastDot > lastComma && lastDot != -1) {
+      // Format: 1,234.56 (comma as thousands separator)
+      normalized = normalized.replaceAll(',', '');
+    } else if (lastComma > lastDot && lastComma != -1) {
+      // Format: 1.234,56 (dot as thousands separator, comma as decimal)
+      normalized = normalized.replaceAll('.', '');
+      normalized = normalized.replaceAll(',', '.');
+    } else if (normalized.contains(',') && !normalized.contains('.')) {
+      // Format: 12,34 (comma as decimal separator)
+      normalized = normalized.replaceAll(',', '.');
+    } else if (normalized.contains('.') && !normalized.contains(',')) {
+      // Format: 12.34 (dot as decimal separator) - already correct
+    } else {
+      // Remove all separators for whole numbers
+      normalized = normalized.replaceAll(RegExp(r'[.,]'), '');
+    }
+    
+    return normalized;
+  }
+  
 }
 
 
